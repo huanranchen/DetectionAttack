@@ -185,6 +185,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
     def imshow_save(self, img_numpy_batch, save_path, save_name, detectors=None):
         if detectors is None:
             detectors = self.detectors
+        os.makedirs(save_path, exist_ok=True)
         for detector in detectors:
             tmp, _ = self.add_universal_patch(img_numpy_batch, detector)
             preds, _ = detector.detect_img_batch_get_bbox_conf(tmp)
@@ -232,6 +233,7 @@ def attack(cfg, img_names, detector_attacker, save_name, save_path = './results'
     detector_attacker.init_universal_patch()
     detector_attacker.init_attaker()
     init_plot = False
+
     for i in range(cfg.ATTACKER.MAX_ITERS):
         for index in tqdm(range(0, len(img_names), cfg.DETECTOR.BATCH_SIZE)):
             names = img_names[index:index + cfg.DETECTOR.BATCH_SIZE]
@@ -265,9 +267,11 @@ def attack(cfg, img_names, detector_attacker, save_name, save_path = './results'
                 detector_attacker.serial_attack(img_numpy_batch)
 
             if save_plot:
-                detector_attacker.imshow_save(img_numpy_batch, save_path, save_name)
+                for detector in detector_attacker.detectors:
+                    detector_attacker.imshow_save(img_numpy_batch, os.path.join(save_path, detector.name),
+                                                  save_name, detectors=[detector])
 
-            detector_attacker.save_patch(save_path, save_name)
+        detector_attacker.save_patch(save_path, str(i)+save_name)
 
 
 if __name__ == '__main__':

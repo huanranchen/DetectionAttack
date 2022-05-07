@@ -130,7 +130,7 @@ class LinfPGDAttack(Base_Attacker):
         for iter in range(detector_attacker.cfg.ATTACKER.PARALLEL_ITER_STEP):
             preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(adv_tensor_batch)
             disappear_loss = self.loss_fn(detections_with_grad)
-            print('leaf1: ', patch_tmp)
+            # print('leaf1: ', patch_tmp)
             detector.zero_grad()
             disappear_loss.backward(retain_graph=True)
 

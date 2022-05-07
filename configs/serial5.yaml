@@ -16,4 +16,4 @@ ATTACKER:
   ATTACK_CLASS: 1 # -1 attack all classes, or you can select the class id
 
   PATCH_ATTACK:
-    SCALE: 0.2
+    SCALE: 0.15
