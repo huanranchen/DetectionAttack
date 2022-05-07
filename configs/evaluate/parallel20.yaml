@@ -1,0 +1,19 @@
+PATCH_FILE: '/home/chenziyan/work/BaseDetectionAttack/results/military/patch/parallel20.png'
+DATA_ROOT: '/home/chenziyan/work/BaseDetectionAttack/data/military_data/JPEGImages'
+ATTACK_SAVE_PATH: '/home/chenziyan/work/BaseDetectionAttack/data/military_data/parallel20'
+GT_PATH: '/home/chenziyan/work/BaseDetectionAttack/data/military_data/AnnotationLabels'
+
+DETECTOR:
+  NAME: ["Military_YOLOX", "Military_FasterRCNN"]
+  INPUT_SIZE: [416, 416]
+  BATCH_SIZE: 1 # be fixed into 1 for evaluation
+  CLASS_NAME_FILE: './configs/namefiles/military.names'
+
+ATTACKER:
+  ATTACK_CLASS: 1
+  PATCH_ATTACK:
+    SCALE: 0.2
+
+EVALUATOR:
+  IOU_THRESH: 0.5
+  CONF_THRESH: 0.5
