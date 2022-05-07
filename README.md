@@ -6,7 +6,13 @@
 
 请直接copy我的环境 
 ``` bash
-cp -r /home/huanghao/anaconda3/envs/dassl/ ~/anaconda3/envs/ # 您需呀有安装anaconda
+cp -r /home/huanghao/anaconda3/envs/dassl/ ~/anaconda3/envs/ # 您需要预先安装anaconda
+```
+
+```bash
+conda create -n attack python=3.7
+conda activate attack
+pip install -r requirements.txt
 ```
 
 ---
