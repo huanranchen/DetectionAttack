@@ -1,6 +1,7 @@
-PATCH_FILE: '/home/chenziyan/work/BaseDetectionAttack/results/military/patch/serial5.png'
+
+PATCH_FILE: '/home/chenziyan/work/BaseDetectionAttack/results/military/patch/380serial5.png'
 DATA_ROOT: '/home/chenziyan/work/BaseDetectionAttack/data/military_data/JPEGImages'
-ATTACK_SAVE_PATH: '/home/chenziyan/work/BaseDetectionAttack/data/military_data/serial5/'
+ATTACK_SAVE_PATH: '/home/chenziyan/work/BaseDetectionAttack/data/military_data/380serial5/'
 GT_PATH: '/home/chenziyan/work/BaseDetectionAttack/data/military_data/AnnotationLabels'
 #Original_SAVE_PATH: './data/military_data/DetectedLabels'
 
@@ -13,7 +14,7 @@ DETECTOR:
 ATTACKER:
   ATTACK_CLASS: 1
   PATCH_ATTACK:
-    SCALE: 0.2
+    SCALE: 0.15
 
 EVALUATOR:
   IOU_THRESH: 0.5

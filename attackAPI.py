@@ -28,10 +28,10 @@ attacker_dict = {
 }
 
 
-def init_detectors(cfg):
+def init_detectors(detector_names):
     detectors = []
 
-    for detector_name in cfg.DETECTOR.NAME:
+    for detector_name in detector_names:
         detector = init_detector(detector_name)
 
         detectors.append(detector)
@@ -43,7 +43,7 @@ class DetctorAttacker(object):
     def __init__(self, cfg, device):
         self.cfg = cfg
         self.device = device
-        self.detectors = init_detectors(cfg)
+        self.detectors = init_detectors(cfg.DETECTOR.NAME)
         self.patch_boxes = []
         self.class_names = load_class_names(self.cfg.DETECTOR.CLASS_NAME_FILE)
 
@@ -124,7 +124,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         # img_cv2: [b, h, w, c]
         self.batch_patch_boxes = []
         has_target = False
-        print(self.universal_patch.shape)
+        # print(self.universal_patch.shape)
         h, w = self.universal_patch.shape[-2:]
         patch_ratio = w/h
         for index, preds in enumerate(all_preds):
@@ -241,17 +241,11 @@ def attack(cfg, img_names, detector_attacker, save_name, save_path = './results'
             # print(img_numpy_batch.shape)
             all_preds = None
             for detector in detector_attacker.detectors:
-                # print('----------------', detector.name)
                 img_tensor_batch = detector.init_img_batch(img_numpy_batch)
-                # get object bbox: preds bbox list; detections_with_grad: confs tensor
                 preds, _ = detector.detect_img_batch_get_bbox_conf(img_tensor_batch)
-                # print('pred: ', type(preds), preds[0].shape)
-                # print('conf: ', detections_with_grad.shape)
                 all_preds = detector_attacker.merge_batch_pred(all_preds, preds)
 
-            # print('before inter NMS', all_preds[0].shape)
             all_preds = inter_nms(all_preds)
-            # print('after inter NMS', all_preds[0].shape)
             # get position of adversarial patches
             has_target = detector_attacker.get_patch_pos_batch(all_preds)
             if not has_target:
@@ -275,7 +269,14 @@ def attack(cfg, img_names, detector_attacker, save_name, save_path = './results'
 
 
 if __name__ == '__main__':
-    print(os.getcwd())
+    import argparse
+
+    save_root = './results/inria'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--attack_method', type=str, default='serial')
+    parser.add_argument('-cfg', '--cfg', type=str, default='inria.yaml')
+    args = parser.parse_args()
+
     cfg = yaml.load(open('./configs/inria.yaml'), Loader=yaml.FullLoader)
     cfg = obj(cfg)
     data_root = './data'
@@ -284,6 +285,7 @@ if __name__ == '__main__':
     data_root = cfg.DETECTOR.IMG_DIR
     img_names = [os.path.join(data_root, i) for i in os.listdir(data_root)]
     init_plot = True
-    save_plot = False
+    save_plot = True
 
-    attack(cfg, img_names, detector_attacker, save_plot)
+    save_patch_name = args.cfg.split('.')[0] + '.png'
+    attack(cfg, img_names, detector_attacker, save_patch_name, save_root, save_plot, args.attack_method)

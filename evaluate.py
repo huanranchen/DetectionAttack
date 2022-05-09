@@ -10,13 +10,13 @@ from tqdm import tqdm
 from detector_lab.HHDet.utils import init_detector
 from attackAPI import UniversalDetectorAttacker
 
-from tools.utils import obj, inter_nms
+from tools.utils import obj
 from tools.data_handler import read_img_np_batch
 
 paths = {'attack-img': 'imgs', 'det-lab': 'det-labels', 'attack-lab': 'attack-labels'}
-gt = 'ground-truth'
+GT = 'ground-truth'
 
-def dir_check(cfg):
+def dir_check(save_path):
     # if the target path exists, it will be deleted (for empty dirt) and rebuild-up
     def check(path):
         if os.path.exists(path):
@@ -24,24 +24,26 @@ def dir_check(cfg):
         os.makedirs(path)
         # print('mkdir: ', path)
 
-    check(cfg.ATTACK_SAVE_PATH)
+    check(save_path)
     for detector_name in cfg.DETECTOR.NAME:
-        tmp_path = os.path.join(cfg.ATTACK_SAVE_PATH, detector_name)
+        tmp_path = os.path.join(save_path, detector_name)
         for path in paths.values():
             ipath = os.path.join(tmp_path, path)
             check(ipath)
 
 
 class UniversalPatchEvaluator(UniversalDetectorAttacker):
-    def __init__(self, cfg, device):
+    def __init__(self, cfg, args, device):
         super().__init__(cfg, device)
         self.cfg = cfg
+        self.args = args
         self.device = device
         self.read_patch()
 
     def read_patch(self):
-        print('reading patch '+self.cfg.PATCH_FILE)
-        universal_patch = cv2.imread(self.cfg.PATCH_FILE)
+        patch_file = self.args.patch
+        print('reading patch ' + patch_file)
+        universal_patch = cv2.imread(patch_file)
         universal_patch = cv2.cvtColor(universal_patch, cv2.COLOR_BGR2RGB)
         universal_patch = np.expand_dims(np.transpose(universal_patch, (2, 0, 1)), 0)
         self.universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.).to(self.device)
@@ -64,29 +66,50 @@ class UniversalPatchEvaluator(UniversalDetectorAttacker):
             f.write('\n'.join(s))
 
 
+def handle_input():
+    def get_prefix(path):
+        if os.sep in path:
+            path = path.split(os.sep)[-1]
+        return path.split('.')[0]
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--patch', type=str)
+    parser.add_argument('-d', '--detectors', type=list, default=None)
+    parser.add_argument('-s', '--save', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/military_data')
+    parser.add_argument('-gt', '--gt_path', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/military_data/AnnotationLabels')
+    parser.add_argument('-dr', '--data_root', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/military_data/JPEGImages')
+    parser.add_argument('-cfg', '--config_file', type=str, default='serial5.yaml')
+    args = parser.parse_args()
+
+    prefix = get_prefix(args.patch)
+    args.save = os.path.join(args.save, prefix)
+    print(prefix, args.save)
+    cfg = yaml.load(open('./configs/' + args.config_file), Loader=yaml.FullLoader)
+    cfg = obj(cfg)
+
+    if args.detectors is not None:
+        cfg.DETECTOR.NAME = args.detectors
+
+    return args, cfg
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    # parser.add_argument('-p', '--patch', type=str)
-    parser.add_argument('--config_file', type=str, default='serial5.yaml')
-    args = parser.parse_args()
-    cfg = yaml.load(open('./configs/evaluate/'+args.config_file), Loader=yaml.FullLoader)
-    cfg = obj(cfg)
-    train_cfg = yaml.load(open('./configs/'+args.config_file), Loader=yaml.FullLoader)
-    train_cfg = obj(train_cfg)
-
+    batch_size = 1
+    args, cfg = handle_input()
+    dir_check(args.save)
     device = torch.device('cuda')
 
-    evaluator = UniversalPatchEvaluator(cfg, device)
-    img_names = [os.path.join(cfg.DATA_ROOT, i) for i in os.listdir(cfg.DATA_ROOT)]
-    dir_check(cfg)
-    for index in tqdm(range(0, len(img_names), cfg.DETECTOR.BATCH_SIZE)):
-        names = img_names[index:index + cfg.DETECTOR.BATCH_SIZE]
+    evaluator = UniversalPatchEvaluator(cfg, args, device)
+    print('dataroot:', os.getcwd(), args.data_root)
+    img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
+    save_path = args.save
+    for index in tqdm(range(0, len(img_names), batch_size)):
+        names = img_names[index:index + batch_size]
         img_name = names[0].split('/')[-1]
         img_numpy_batch = read_img_np_batch(names, cfg.DETECTOR.INPUT_SIZE)
 
         for detector in evaluator.detectors:
-            tmp_path = os.path.join(cfg.ATTACK_SAVE_PATH, detector.name)
+            tmp_path = os.path.join(save_path, detector.name)
             # print('----------------', detector.name)
             all_preds = None
             img_tensor_batch = detector.init_img_batch(img_numpy_batch)
@@ -100,9 +123,8 @@ if __name__ == '__main__':
             evaluator.get_patch_pos_batch(all_preds)
 
             # for saving the attacked imgs
-            ipath = os.path.join(tmp_path, 'imgs')
-            evaluator.imshow_save(img_numpy_batch, ipath, img_name, detectors=[detector])
-
+            # ipath = os.path.join(tmp_path, 'imgs')
+            # evaluator.imshow_save(img_numpy_batch, ipath, img_name, detectors=[detector])
             adv_img_tensor, _ = evaluator.add_universal_patch(img_numpy_batch, detector)
             preds, _ = detector.detect_img_batch_get_bbox_conf(adv_img_tensor)
 
@@ -114,13 +136,14 @@ if __name__ == '__main__':
     # for compute mAP
     for detector in evaluator.detectors:
         # tmp_path = os.path.join(cfg.ATTACK_SAVE_PATH, detector.name)
-        path = os.path.join(cfg.ATTACK_SAVE_PATH, detector.name)
-        gt_path = os.path.join(path, gt)
-        cmd = 'ln -s ' + cfg.GT_PATH + ' ' + gt_path
+        path = os.path.join(save_path, detector.name)
+        gt_path = os.path.join(path, GT)
+        # print('args', args.gt_path, gt_path)
+        cmd = 'ln -s ' + args.gt_path + ' ' + gt_path
         os.system(cmd)
         cmd = 'python ./data/mAP.py -d ' + detector.name + ' -p ' + path + ' --lab_path=' + paths['attack-lab']
         # print(cmd)
         # print('test: ', os.path.join(path, paths['det-lab']))
         os.system(cmd + ' -gt ' +paths['det-lab']+ ' -rp det')
-        os.system(cmd + ' -rp gt')
+        # os.system(cmd + ' -rp gt')
         # break

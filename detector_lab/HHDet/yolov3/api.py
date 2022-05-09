@@ -104,9 +104,10 @@ class HHYolov3:
         # print('normalize: ', img_tensor.is_leaf)
         return img_tensor, image_data
 
-    def normalize_tensor(self, tensor_data):
+    def normalize_tensor(self, img_tensor):
         # for if mean-std(or other) normalization needed
-        # tensor_data.requires_grad = True
+        tensor_data = img_tensor.clone()
+        tensor_data.requires_grad = True
         return tensor_data
 
     def unnormalize(self, img_tensor):
@@ -117,6 +118,9 @@ class HHYolov3:
         img_numpy = cv2.cvtColor(img_numpy, cv2.COLOR_RGB2BGR)
         img_numpy_int8 = img_numpy.astype('uint8')
         return img_numpy, img_numpy_int8
+
+    def unnormalize_tensor(self, img_tensor):
+        return img_tensor
 
     def detect_img_batch_get_bbox_conf(self, batch_tensor, input_size=416, conf_thres=0.5, nms_thres=0.4):
         self.detector.eval()

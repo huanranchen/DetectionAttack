@@ -106,6 +106,9 @@ class HHYolov4:
         img_numpy_int8 = img_numpy.astype('uint8')
         return img_numpy, img_numpy_int8
 
+    def unnormalize_tensor(self, img_tensor):
+        return img_tensor
+
     def detect_cv2_show(self, imgfile, savename='predictions.jpg'):
         """detect a image with yolov4 and draw the bounding boxes
 

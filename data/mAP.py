@@ -53,8 +53,8 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 GT_PATH = os.path.join(args.path, args.gt_path)
 # print('GT_PATH: ', GT_PATH)
 DR_PATH = os.path.join(args.path, args.lab_path)
-print('args: ', args.path, args.lab_path)
-print('detection results path: ', DR_PATH)
+# print('args: ', args.path, args.lab_path)
+# print('detection results path: ', DR_PATH)
 # GT_PATH = './military_data/AnnotationLabels/'
 # DR_PATH = os.path.join(args.path, args.detector)
 

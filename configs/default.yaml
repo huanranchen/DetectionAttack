@@ -1,35 +1,11 @@
-# {
-#     "detector":
-#     {
-#         "base_settings":[],
-#         "image_size":[416, 416],
-#         "batch_size": 1,
-#         "SSD":{
-#             "config_path": "./mmdetection/configs/ssd/ssd300_coco.py",
-#             "checkpoint_path": "./checkpoints/ssd300_coco_20210803_015428-d231a06e.pth"
-#         },
-#         "FasterRCNN":{
-#             "config_path": "./mmdetection/configs/faster_rcnn/faster_rcnn_r50_fpn_1x_coco.py",
-#             "checkpoint_path": "./checkpoints/faster_rcnn_r50_fpn_1x_coco_20200130-047c8118.pth"
-#         }
-#     },
-#     "attack":
-#     {
-#         "method": "pgd_ours",
-#         "epsilon": 0.05,
-#         "max_iters": 100,
-#         "step_size": 0.005,
-#         "target_class": 0,
-#         "scale": 0.1
-#     }
-# }
-
 DETECTOR:
-  # "Military_YOLOX",
-  NAME: ["Military_YOLOX", "Military_FasterRCNN"] # YOLOV3, YOLOV4, YOLOV5, Military_YOLOX, Military_FasterRCNN
+  # "Military_YOLOX", , "YOLOV5"
+  NAME: ["YOLOV3"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 2
-  CLASS_NAME_FILE: './configs/namefiles/military.names'
+  IMG_DIR: './data/INRIAPerson/Train/pos'
+  LAB_DIR: './data/INRIAPerson/Train/pos/yolo-labels'
+  CLASS_NAME_FILE: './configs/namefiles/coco.names'
 
 ATTACKER:
   METHOD: "pgd"
@@ -37,12 +13,9 @@ ATTACKER:
   MAX_ITERS: 100
   SERIAL_ITER_STEP: 2
   PARALLEL_ITER_STEP: 15
-  STEP_SIZE: 0.01
+  STEP_SIZE: 0.02
   TARGET_CLASS: 0
-  ATTACK_CLASS: 1 # -1 attack all classes, or you can select the class id
+  ATTACK_CLASS: 0 # -1 attack all classes, or you can select the class id
 
   PATCH_ATTACK:
     SCALE: 0.1
-  
-  
-

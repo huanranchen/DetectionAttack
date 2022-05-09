@@ -14,7 +14,7 @@ ATTACKER:
   PARALLEL_ITER_STEP: 20
   STEP_SIZE: 0.01
   TARGET_CLASS: 0
-  ATTACK_CLASS: 1 # -1 attack all classes, or you can select the class id
+  ATTACK_CLASS: -1 # -1 attack all classes, or you can select the class id
 
   PATCH_ATTACK:
     SCALE: 0.2
