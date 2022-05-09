@@ -277,7 +277,7 @@ if __name__ == '__main__':
     parser.add_argument('-cfg', '--cfg', type=str, default='inria.yaml')
     args = parser.parse_args()
 
-    cfg = yaml.load(open('./configs/inria.yaml'), Loader=yaml.FullLoader)
+    cfg = yaml.load(open('./configs/'+args.cfg), Loader=yaml.FullLoader)
     cfg = obj(cfg)
     data_root = './data'
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

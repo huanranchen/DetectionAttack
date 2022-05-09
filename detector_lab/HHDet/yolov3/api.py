@@ -136,6 +136,7 @@ class HHYolov3:
             box[:,2] /= ori_shape[1]
             box[:,3] /= ori_shape[0]
             bbox_array.append(box)
+        # print(bbox_array)
         return bbox_array, detections_with_grad[:, :, 4]
 
     def detect_img_tensor_get_bbox_conf(self, input_img, ori_img_cv2, img_size=416, conf_thres=0.5, nms_thres=0.4):
