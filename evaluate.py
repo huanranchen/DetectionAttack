@@ -16,20 +16,20 @@ from tools.data_handler import read_img_np_batch
 paths = {'attack-img': 'imgs', 'det-lab': 'det-labels', 'attack-lab': 'attack-labels'}
 GT = 'ground-truth'
 
-def dir_check(save_path):
+def dir_check(save_path, rebuild=True):
     # if the target path exists, it will be deleted (for empty dirt) and rebuild-up
-    def check(path):
-        if os.path.exists(path):
+    def check(path, rebuild):
+        if rebuild and os.path.exists(path):
             shutil.rmtree(path)
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
         # print('mkdir: ', path)
 
-    check(save_path)
+    check(save_path, rebuild=False)
     for detector_name in cfg.DETECTOR.NAME:
         tmp_path = os.path.join(save_path, detector_name)
         for path in paths.values():
             ipath = os.path.join(tmp_path, path)
-            check(ipath)
+            check(ipath, rebuild)
 
 
 class UniversalPatchEvaluator(UniversalDetectorAttacker):

@@ -234,7 +234,7 @@ def attack(cfg, img_names, detector_attacker, save_name, save_path = './results'
     detector_attacker.init_attaker()
     init_plot = False
 
-    for i in range(cfg.ATTACKER.MAX_ITERS):
+    for epoch in range(cfg.ATTACKER.MAX_ITERS):
         for index in tqdm(range(0, len(img_names), cfg.DETECTOR.BATCH_SIZE)):
             names = img_names[index:index + cfg.DETECTOR.BATCH_SIZE]
             img_numpy_batch = read_img_np_batch(names, cfg.DETECTOR.INPUT_SIZE)
@@ -265,7 +265,7 @@ def attack(cfg, img_names, detector_attacker, save_name, save_path = './results'
                     detector_attacker.imshow_save(img_numpy_batch, os.path.join(save_path, detector.name),
                                                   save_name, detectors=[detector])
 
-        detector_attacker.save_patch(save_path, str(i)+save_name)
+        detector_attacker.save_patch(save_path, str(epoch)+'_'+save_name)
 
 
 if __name__ == '__main__':
