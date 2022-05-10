@@ -123,6 +123,7 @@ class HHYolov3:
         return img_tensor
 
     def detect_img_batch_get_bbox_conf(self, batch_tensor, input_size=416, conf_thres=0.5, nms_thres=0.4):
+        # output: box_array: list of np N*6
         self.detector.eval()
         ori_shape = batch_tensor.shape[-2:]
         detections_with_grad = self.detector(batch_tensor)
@@ -135,7 +136,7 @@ class HHYolov3:
             box[:,1] /= ori_shape[0]
             box[:,2] /= ori_shape[1]
             box[:,3] /= ori_shape[0]
-            bbox_array.append(box)
+            bbox_array.append(np.array(box))
         # print(bbox_array)
         return bbox_array, detections_with_grad[:, :, 4]
 

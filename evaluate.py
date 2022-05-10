@@ -13,7 +13,7 @@ from attackAPI import UniversalDetectorAttacker
 from tools.utils import obj
 from tools.data_handler import read_img_np_batch
 
-paths = {'attack-img': 'imgs', 'det-lab': 'det-labels', 'attack-lab': 'attack-labels'}
+paths = {'attack-img': 'imgs', 'det-lab': 'det-labels', 'attack-lab': 'attack-labels', 'det-res': 'det-res'}
 GT = 'ground-truth'
 
 def dir_check(save_path, rebuild=True):
@@ -55,10 +55,12 @@ class UniversalPatchEvaluator(UniversalDetectorAttacker):
         for pred in preds:
             # N*6: x1 y1 x2 y2 conf cls
             x1, y1, x2, y2, conf, cls = pred
+            cls = self.class_names[int(cls)].replace(' ', '')
+            tmp = [cls, x1, y1, x2, y2]
             if save_conf:
-                tmp = [self.class_names[int(cls)], conf, x1, y1, x2, y2]
-            else:
-                tmp = [self.class_names[int(cls)], x1, y1, x2, y2]
+                tmp.insert(1, conf)
+                # print('tmp', tmp)
+
             tmp = [str(i) for i in tmp]
             s.append(' '.join(tmp))
 
@@ -74,17 +76,19 @@ def handle_input():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--patch', type=str)
+    parser.add_argument('-cfg', '--config_file', type=str)
     parser.add_argument('-d', '--detectors', type=list, default=None)
     parser.add_argument('-s', '--save', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/military_data')
-    parser.add_argument('-gt', '--gt_path', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/military_data/AnnotationLabels')
+    parser.add_argument('-gt', '--gt_path', help='ground truth label dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/military_data/AnnotationLabels')
     parser.add_argument('-dr', '--data_root', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/military_data/JPEGImages')
-    parser.add_argument('-cfg', '--config_file', type=str, default='serial5.yaml')
+    parser.add_argument('-o', '--test_origin', action='store_true')
+    parser.add_argument('-i', '--save_imgs', help='to save attacked imgs or not', action='store_true')
     args = parser.parse_args()
 
     prefix = get_prefix(args.patch)
     args.save = os.path.join(args.save, prefix)
     print(prefix, args.save)
-    cfg = yaml.load(open('./configs/' + args.config_file), Loader=yaml.FullLoader)
+    cfg = yaml.load(open(args.config_file), Loader=yaml.FullLoader)
     cfg = obj(cfg)
 
     if args.detectors is not None:
@@ -93,13 +97,8 @@ def handle_input():
     return args, cfg
 
 
-if __name__ == '__main__':
-    batch_size = 1
-    args, cfg = handle_input()
-    dir_check(args.save)
-    device = torch.device('cuda')
+def generate_labels(evaluator, cfg, args):
 
-    evaluator = UniversalPatchEvaluator(cfg, args, device)
     print('dataroot:', os.getcwd(), args.data_root)
     img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
     save_path = args.save
@@ -120,11 +119,17 @@ if __name__ == '__main__':
             fp = os.path.join(tmp_path, paths['det-lab'])
             evaluator.save_label(preds[0], fp, img_name, save_conf=False)
 
+            if args.test_origin:
+                fp = os.path.join(tmp_path, paths['det-res'])
+                evaluator.save_label(preds[0], fp, img_name, save_conf=True)
+
             evaluator.get_patch_pos_batch(all_preds)
 
-            # for saving the attacked imgs
-            # ipath = os.path.join(tmp_path, 'imgs')
-            # evaluator.imshow_save(img_numpy_batch, ipath, img_name, detectors=[detector])
+            if args.save_imgs:
+                # for saving the attacked imgs
+                ipath = os.path.join(tmp_path, 'imgs')
+                evaluator.imshow_save(img_numpy_batch, ipath, img_name, detectors=[detector])
+
             adv_img_tensor, _ = evaluator.add_universal_patch(img_numpy_batch, detector)
             preds, _ = detector.detect_img_batch_get_bbox_conf(adv_img_tensor)
 
@@ -132,8 +137,19 @@ if __name__ == '__main__':
             lpath = os.path.join(tmp_path, paths['attack-lab'])
             # print(lpath)
             evaluator.save_label(preds[0], lpath, img_name)
+            # break
+        # break
 
-    # for compute mAP
+if __name__ == '__main__':
+    batch_size = 1
+    args, cfg = handle_input()
+    dir_check(args.save)
+    device = torch.device('cuda')
+    evaluator = UniversalPatchEvaluator(cfg, args, device)
+
+    generate_labels(evaluator, cfg, args)
+    save_path = args.save
+    # to compute mAP
     for detector in evaluator.detectors:
         # tmp_path = os.path.join(cfg.ATTACK_SAVE_PATH, detector.name)
         path = os.path.join(save_path, detector.name)
@@ -141,9 +157,17 @@ if __name__ == '__main__':
         # print('args', args.gt_path, gt_path)
         cmd = 'ln -s ' + args.gt_path + ' ' + gt_path
         os.system(cmd)
-        cmd = 'python ./data/mAP.py -d ' + detector.name + ' -p ' + path + ' --lab_path=' + paths['attack-lab']
+        cmd = 'python ./data/mAP.py' + ' -p ' + path + ' --lab_path='
         # print(cmd)
         # print('test: ', os.path.join(path, paths['det-lab']))
-        os.system(cmd + ' -gt ' +paths['det-lab']+ ' -rp det')
-        # os.system(cmd + ' -rp gt')
+
+        # take clear detection results as GT label: attack results as detections
+        os.system(cmd + paths['attack-lab']+ ' -gt ' + paths['det-lab'] + ' -rp det')
+
+        # take original labels as GT label(default): attack results as detections
+        os.system(cmd + paths['attack-lab']+' -rp gt')
+
+        if args.test_origin:
+            # take original labels as GT label(default): clear detection res as detections
+            os.system(cmd + paths['det-res'] + ' -rp ori')
         # break

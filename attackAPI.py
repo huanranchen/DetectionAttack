@@ -45,6 +45,7 @@ class DetctorAttacker(object):
         self.device = device
         self.detectors = init_detectors(cfg.DETECTOR.NAME)
         self.patch_boxes = []
+        self.patch_ratio = -1 # default value: will not change the aspect ratio
         self.class_names = load_class_names(self.cfg.DETECTOR.CLASS_NAME_FILE)
 
     def init_attaker(self):
@@ -60,7 +61,7 @@ class DetctorAttacker(object):
         # print(boxes)
         plot_boxes_cv2(img, np.array(boxes), self.class_names, savename=savename)
 
-    def patch_pos(self, preds, ratio=-1):
+    def patch_pos(self, preds):
         height, width = self.cfg.DETECTOR.INPUT_SIZE
         patch_boxs = []
         # for every bbox in the img
@@ -77,7 +78,8 @@ class DetctorAttacker(object):
                 p_x2 = int(p_x2.clip(0, 1) * width)
                 p_y2 = ((y1 + y2) / 2) + ((math.sqrt(self.cfg.ATTACKER.PATCH_ATTACK.SCALE) * (y2 - y1)) / 2)
                 p_y2 = int(p_y2.clip(0, 1) * height)
-                p_x1, p_y1, p_x2, p_y2 = process_shape(p_x1, p_y1, p_x2, p_y2, ratio=ratio)
+                if self.cfg.ATTACKER.PATCH_ATTACK.FIX_RATIO:
+                    p_x1, p_y1, p_x2, p_y2 = process_shape(p_x1, p_y1, p_x2, p_y2, ratio=self.patch_ratio)
                 patch_boxs.append([p_x1, p_y1, p_x2, p_y2])
                 # print('rectify bbox:', [p_x1, p_y1, p_x2, p_y2])
         return patch_boxs
@@ -113,10 +115,13 @@ class UniversalDetectorAttacker(DetctorAttacker):
         super().__init__(cfg, device)
         self.universal_patch = None
 
-    def init_universal_patch(self, height=100, width=100):
+    def init_universal_patch(self):
+        height = self.cfg.ATTACKER.PATCH_ATTACK.HEIGHT
+        width = self.cfg.ATTACKER.PATCH_ATTACK.WIDTH
         universal_patch = np.random.randint(low=0, high=255, size=(height, width, 3))
         universal_patch = np.expand_dims(np.transpose(universal_patch, (2, 0, 1)), 0)
         self.universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.).to(self.device)
+        self.patch_ratio = width / height
         # self.universal_patch.requires_grad = True
 
     def get_patch_pos_batch(self, all_preds):
@@ -125,11 +130,10 @@ class UniversalDetectorAttacker(DetctorAttacker):
         self.batch_patch_boxes = []
         has_target = False
         # print(self.universal_patch.shape)
-        h, w = self.universal_patch.shape[-2:]
-        patch_ratio = w/h
+
         for index, preds in enumerate(all_preds):
             # for every image in the batch
-            patch_boxs = self.patch_pos(preds, ratio=patch_ratio)
+            patch_boxs = self.patch_pos(preds)
             self.batch_patch_boxes.append(patch_boxs)
             if len(patch_boxs) > 0:
                 has_target = True

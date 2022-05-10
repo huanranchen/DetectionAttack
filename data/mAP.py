@@ -13,7 +13,6 @@ import numpy as np
 MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--detector', type=str)
 parser.add_argument('-p', '--path', help="the path to results file.", type=str, default='./')
 parser.add_argument('-l', '--lab_path', help='path of detection results.', type=str, default='detection-results')
 parser.add_argument('-gt', '--gt_path', help='path of ground truth label', type=str, default='ground-truth')
@@ -55,12 +54,9 @@ GT_PATH = os.path.join(args.path, args.gt_path)
 DR_PATH = os.path.join(args.path, args.lab_path)
 # print('args: ', args.path, args.lab_path)
 # print('detection results path: ', DR_PATH)
-# GT_PATH = './military_data/AnnotationLabels/'
-# DR_PATH = os.path.join(args.path, args.detector)
 
 # if there are no images then no animation can be shown
 IMG_PATH = os.path.join(os.getcwd(), 'input', 'images-optional')
-# IMG_PATH = os.path.join('./military_data/Attacked/imgs', args.detector)
 if os.path.exists(IMG_PATH):
     for dirpath, dirnames, files in os.walk(IMG_PATH):
         if not files:
