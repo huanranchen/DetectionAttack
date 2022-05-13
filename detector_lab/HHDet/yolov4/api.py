@@ -201,6 +201,8 @@ class HHYolov4:
         confs = output[1]
         # confs = confs.view(confs.shape[0], -1)
         preds = self.post_processing(input_img, conf_thresh, nms_thresh, output)
+        for i, pred in enumerate(preds):
+            preds[i] = np.array(pred)
         # print('v4 h: ', confs.shape, confs.requires_grad)
         return preds, confs
     

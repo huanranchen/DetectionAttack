@@ -95,7 +95,7 @@ class RegionProposalNetwork(nn.Module):
 
     def forward(self, x, img_size, scale=1.):
         n, _, h, w = x.shape
-
+        # print('x', h, w)
         x = F.relu(self.conv1(x))
 
         rpn_locs = self.loc(x)

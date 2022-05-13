@@ -82,7 +82,8 @@ def handle_input():
     parser.add_argument('-gt', '--gt_path', help='ground truth label dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/military_data/AnnotationLabels')
     parser.add_argument('-dr', '--data_root', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/military_data/JPEGImages')
     parser.add_argument('-o', '--test_origin', action='store_true')
-    parser.add_argument('-i', '--save_imgs', help='to save attacked imgs or not', action='store_true')
+    parser.add_argument('-l', '--stimulate_uint8_loss', action='store_true')
+    parser.add_argument('-i', '--save_imgs', help='to save attacked imgs', action='store_true')
     args = parser.parse_args()
 
     prefix = get_prefix(args.patch)
@@ -131,6 +132,8 @@ def generate_labels(evaluator, cfg, args):
                 evaluator.imshow_save(img_numpy_batch, ipath, img_name, detectors=[detector])
 
             adv_img_tensor, _ = evaluator.add_universal_patch(img_numpy_batch, detector)
+            if args.stimulate_uint8_loss:
+                adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)
             preds, _ = detector.detect_img_batch_get_bbox_conf(adv_img_tensor)
 
             # for saving the attacked detection info

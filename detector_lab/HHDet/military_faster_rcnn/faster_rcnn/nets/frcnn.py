@@ -55,7 +55,7 @@ class FasterRCNN(nn.Module):
     def forward(self, x, scale=1.):
 
         img_size        = x.shape[2:]
-
+        # print('x', img_size)
         base_feature    = self.extractor.forward(x)
 
 

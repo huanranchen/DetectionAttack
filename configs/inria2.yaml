@@ -1,6 +1,6 @@
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
-  NAME: ["YOLOV3"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 2
   IMG_DIR: './data/INRIAPerson/Train/pos'
@@ -10,10 +10,10 @@ DETECTOR:
 ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
-  MAX_ITERS: 2000
+  MAX_ITERS: 100
   SERIAL_ITER_STEP: 5
   PARALLEL_ITER_STEP: 15
-  STEP_SIZE: 0.02
+  STEP_SIZE: 0.01
   TARGET_CLASS: 0
   ATTACK_CLASS: 0 # -1 attack all classes, or you can select the class id
 

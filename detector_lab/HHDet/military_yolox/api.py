@@ -7,14 +7,16 @@ import torch
 import torch.nn as nn
 import cv2
 from PIL import ImageDraw, ImageFont
+
 from PIL import Image
 from .yolox.nets.yolo import YoloBody
 from .yolox.utils.utils import cvtColor, get_classes, preprocess_input, resize_image
 from .yolox.utils.utils_bbox import decode_outputs, non_max_suppression
+from ...DetectorBase import DetectorBase
 
 # from ..utils import BaseDetector
 
-class YOLO(object):
+class YOLO(DetectorBase):
     _defaults = {
         "model_path"        : 'yolox/logs/ep1155-loss1.474-val_loss1.452.pth',
         "classes_path"      : 'yolox/model_data/car_classes.txt',
@@ -43,8 +45,8 @@ class YOLO(object):
         self.name = name
         # self.generate()
 
-    def zero_grad(self):
-        self.detector.zero_grad()
+    # def zero_grad(self):
+    #     self.detector.zero_grad()
 
     def temp_loss(self, confs):
         return torch.nn.MSELoss()(confs.to(self.device), torch.ones(confs.shape).to(self.device))
@@ -156,6 +158,7 @@ class YOLO(object):
         return box
 
     def detect_img_batch_get_bbox_conf(self, batch_tensor):
+        print(batch_tensor.shape)
         results_with_grad = self.detect(batch_tensor)
         results = results_with_grad.clone().detach()
         results = non_max_suppression(results, self.num_classes, self.input_shape,
@@ -177,6 +180,7 @@ class YOLO(object):
 
         # 1*x*9: [b1, b2, b3, b4, p_obj, p_class...(num_classes)]
         results = results_with_grad.clone().detach()
+        print(results)
         results = non_max_suppression(results, self.num_classes, self.input_shape,
                                       image_shape, self.letterbox_image, conf_thres=self.confidence,
                                       nms_thres=self.nms_iou)

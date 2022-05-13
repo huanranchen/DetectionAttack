@@ -1,7 +1,7 @@
 DETECTOR:
   # "Military_YOLOX",
   NAME: ["Military_YOLOX", "Military_FasterRCNN"] # YOLOV3, YOLOV4, YOLOV5, Military_YOLOX, Military_FasterRCNN
-  INPUT_SIZE: [416, 416] # height, width
+  INPUT_SIZE: [416, 416] # width, height
   BATCH_SIZE: 2
   CLASS_NAME_FILE: './configs/namefiles/military.names'
 

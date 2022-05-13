@@ -10,10 +10,11 @@ from .faster_rcnn.nets.frcnn import FasterRCNN
 from .faster_rcnn.utils.utils import (cvtColor, get_classes, get_new_img_size, resize_image,
                          preprocess_input)
 from .faster_rcnn.utils.utils_bbox import DecodeBox
+from ...DetectorBase import DetectorBase
 import os
 import copy
 
-class FRCNN(object):
+class FRCNN(DetectorBase):
     _defaults = {
         "model_path"    : 'faster_rcnn/logs/ep300-loss0.701-val_loss1.057.pth',
         "classes_path"  : 'faster_rcnn/model_data/car_classes.txt',
@@ -41,9 +42,10 @@ class FRCNN(object):
         self.detector = None
         self.name = name
 
-    def zero_grad(self):
-        self.detector.zero_grad()
+    # def zero_grad(self):
+    #     self.detector.zero_grad()
 
+    # overriding the abstract method
     def load(self, detector_weights, classes_path):
         self.class_names, self.num_classes  = get_classes(classes_path)
         self.std    = torch.Tensor([0.1, 0.1, 0.2, 0.2]).repeat(self.num_classes + 1)[None]
@@ -63,7 +65,6 @@ class FRCNN(object):
         self.detector = self.detector.to(self.device)
 
     def init_img_batch(self, img_numpy_batch):
-
         img_tensor = torch.from_numpy(img_numpy_batch).float().div(255.0).to(self.device)
         return img_tensor
 
@@ -103,8 +104,8 @@ class FRCNN(object):
     def unnormalize_tensor(self, img_tensor):
         return img_tensor
 
-    def temp_loss(self, confs):
-        return torch.nn.MSELoss()(confs.to(self.device), torch.ones(confs.shape).to(self.device))
+    # def temp_loss(self, confs):
+    #     return torch.nn.MSELoss()(confs.to(self.device), torch.ones(confs.shape).to(self.device))
 
     def detect(self, img_tensor):
         roi_cls_locs, roi_scores, rois, _, rpn_scores = self.detector(img_tensor)
@@ -122,6 +123,7 @@ class FRCNN(object):
 
     def detect_img_batch_get_bbox_conf(self, input_img):
         image_shape = input_img.shape[-2:]
+        # print('input:', input_img.shape)
         roi_cls_locs, roi_scores, rois, rpn_scores = self.detect(input_img)
         # print('rpn:', rpn_scores[0, 0, :], rpn_scores.shape)
         results = self.bbox_util.forward(roi_cls_locs.clone().detach(), roi_scores.clone().detach(),
@@ -136,9 +138,9 @@ class FRCNN(object):
         return box_array, rpn_scores[:, :, 0]
 
     def detect_img_tensor_get_bbox_conf(self, input_img, ori_img_cv2):
-        image_shape = np.array(np.shape(ori_img_cv2)[0:2])
+        image_shape = np.array(np.shape(ori_img_cv2)[:2])
         # input_shape = get_new_img_size(image_shape[0], image_shape[1])
-        input_shape = image_shape[1], image_shape[0]
+        input_shape = image_shape[0], image_shape[1]
 
         roi_cls_locs, roi_scores, rois, rpn_scores = self.detect(input_img)
         # print('rpn:', rpn_scores[0, 0, :], rpn_scores.shape)
@@ -148,22 +150,6 @@ class FRCNN(object):
         # print('batch:', results, len(results))
         results = self.box_rectify(results[0], image_shape)
         return results, rpn_scores[:, :, 0]
-
-class FRCNNAgent(FRCNN):
-    def __init__(self, input_size, name, **kwargs):
-        super().__init__(name, **kwargs)
-        self.input_size = input_size
-
-    def detect_img_batch_get_bbox_conf(self, img_batch):
-        roi_cls_locs, roi_scores, rois, rpn_scores = self.detect(img_batch)
-        results = self.bbox_util.forward(roi_cls_locs.clone().detach(), roi_scores.clone().detach(),
-                                         rois.clone().detach(), self.input_size, self.input_size,
-                                         nms_iou=self.nms_iou, confidence=self.confidence)
-        box_array = []
-        for result in results:
-            box = self.box_rectify(result, self.input_size)
-            box_array.append(box)
-        return box_array, rpn_scores[:,:,0]
 
 
 if __name__ == "__main__":

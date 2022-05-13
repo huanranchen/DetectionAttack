@@ -1,4 +1,3 @@
-
 DETECTOR:
   # "Military_YOLOX",
   NAME: ["Military_YOLOX", "Military_FasterRCNN"] # YOLOV3, YOLOV4, YOLOV5, Military_YOLOX, Military_FasterRCNN
