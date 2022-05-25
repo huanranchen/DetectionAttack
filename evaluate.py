@@ -12,6 +12,7 @@ from attackAPI import UniversalDetectorAttacker
 
 from tools.utils import obj
 from tools.data_handler import read_img_np_batch
+# from tools.det_utils import plot_boxes_cv2
 
 paths = {'attack-img': 'imgs', 'det-lab': 'det-labels', 'attack-lab': 'attack-labels', 'det-res': 'det-res'}
 GT = 'ground-truth'
@@ -24,7 +25,7 @@ def dir_check(save_path, rebuild=True):
         os.makedirs(path, exist_ok=True)
         # print('mkdir: ', path)
 
-    check(save_path, rebuild=False)
+    check(save_path, rebuild=rebuild)
     for detector_name in cfg.DETECTOR.NAME:
         tmp_path = os.path.join(save_path, detector_name)
         for path in paths.values():
@@ -99,9 +100,11 @@ def handle_input():
 
 
 def generate_labels(evaluator, cfg, args):
+    batch_size = 1
 
     print('dataroot:', os.getcwd(), args.data_root)
     img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
+
     save_path = args.save
     for index in tqdm(range(0, len(img_names), batch_size)):
         names = img_names[index:index + batch_size]
@@ -115,6 +118,7 @@ def generate_labels(evaluator, cfg, args):
             img_tensor_batch = detector.init_img_batch(img_numpy_batch)
             # get object bbox: preds bbox list; detections_with_grad: confs tensor
             preds, _ = detector.detect_img_batch_get_bbox_conf(img_tensor_batch)
+
             all_preds = evaluator.merge_batch_pred(all_preds, preds)
             # for saving the original detection info
             fp = os.path.join(tmp_path, paths['det-lab'])
@@ -140,11 +144,8 @@ def generate_labels(evaluator, cfg, args):
             lpath = os.path.join(tmp_path, paths['attack-lab'])
             # print(lpath)
             evaluator.save_label(preds[0], lpath, img_name)
-            # break
-        # break
 
 if __name__ == '__main__':
-    batch_size = 1
     args, cfg = handle_input()
     dir_check(args.save)
     device = torch.device('cuda')
@@ -156,10 +157,12 @@ if __name__ == '__main__':
     for detector in evaluator.detectors:
         # tmp_path = os.path.join(cfg.ATTACK_SAVE_PATH, detector.name)
         path = os.path.join(save_path, detector.name)
+
         gt_path = os.path.join(path, GT)
         # print('args', args.gt_path, gt_path)
         cmd = 'ln -s ' + args.gt_path + ' ' + gt_path
         os.system(cmd)
+
         cmd = 'python ./data/mAP.py' + ' -p ' + path + ' --lab_path='
         # print(cmd)
         # print('test: ', os.path.join(path, paths['det-lab']))

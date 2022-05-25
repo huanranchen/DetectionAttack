@@ -158,7 +158,7 @@ class YOLO(DetectorBase):
         return box
 
     def detect_img_batch_get_bbox_conf(self, batch_tensor):
-        print(batch_tensor.shape)
+        # print(batch_tensor.shape)
         results_with_grad = self.detect(batch_tensor)
         results = results_with_grad.clone().detach()
         results = non_max_suppression(results, self.num_classes, self.input_shape,

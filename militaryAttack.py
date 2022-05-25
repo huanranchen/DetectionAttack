@@ -8,10 +8,10 @@ from tools.utils import *
 
 
 if __name__ == '__main__':
-    save_root = './results/military'
     parser = argparse.ArgumentParser()
     parser.add_argument('--attack_method', type=str, default='parallel')
     parser.add_argument('--config_file', type=str, default='parallel20.yaml')
+    parser.add_argument('--save_root', type=str, default='./results/military')
     # parser.add_argument('--postfix', type=str, default='')
     args = parser.parse_args()
     cfg = yaml.load(open('./configs/'+args.config_file), Loader=yaml.FullLoader)
@@ -24,4 +24,4 @@ if __name__ == '__main__':
 
     save_patch_name = args.config_file.split('.')[0] + '.png'
     # save_patch_name = None
-    attack(cfg, img_names, detector_attacker, save_patch_name, save_root, save_plot, args.attack_method)
+    attack(cfg, img_names, detector_attacker, save_patch_name, args.save_root, save_plot, args.attack_method)

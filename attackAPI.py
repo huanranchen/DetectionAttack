@@ -13,7 +13,8 @@ from attacks.mim import LinfMIMAttack
 from attacks.pgd import LinfPGDAttack
 
 from losses import temp_attack_loss
-from tools.utils import obj, load_class_names, process_shape
+from tools.utils import obj, process_shape
+from tools.file_handler import load_class_names
 from tools.det_utils import plot_boxes_cv2, inter_nms
 from tools.data_handler import read_img_np_batch
 
@@ -159,7 +160,11 @@ class UniversalDetectorAttacker(DetctorAttacker):
             for j, bbox in enumerate(self.batch_patch_boxes[i]):
                 # for jth bbox in ith-img's bboxes
                 p_x1, p_y1, p_x2, p_y2 = bbox[:4]
-                patch_tensor = F.interpolate(universal_patch, size=(p_y2 - p_y1, p_x2 - p_x1), mode='bilinear')
+                height = p_y2 - p_y1
+                width = p_x2 - p_x1
+                if height == 0 or width == 0:
+                    continue
+                patch_tensor = F.interpolate(universal_patch, size=(height, width), mode='bilinear')
                 img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = patch_tensor[0]
         return img_tensor, universal_patch
 
@@ -273,8 +278,9 @@ def attack(cfg, img_names, detector_attacker, save_name, save_path = './results'
                     detector_attacker.imshow_save(img_numpy_batch, os.path.join(save_path, detector.name),
                                                   save_name, detectors=[detector])
 
-        patch_name = str(epoch)+'_'+save_name
-        detector_attacker.save_patch(save_path, patch_name)
+            if index % 1000 == 0:
+                patch_name = f'{epoch}_{index}_{save_name}'
+                detector_attacker.save_patch(save_path, patch_name)
     return patch_name
 
 

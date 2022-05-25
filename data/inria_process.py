@@ -4,12 +4,8 @@ from tqdm import tqdm
 import numpy as np
 import re
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--source', type=str, default='Train')
-args = parser.parse_args()
 
-
-def process_GT_label():
+def process_GT_label(args):
    source = args.source
    annotations_path = './INRIAPerson/'+source+'/annotations'
    annotations= os.listdir(annotations_path)
@@ -55,3 +51,8 @@ def process_GT_label():
       # break
 
 
+if __name__ == "__main__":
+   parser = argparse.ArgumentParser()
+   parser.add_argument('-s', '--source', type=str, default='Train')
+   args = parser.parse_args()
+   process_GT_label(args)
