@@ -51,17 +51,17 @@ class YOLO(DetectorBase):
     def temp_loss(self, confs):
         return torch.nn.MSELoss()(confs.to(self.device), torch.ones(confs.shape).to(self.device))
 
-    def load(self, detector_weights, classes_path):
+    def load(self, model_weights, classes_path):
         self.class_names, self.num_classes  = get_classes(classes_path)
         hsv_tuples = [(x / self.num_classes, 1., 1.) for x in range(self.num_classes)]
         self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
         self.colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), self.colors))
 
         self.detector    = YoloBody(self.num_classes, self.phi)
-        self.detector.load_state_dict(torch.load(detector_weights, map_location=self.device))
+        self.detector.load_state_dict(torch.load(model_weights, map_location=self.device))
         self.detector    = self.detector.eval()
 
-        print('{} model, and classes loaded.'.format(detector_weights))
+        print('{} model, and classes loaded.'.format(model_weights))
 
         self.detector = self.detector.to(self.device)
 

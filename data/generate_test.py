@@ -31,9 +31,13 @@ if len(img_names) > file_num:
 
 for name in tqdm(img_names):
     # save = name.replace('train', 'test')
-    cmd = 'cp ' + name + ' coco/test/test2017'
+    cmd = 'cp ' + name + ' coco/test/test2017/'
     # print(cmd)
     os.system(cmd)
-    cmd = 'cp ' + name + ' coco/test/labels/'
+    label = name.replace('train2017', 'labels').replace('.jpg', '.txt')
+    assert os.path.exists(label), f'Error, file {label} not exist!'
+
+    cmd = 'cp ' + label + ' coco/test/labels/'
     os.system(cmd)
+    # break
 # print('written')

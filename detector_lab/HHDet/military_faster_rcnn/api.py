@@ -33,21 +33,14 @@ class FRCNN(DetectorBase):
             return "Unrecognized attribute name '" + n + "'"
 
     def __init__(self, name, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), **kwargs):
+        super().__init__(name, device)
         self.__dict__.update(self._defaults)
         for name, value in kwargs.items():
             setattr(self, name, value)
 
-        self.device = device
-        # self.generate()
-        self.detector = None
-        self.name = name
-
-    # def zero_grad(self):
-    #     self.detector.zero_grad()
-
     # overriding the abstract method
-    def load(self, detector_weights, classes_path):
-        self.class_names, self.num_classes  = get_classes(classes_path)
+    def load(self, model_weights, **args):
+        # self.class_names, self.num_classes  = get_classes(args.classes_path)
         self.std    = torch.Tensor([0.1, 0.1, 0.2, 0.2]).repeat(self.num_classes + 1)[None]
         self.std    = self.std.to(self.device)
         self.bbox_util  = DecodeBox(self.std, self.num_classes)
@@ -58,9 +51,9 @@ class FRCNN(DetectorBase):
         self.colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), self.colors))
         
         self.detector    = FasterRCNN(self.num_classes, "predict", anchor_scales = self.anchors_size, backbone = self.backbone)
-        self.detector.load_state_dict(torch.load(detector_weights, map_location=self.device))
+        self.detector.load_state_dict(torch.load(model_weights, map_location=self.device))
         self.detector    = self.detector.eval()
-        print('{} model, anchors, and classes loaded.'.format(detector_weights))
+        print('{} model, anchors, and classes loaded.'.format(model_weights))
         
         self.detector = self.detector.to(self.device)
 

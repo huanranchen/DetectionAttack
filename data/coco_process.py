@@ -135,16 +135,28 @@ class ConvertCOCOToYOLO:
             with open(filename, open_type) as file:
                 file.write(content)
             # break
+        self.check_empty_label()
 
+    def check_empty_label(self):
+        ims = os.listdir(self.img_folder)
+        for im_name in tqdm(ims):
+            label_name = im_name.split('.')[0] + '.txt'
+            label_path = os.path.join(self.save_path, label_name)
+            if not os.path.exists(label_path):
+                f = open(label_path, 'w')
+                f.close()
+                print('Empty object: ', label_path)
 
 # To run in as a class
 if __name__ == "__main__":
     # print(sys.path)
+    target = 'train'
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--img_folder', type=str, default=f'.{os.sep}coco{os.sep}train2017')
+    parser.add_argument('-i', '--img_folder', type=str, default=f'.{os.sep}coco{os.sep}{target}/train2017')
     parser.add_argument('-n', '--name_file', type=str, default=f'..{os.sep}configs{os.sep}namefiles{os.sep}coco-stuff.names')
     parser.add_argument('-j', '--json_path', type=str, default=f'.{os.sep}coco{os.sep}instances_train2017.json')
-    parser.add_argument('-s', '--save_path', type=str, default=f'.{os.sep}coco{os.sep}labels')
+    parser.add_argument('-s', '--save_path', type=str, default=f'.{os.sep}coco{os.sep}{target}/labels')
     args = parser.parse_args()
     util = ConvertCOCOToYOLO(args.img_folder, args.json_path, args.save_path, args.name_file)
     util.convert()
+    # util.check_empty_label()

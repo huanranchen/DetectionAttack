@@ -14,13 +14,9 @@ from attacks.pgd import LinfPGDAttack
 
 from losses import temp_attack_loss
 from tools.utils import obj, process_shape
-from tools.file_handler import load_class_names
+from tools.file_handler import CfgAgent
 from tools.det_utils import plot_boxes_cv2, inter_nms
 from tools.data_handler import read_img_np_batch
-
-import warnings
-
-warnings.filterwarnings('ignore')
 
 attacker_dict = {
     "bim": LinfBIMAttack,
@@ -31,12 +27,9 @@ attacker_dict = {
 
 def init_detectors(detector_names):
     detectors = []
-
     for detector_name in detector_names:
         detector = init_detector(detector_name)
-
         detectors.append(detector)
-
     return detectors
 
 
@@ -44,9 +37,10 @@ class DetctorAttacker(object):
     def __init__(self, cfg, device):
         self.cfg = cfg
         self.device = device
-        self.detectors = init_detectors(cfg.DETECTOR.NAME)
+        self.detectors = init_detectors(self.cfg.DETECTOR.NAME)
         self.patch_boxes = []
-        self.class_names = load_class_names(self.cfg.DETECTOR.CLASS_NAME_FILE)
+        self.class_names = cfg.all_class_names # class names reference: labels of all the classes
+        self.attack_list = cfg.attack_list # int list: classes index to be attacked, [40, 41, 42, ...]
 
     def init_attaker(self):
         cfg = self.cfg
@@ -56,6 +50,7 @@ class DetctorAttacker(object):
                                                            max_iters=cfg.ATTACKER.MAX_ITERS,
                                                            step_size=cfg.ATTACKER.STEP_SIZE,
                                                            class_id=cfg.ATTACKER.TARGET_CLASS)
+
 
     def plot_boxes(self, img, boxes, savename=None):
         # print(boxes)
@@ -69,7 +64,8 @@ class DetctorAttacker(object):
             # print('get pos', pred)
             x1, y1, x2, y2, conf, id = pred
             # print('bbox: ', x1, y1, x2, y2)
-            if self.cfg.ATTACKER.ATTACK_CLASS == -1 or self.cfg.ATTACKER.ATTACK_CLASS == int(id):
+            # cfg.ATTACKER.ATTACK_CLASS have been processed to an int list
+            if -1 in self.attack_list or int(id) in self.attack_list:
                 p_x1 = ((x1 + x2) / 2) - ((math.sqrt(self.cfg.ATTACKER.PATCH_ATTACK.SCALE) * (x2 - x1)) / 2)
                 p_x1 = int(p_x1.clip(0, 1) * width)
                 p_y1 = ((y1 + y2) / 2) - ((math.sqrt(self.cfg.ATTACKER.PATCH_ATTACK.SCALE) * (y2 - y1)) / 2)
@@ -290,17 +286,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--attack_method', type=str, default='serial')
     parser.add_argument('-cfg', '--cfg', type=str, default='inria.yaml')
-    parser.add_argument('-s', '--save_root', type=str, default='./results/inria')
+    parser.add_argument('-s', '--save_path', type=str, default='./results/inria')
     parser.add_argument('-p', '--plot_save', action='store_true')
     args = parser.parse_args()
 
-    cfg = yaml.load(open('./configs/'+args.cfg), Loader=yaml.FullLoader)
-    cfg = obj(cfg)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print('device: ', device)
+    cfg = CfgAgent('./configs/' + args.cfg)
     detector_attacker = UniversalDetectorAttacker(cfg, device)
+
+    cfg.show_class_label(cfg.attack_list)
+
     data_root = cfg.DETECTOR.IMG_DIR
     img_names = [os.path.join(data_root, i) for i in os.listdir(data_root)]
 
     save_patch_name = args.cfg.split('.')[0] + '.png'
-    attack(cfg, img_names, detector_attacker, save_patch_name, args.save_root,
+    attack(cfg, img_names, detector_attacker, save_patch_name, args.save_path,
            args.plot_save, args.attack_method)

@@ -3,7 +3,7 @@ DETECTOR:
   NAME: ["YOLOV3", "YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 2
-  IMG_DIR: './data/coco/train2017'
+  IMG_DIR: './data/coco/train/train2017'
   LAB_DIR:
   CLASS_NAME_FILE: './configs/namefiles/coco.names'
 
@@ -12,10 +12,10 @@ ATTACKER:
   EPSILON: 255 # 0-255
   MAX_ITERS: 2000
   SERIAL_ITER_STEP: 5
-  PARALLEL_ITER_STEP:
+  PARALLEL_ITER_STEP: 10
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
-  ATTACK_CLASS: -1 # -1 attack all classes, or you can select the class id
+  ATTACK_CLASS: '-1' # String: '-1' attack all classes; appoint a class 'x'; 'a:b' class list a to b - 1
 
   PATCH_ATTACK:
     WIDTH: 100

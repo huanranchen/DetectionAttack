@@ -11,6 +11,8 @@ from detector_lab.HHDet.utils import init_detector
 from attackAPI import UniversalDetectorAttacker
 
 from tools.utils import obj
+from tools.mAP import draw_mAP, merge_plot
+from tools.file_handler import CfgAgent
 from tools.data_handler import read_img_np_batch
 # from tools.det_utils import plot_boxes_cv2
 
@@ -85,14 +87,30 @@ def handle_input():
     parser.add_argument('-o', '--test_origin', action='store_true')
     parser.add_argument('-l', '--stimulate_uint8_loss', action='store_true')
     parser.add_argument('-i', '--save_imgs', help='to save attacked imgs', action='store_true')
+    parser.add_argument('-e', '--eva_class', type=str, default='-1') # '-1': all classes; '-2': attack seen classes(ATTACK_CLASS in cfg file); '-3': attack unseen classes(all_class - ATTACK_CLASS); or given a list by '['x:y']'/'[0]'
+    parser.add_argument('-q', '--quiet', help='output none if set true', action='store_true')
     args = parser.parse_args()
 
     prefix = get_prefix(args.patch)
     args.save = os.path.join(args.save, prefix)
-    print(prefix, args.save)
-    cfg = yaml.load(open(args.config_file), Loader=yaml.FullLoader)
-    cfg = obj(cfg)
 
+    print(prefix, args.save)
+    cfg = CfgAgent(args.config_file)
+
+    # Be careful of the so-called 'attack_list' and 'eva_class' in the evaluate.py
+    # For higher reusability of the codes, these variable names may be confusing
+    # In this file, the 'attack_list' is loaded from the config file which has been used for training
+    # (cuz we don't bother to create a new config file for evaluations)
+    # Thus the 'attack_list' refers to the original attacked classes when training the patch
+    # while the 'eva_list' denotes the class list to be evaluated, which are to attack in the evaluation
+    # (When the eva classes are different from the original attack classes,
+    # it is mainly for the partial attack in evaluating unseen-class/cross-class performance)
+    args.eva_class = cfg.rectify_class_list(args.eva_class, dtype='str')
+    print('Eva(Attack) classes from evaluation: ', cfg.show_class_index(args.eva_class))
+    print('Eva classes names from evaluation: ', args.eva_class)
+
+    args.ignore_class = list(set(cfg.all_class_names).difference(set(args.eva_class)))
+    # print('igore: ', args.ignore_class)
     if args.detectors is not None:
         cfg.DETECTOR.NAME = args.detectors
 
@@ -144,14 +162,20 @@ def generate_labels(evaluator, cfg, args):
             lpath = os.path.join(tmp_path, paths['attack-lab'])
             # print(lpath)
             evaluator.save_label(preds[0], lpath, img_name)
+            # break
+        # break
+
 
 if __name__ == '__main__':
     args, cfg = handle_input()
-    dir_check(args.save)
+
+    # dir_check(args.save)
     device = torch.device('cuda')
     evaluator = UniversalPatchEvaluator(cfg, args, device)
+    # set the eva classes to be the ones to attack
+    evaluator.attack_list = cfg.show_class_index(args.eva_class)
 
-    generate_labels(evaluator, cfg, args)
+    # generate_labels(evaluator, cfg, args)
     save_path = args.save
     # to compute mAP
     for detector in evaluator.detectors:
@@ -159,21 +183,33 @@ if __name__ == '__main__':
         path = os.path.join(save_path, detector.name)
 
         gt_path = os.path.join(path, GT)
-        # print('args', args.gt_path, gt_path)
         cmd = 'ln -s ' + args.gt_path + ' ' + gt_path
         os.system(cmd)
 
-        cmd = 'python ./data/mAP.py' + ' -p ' + path + ' --lab_path='
-        # print(cmd)
-        # print('test: ', os.path.join(path, paths['det-lab']))
-
-        # take clear detection results as GT label: attack results as detections
+        # print(str(attack_class))
+        # args = {'path': path, 'ignore':' '.join(args.igore_class)}
+        cmd = 'python ./tools/mAP.py' + ' -p ' + path
+        if len(args.ignore_class):
+            cmd += ' -i ' + ' '.join(args.ignore_class)
+        cmd += ' --lab-path='
+        # (det-results)take clear detection results as GT label: attack results as detections
+        # DET_args = {'gt_path':paths['det-lab'], 'res_prefix': 'det'}
+        # DET_args.update(args)
+        # det_aps_dic = draw_mAP(obj(DET_args))
         os.system(cmd + paths['attack-lab']+ ' -gt ' + paths['det-lab'] + ' -rp det')
 
-        # take original labels as GT label(default): attack results as detections
+        # (gt-results)take original labels as GT label(default): attack results as detections
+        # GT_args = {'gt_path': paths['attack-lab']}
+        # GT_args.update(args)
+        # gt_aps_dic = draw_mAP(obj(GT_args))
         os.system(cmd + paths['attack-lab']+' -rp gt')
 
         if args.test_origin:
-            # take original labels as GT label(default): clear detection res as detections
+            # (ori-results)take original labels as GT label(default): clear detection res as detections
+            # ORI_args = {'gt_path': paths['det-res'], 'res_prefix': 'ori'}
+            # ORI_args.update(args)
+            # ori_aps_dic = draw_mAP(obj(ORI_args))
             os.system(cmd + paths['det-res'] + ' -rp ori')
         # break
+
+        # merge_plot(ori_aps_dic, path, det_aps_dic, gt_aps_dic)
