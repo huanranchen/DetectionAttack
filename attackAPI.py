@@ -14,9 +14,9 @@ from attacks.pgd import LinfPGDAttack
 
 from losses import temp_attack_loss
 from tools.utils import obj, process_shape
-from tools.file_handler import CfgAgent
+from tools.parser import ConfigParser
 from tools.det_utils import plot_boxes_cv2, inter_nms
-from tools.data_handler import read_img_np_batch
+from tools.data_loader import read_img_np_batch
 
 attacker_dict = {
     "bim": LinfBIMAttack,
@@ -244,8 +244,11 @@ def attack(cfg, img_names, detector_attacker, save_name, save_path = './results'
     for epoch in range(cfg.ATTACKER.MAX_ITERS):
         for index in tqdm(range(0, len(img_names), cfg.DETECTOR.BATCH_SIZE)):
             names = img_names[index:index + cfg.DETECTOR.BATCH_SIZE]
+            # read img numpy
             img_numpy_batch = read_img_np_batch(names, cfg.DETECTOR.INPUT_SIZE)
             # print(img_numpy_batch.shape)
+
+            # get all detection bboxes
             all_preds = None
             for detector in detector_attacker.detectors:
                 # print(detector.name)
@@ -292,7 +295,7 @@ if __name__ == '__main__':
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('device: ', device)
-    cfg = CfgAgent('./configs/' + args.cfg)
+    cfg = ConfigParser('./configs/' + args.cfg)
     detector_attacker = UniversalDetectorAttacker(cfg, device)
 
     cfg.show_class_label(cfg.attack_list)

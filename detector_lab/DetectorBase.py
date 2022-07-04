@@ -11,6 +11,11 @@ class DetectorBase(ABC):
         # need to be loaded by calling self.load()
         self.detector = None
 
+    def detach(self, tensor):
+        if self.device == torch.device('cpu'):
+            return tensor.detach()
+        return tensor.cpu().detach()
+
     def zero_grad(self):
         self.detector.zero_grad()
 
@@ -47,8 +52,8 @@ class DetectorBase(ABC):
                 batch_tensor: image tensor [batch_size, channel, h, w]
 
             output:
-                box_array: list of bboxes(batch_size*N*6)
-                detections_with_grad:
+                box_array: list of bboxes(batch_size*N*6) [[x1,y1,x2,y2,cls,cls_conf],..]
+                detections_with_grad: confidence of the object
         """
         pass
 

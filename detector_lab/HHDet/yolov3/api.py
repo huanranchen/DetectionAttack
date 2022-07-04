@@ -34,15 +34,21 @@ class HHYolov3(DetectorBase):
             detector_weights (torch weights, optional): the torch weights of detector. Defaults to None.
         """
         self.detector = load_model(model_path=detector_config_file, weights_path=model_weights)
+        self.module_list = self.detector.module_list
         self.detector.to(self.device)
+
+    def init_img(self, img_numpy):
+        # img_numpy: uint8, [0, 255], RGB, CHW
+        img = np.transpose(img_numpy, (1, 2, 0))
+        img_tensor = transforms.Compose([
+            DEFAULT_TRANSFORMS])(
+            (img, np.zeros((1, 5))))[0].unsqueeze(0)
+        return img_tensor
 
     def init_img_batch(self, img_numpy_batch):
         tensor_batch = None
         for img in img_numpy_batch:
-            img = np.transpose(img, (1, 2, 0))
-            img_tensor = transforms.Compose([
-                DEFAULT_TRANSFORMS])(
-                (img, np.zeros((1, 5))))[0].unsqueeze(0)
+            img_tensor = self.init_img(img)
             if tensor_batch is None:
                 tensor_batch = img_tensor
             else:
@@ -51,6 +57,7 @@ class HHYolov3(DetectorBase):
         return tensor_batch.to(self.device)
 
     def normalize(self, image_data):
+        # image_data: HWC numpy, RGB
         # image_data = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
         image_data = np.array(image_data, dtype='float32')
         # print('normalize', image_data.shape)
@@ -63,7 +70,8 @@ class HHYolov3(DetectorBase):
 
     def unnormalize(self, img_tensor):
         # img_tensor: tensor [1, c, h, w]
-        img_numpy = img_tensor.squeeze(0).cpu().detach().numpy()
+        # img_numpy = img_tensor.squeeze(0).cpu().detach().numpy()
+        img_numpy = self.detach(img_tensor.squeeze(0)).numpy()
         img_numpy = np.transpose(img_numpy, (1, 2, 0))
         img_numpy *= 255
         img_numpy = cv2.cvtColor(img_numpy, cv2.COLOR_RGB2BGR)
@@ -74,7 +82,8 @@ class HHYolov3(DetectorBase):
         # output: box_array: list of np N*6
         self.detector.eval()
         ori_shape = batch_tensor.shape[-2:]
-        detections_with_grad = self.detector(batch_tensor)
+        detections_with_grad = self.detector(batch_tensor) # torch.tensor([1, num, classes_num+4+1])
+        print(self.name, detections_with_grad.shape)
         preds = non_max_suppression(detections_with_grad, conf_thres, nms_thres)
 
         bbox_array = []
@@ -85,5 +94,5 @@ class HHYolov3(DetectorBase):
             box[:,2] /= ori_shape[1]
             box[:,3] /= ori_shape[0]
             bbox_array.append(np.array(box))
-        # print(bbox_array)
+        print(bbox_array)
         return bbox_array, detections_with_grad[:, :, 4]

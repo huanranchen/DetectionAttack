@@ -12,8 +12,8 @@ from attackAPI import UniversalDetectorAttacker
 
 from tools.utils import obj
 from tools.mAP import draw_mAP, merge_plot
-from tools.file_handler import CfgAgent
-from tools.data_handler import read_img_np_batch
+from tools.parser import ConfigParser
+from tools.data_loader import read_img_np_batch
 # from tools.det_utils import plot_boxes_cv2
 
 paths = {'attack-img': 'imgs', 'det-lab': 'det-labels', 'attack-lab': 'attack-labels', 'det-res': 'det-res'}
@@ -95,7 +95,7 @@ def handle_input():
     args.save = os.path.join(args.save, prefix)
 
     print(prefix, args.save)
-    cfg = CfgAgent(args.config_file)
+    cfg = ConfigParser(args.config_file)
 
     # Be careful of the so-called 'attack_list' and 'eva_class' in the evaluate.py
     # For higher reusability of the codes, these variable names may be confusing
@@ -169,13 +169,13 @@ def generate_labels(evaluator, cfg, args):
 if __name__ == '__main__':
     args, cfg = handle_input()
 
-    # dir_check(args.save)
+    dir_check(args.save)
     device = torch.device('cuda')
     evaluator = UniversalPatchEvaluator(cfg, args, device)
     # set the eva classes to be the ones to attack
     evaluator.attack_list = cfg.show_class_index(args.eva_class)
 
-    # generate_labels(evaluator, cfg, args)
+    generate_labels(evaluator, cfg, args)
     save_path = args.save
     # to compute mAP
     for detector in evaluator.detectors:
@@ -187,7 +187,6 @@ if __name__ == '__main__':
         os.system(cmd)
 
         # print(str(attack_class))
-        # args = {'path': path, 'ignore':' '.join(args.igore_class)}
         cmd = 'python ./tools/mAP.py' + ' -p ' + path
         if len(args.ignore_class):
             cmd += ' -i ' + ' '.join(args.ignore_class)

@@ -38,6 +38,8 @@ class HHYolov4(DetectorBase):
         self.detector.eval()
         self.detector.to(self.device)
 
+        self.module_list = self.detector.models
+
     def init_img_batch(self, img_numpy_batch):
         img_tensor = Variable(torch.from_numpy(img_numpy_batch).float().div(255.0).to(self.device))
         return img_tensor
@@ -63,13 +65,11 @@ class HHYolov4(DetectorBase):
 
     def detect_img_batch_get_bbox_conf(self, batch_tensor, conf_thresh=0.5, nms_thresh=0.4):
         output = self.detector(batch_tensor)
-        # [batch, num, 1, 4] e.g., [1, 22743, 1, 4]
-        # box_array = output[0]
-        # [batch, num, num_classes] e.g.,[1, 22743, 80]
+        # output: [ [batch, num, 1, 4], [batch, num, num_classes] ]
         confs = output[1]
-        # confs = confs.view(confs.shape[0], -1)
+        print(self.name, confs.shape)
         preds = self.post_processing(batch_tensor, conf_thresh, nms_thresh, output)
         for i, pred in enumerate(preds):
-            preds[i] = np.array(pred)
+            preds[i] = np.array(pred) # shape([1, 6])
         # print('v4 h: ', confs.shape, confs.requires_grad)
         return preds, confs
