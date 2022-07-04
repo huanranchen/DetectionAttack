@@ -46,7 +46,7 @@ def main(args):
             adv_tensor_batch, patch_tmp = evaluator.add_universal_patch(img_numpy_batch, detector)
             # 对对抗样本进行目标检测
             preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(adv_tensor_batch)
-
+            # 可以拿到loss的时机2：在对抗样本上的loss
             loss2 = temp_attack_loss(detections_with_grad)
             print(loss2, detections_with_grad.shape)
 
