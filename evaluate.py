@@ -36,12 +36,16 @@ def dir_check(save_path, rebuild=True):
 
 
 class UniversalPatchEvaluator(UniversalDetectorAttacker):
-    def __init__(self, cfg, args, device):
+    def __init__(self, cfg, args, device, if_read_patch = True):
         super().__init__(cfg, device)
         self.cfg = cfg
         self.args = args
         self.device = device
-        self.read_patch()
+        if if_read_patch:
+            self.read_patch()
+
+    def read_patch_from_memory(self, patch):
+        self.universal_patch = patch
 
     def read_patch(self):
         patch_file = self.args.patch

@@ -9,16 +9,21 @@ from losses import temp_attack_loss
 from evaluate import UniversalPatchEvaluator
 
 
-def main(args):
+
+def get_loss(args, patch, total_step = 10, use_which_image = None):
     # read config file
     cfg = ConfigParser(args.config_file)
-
     device = torch.device('cuda')
-    evaluator = UniversalPatchEvaluator(cfg, args, device)
+    evaluator = UniversalPatchEvaluator(cfg, args, device, if_read_patch=False)
+    evaluator.read_patch_from_memory(patch)
 
     # read imgs
     img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
-
+    img_names.sort()
+    if use_which_image is not None:
+        img_names = [img_names[use_which_image]]
+    step = 0
+    total_loss = 0
     for index in tqdm(range(0, len(img_names), batch_size)):
         names = img_names[index:index + batch_size]
         img_name = names[0].split('/')[-1]
@@ -26,7 +31,7 @@ def main(args):
 
         all_preds = None
         for detector in evaluator.detectors:
-            print(detector.name)
+            # print(detector.name)
             all_preds = None
             img_tensor_batch = detector.init_img_batch(img_numpy_batch)
 
@@ -36,7 +41,7 @@ def main(args):
 
             # 可以拿到loss的时机1：在干净样本上的loss
             loss1 = temp_attack_loss(detections_with_grad)
-            print(loss1, detections_with_grad.shape)
+            # print(loss1, detections_with_grad.shape)
 
             has_target = evaluator.get_patch_pos_batch(all_preds)
             if not has_target:
@@ -46,22 +51,26 @@ def main(args):
             adv_tensor_batch, patch_tmp = evaluator.add_universal_patch(img_numpy_batch, detector)
             # 对对抗样本进行目标检测
             preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(adv_tensor_batch)
-            # 可以拿到loss的时机2：在对抗样本上的loss
-            loss2 = temp_attack_loss(detections_with_grad)
-            print(loss2, detections_with_grad.shape)
 
-        return
+            loss2 = temp_attack_loss(detections_with_grad)
+            # print(loss2, detections_with_grad.shape)
+            total_loss += loss2
+            step += 1
+            if step > total_step:
+                return total_loss / step
+
+    return total_loss / step
+
 
 if __name__ == '__main__':
     # constant
     batch_size = 1
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--patch', type=str, default='./results/coco/06-06/patch/2_88000_coco0.png')
+    parser.add_argument('-p', '--patch', type=str, default='None')
     parser.add_argument('-cfg', '--config_file', type=str, default='./configs/coco0.yaml')
     parser.add_argument('-dr', '--data_root', type=str,
                         default='/home/chenziyan/work/BaseDetectionAttack/data/coco/train/train2017')
     args = parser.parse_args()
 
-    main(args)
-
+    get_loss(args)
