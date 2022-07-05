@@ -58,12 +58,18 @@ def get_loss(args, patch, total_step = 1, use_which_image = None):
             total_loss += loss2.item()
             step += 1
             if step > total_step:
-                return total_loss / step
+                result = total_loss / step
+                if use_which_image is not None:
+                    return 1 if result > 0.8 else 0
+                return result
 
-    return total_loss / step
+    result = total_loss / step
+    if use_which_image is not None:
+        return 1 if result > 0.8 else 0
+    return result
 
 
 if __name__ == '__main__':
-    from Draws.Landscape import train_valid_3dlandscape
+    from Draws.Landscape import train_valid_3dlandscape,multi_model_3dlandscape,multi_image_contourf
 
-    train_valid_3dlandscape()
+    multi_image_contourf(2)

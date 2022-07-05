@@ -61,7 +61,10 @@ class Landscape():
             mode=self.mode
         )
         coordinate = instance_train.synthesize_coordinates()
-        instance_train.draw(axes)
+        if self.mode == '3D':
+            instance_train.draw(axes)
+        else:
+            instance_train.draw()
         for i, config in enumerate(self.args):
             if i >= 1:
                 use_image = np.random.randint(0, total_image_in_set) if self.one_image else None
@@ -71,7 +74,10 @@ class Landscape():
                     mode=self.mode
                 )
                 instance_val.assign_coordinates(*coordinate)
-                instance_val.draw(axes)
+                if self.mode == '3D':
+                    instance_val.draw(axes)
+                else:
+                    instance_val.draw()
         plt.show()
         plt.savefig(self.output_path + patch_name + ".png")
         plt.clf()

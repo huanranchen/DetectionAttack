@@ -5,6 +5,7 @@ from tqdm import tqdm
 from .ColorUtils import get_rand_cmap, suppress_stdout_stderr
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+
 modes = ['3D', 'Contour', 'HeatMap']
 alpha = 0.5  # 不透明度
 
@@ -24,8 +25,9 @@ class D2Landscape():
         self.mode = mode
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    def synthesize_coordinates(self, x_min=-50, x_max=50, x_interval=5,
-                               y_min=-50, y_max=50, y_interval=5):
+    def synthesize_coordinates(self,
+                               x_min=-200, x_max=200, x_interval=20,
+                               y_min=-200, y_max=200, y_interval=20):
         x = np.arange(x_min, x_max, x_interval)
         y = np.arange(y_min, y_max, y_interval)
         self.x, self.y = np.meshgrid(x, y)
@@ -35,7 +37,7 @@ class D2Landscape():
         self.x = x
         self.y = y
 
-    def draw(self, axes):
+    def draw(self, axes=None):
         self._find_direction()
         z = self._compute_for_draw()
         self._draw3D(self.x, self.y, z, axes)
@@ -64,7 +66,7 @@ class D2Landscape():
         result = result.reshape(self.x.shape)
         return result
 
-    def _draw3D(self, mesh_x, mesh_y, mesh_z, axes):
+    def _draw3D(self, mesh_x, mesh_y, mesh_z, axes=None):
         if self.mode == '3D':
             axes.plot_surface(mesh_x, mesh_y, mesh_z, cmap='rainbow')
 
