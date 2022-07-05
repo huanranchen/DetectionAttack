@@ -10,7 +10,8 @@ from evaluate import UniversalPatchEvaluator
 
 
 
-def get_loss(args, patch, total_step = 10, use_which_image = None):
+def get_loss(args, patch, total_step = 1, use_which_image = None):
+    batch_size = 32 if use_which_image is None else 1
     # read config file
     cfg = ConfigParser(args.config_file)
     device = torch.device('cuda')
@@ -54,7 +55,7 @@ def get_loss(args, patch, total_step = 10, use_which_image = None):
 
             loss2 = temp_attack_loss(detections_with_grad)
             # print(loss2, detections_with_grad.shape)
-            total_loss += loss2
+            total_loss += loss2.item()
             step += 1
             if step > total_step:
                 return total_loss / step
@@ -63,14 +64,6 @@ def get_loss(args, patch, total_step = 10, use_which_image = None):
 
 
 if __name__ == '__main__':
-    # constant
-    batch_size = 1
+    from Draws.Landscape import train_valid_3dlandscape
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--patch', type=str, default='None')
-    parser.add_argument('-cfg', '--config_file', type=str, default='./configs/coco0.yaml')
-    parser.add_argument('-dr', '--data_root', type=str,
-                        default='/home/chenziyan/work/BaseDetectionAttack/data/coco/train/train2017')
-    args = parser.parse_args()
-
-    get_loss(args)
+    train_valid_3dlandscape()
