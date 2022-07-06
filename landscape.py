@@ -2,7 +2,7 @@ import argparse
 import os
 import torch
 from tqdm import tqdm
-
+import random
 from tools.parser import ConfigParser
 from tools.data_loader import read_img_np_batch
 from losses import temp_attack_loss
@@ -11,7 +11,7 @@ from evaluate import UniversalPatchEvaluator
 
 class GetLoss():
     def __init__(self, args, total_step=1, use_which_image=None):
-        self.batch_size = 32 if use_which_image is None else 1
+        self.batch_size = 16 if use_which_image is None else 1
         # read config file
         self.cfg = ConfigParser(args.config_file)
         self.device = torch.device('cuda')
@@ -27,6 +27,7 @@ class GetLoss():
         self.evaluator.read_patch_from_memory(patch)
         step = 0
         total_loss = 0
+        random.shuffle(self.img_names)
         for index in tqdm(range(0, len(self.img_names), self.batch_size)):
             names = self.img_names[index:index + self.batch_size]
             img_name = names[0].split('/')[-1]
