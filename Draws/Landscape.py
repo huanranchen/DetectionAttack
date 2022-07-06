@@ -78,8 +78,6 @@ class Landscape():
                     instance_val.draw(axes)
                 else:
                     instance_val.draw()
-            if self.mode == '2D':
-                plt.legend(f'{i}')
         plt.show()
         plt.savefig(self.output_path + patch_name + ".png")
         plt.clf()
