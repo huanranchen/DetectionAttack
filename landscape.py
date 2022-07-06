@@ -55,7 +55,8 @@ class GetLoss():
                 adv_tensor_batch, patch_tmp = self.evaluator.add_universal_patch(img_numpy_batch, detector)
                 # 对对抗样本进行目标检测
                 preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(adv_tensor_batch)
-
+                # self.evaluator.get_patch_pos_batch(preds)
+                # self.evaluator.imshow_save(img_numpy_batch, save_path='./Draws/out', save_name='WTF.jpg')
                 loss2 = temp_attack_loss(detections_with_grad)
                 # print(loss2, detections_with_grad.shape)
                 total_loss += loss2.item()
@@ -72,8 +73,8 @@ class GetLoss():
         return result
 
 
-
 if __name__ == '__main__':
-    from Draws.Landscape import train_valid_3dlandscape, multi_model_3dlandscape, multi_image_contourf
+    from Draws.Landscape import train_valid_3dlandscape, multi_model_3dlandscape, multi_image_contourf, \
+        train_valid_2dlandscape
 
-    train_valid_3dlandscape()
+    train_valid_2dlandscape()
