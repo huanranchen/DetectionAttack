@@ -26,8 +26,8 @@ class D2Landscape():
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def synthesize_coordinates(self,
-                               x_min=-200, x_max=200, x_interval=20,
-                               y_min=-200, y_max=200, y_interval=20):
+                               x_min=-200, x_max=200, x_interval=10,
+                               y_min=-200, y_max=200, y_interval=10):
         x = np.arange(x_min, x_max, x_interval)
         y = np.arange(y_min, y_max, y_interval)
         self.x, self.y = np.meshgrid(x, y)
@@ -47,7 +47,6 @@ class D2Landscape():
         self.y0 = torch.randn(self.input.shape, device=self.device)
         self.x0 /= torch.norm(self.x0, p=2)
         self.y0 /= torch.norm(self.y0, p=2)
-
         # keep perpendicular
         if torch.abs(self.x0.reshape(-1) @ self.y0.reshape(-1)) >= 0.1:
             self._find_direction()

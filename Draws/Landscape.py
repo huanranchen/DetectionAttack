@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import sys
 sys.path.append('./')
-from landscape import get_loss
+from landscape import GetLoss
 import argparse
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -51,17 +51,17 @@ class Landscape():
                 break
 
     def _draw_one(self, patch_name, step_each_point=1):
-        figure = plt.figure()
-        axes = Axes3D(figure)
         patch = self.read_patch(self.patches_path + patch_name)
         use_image = np.random.randint(0, total_image_in_set) if self.one_image else None
         instance_train = D2Landscape(
-            lambda x: get_loss(self.args[0], x, step_each_point, use_which_image=use_image),
+            GetLoss(self.args[0], step_each_point, use_which_image=use_image),
             patch,
             mode=self.mode
         )
         coordinate = instance_train.synthesize_coordinates()
         if self.mode == '3D':
+            figure = plt.figure()
+            axes = Axes3D(figure)
             instance_train.draw(axes)
         else:
             instance_train.draw()
@@ -69,7 +69,7 @@ class Landscape():
             if i >= 1:
                 use_image = np.random.randint(0, total_image_in_set) if self.one_image else None
                 instance_val = D2Landscape(
-                    lambda x: get_loss(self.args[i], x, step_each_point, use_which_image=use_image),
+                    GetLoss(self.args[i], step_each_point, use_which_image=use_image),
                     patch,
                     mode=self.mode
                 )
