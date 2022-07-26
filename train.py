@@ -65,25 +65,10 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                     detector_attacker.imshow_save(img_tensor_batch, os.path.join(args.save_path, detector.name),
                                                   save_name, detectors=[detector])
 
-            if index % 5000 == 0:
-                patch_name = f'{epoch}_{index}_{save_name}'
+            if epoch % 10 == 0:
+                patch_name = f'{epoch}_{save_name}'
                 print(patch_name)
                 detector_attacker.save_patch(args.save_path, patch_name)
-
-            # if index != 0 and index % 50000 == 0:
-            #     patch_name = f'{epoch}_{index}_{save_name}'
-            #     patch_path = os.path.join(arg.save_path, 'patch/'+patch_name)
-            #     ffix = arg.save_path.split('./results')[1]
-            #     # print("print name : ", arg.save_path, patch_name)
-            #     cmd = f'CUDA_VISIBLE_DEVICES=2 python evaluate.py -i \
-            #             -p {patch_path} \
-            #             -cfg {args.cfg} \
-            #             -gt /home/chenziyan/work/BaseDetectionAttack/data/coco/test/labels \
-            #             -dr /home/chenziyan/work/BaseDetectionAttack/data/coco/test/test2017 \
-            #             -s /home/chenziyan/work/BaseDetectionAttack/data{ffix} \
-            #             -e -1'
-            #     os.system(cmd+' & > test.log')
-    return patch_name
 
 
 if __name__ == '__main__':

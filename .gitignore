@@ -1,7 +1,7 @@
 #custom
 evaluation/
 detector_lab/HHDet/faster_rcnn/pytorch_faster_rcnn/
-detector_lab/weights/*.weights
+*.weights
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -118,7 +118,6 @@ tools
 *.pkl
 *.pkl.json
 *.log.json
-work_dirs/
 
 # Pytorch
 *.pth

@@ -29,6 +29,14 @@ CUDA_VISIBLE_DEVICES=2 python evaluate.py -i \
 -e 0 \
 -d YOLOV3 YOLOV3-TINY YOLOV4 YOLOV4-TINY FASTER-RCNN
 
+CUDA_VISIBLE_DEVICES=2 python evaluate.py -i \
+-p ./results/naco/patch_1000.pth \
+-cfg ./configs/inria2.yaml \
+-lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/labels \
+-dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/pos \
+-s /home/chenziyan/work/BaseDetectionAttack/data/inria/naco/$(date '+%m-%d') \
+-e 0
+
 CUDA_VISIBLE_DEVICES=2 python evaluate.py -i -l \
 -p ./results/military/patch/595parallel.png \
 -cfg ./configs/parallel.yaml

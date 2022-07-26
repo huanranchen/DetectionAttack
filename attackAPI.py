@@ -9,7 +9,7 @@ from attacks.bim import LinfBIMAttack
 from attacks.mim import LinfMIMAttack
 from attacks.pgd import LinfPGDAttack
 from losses import temp_attack_loss
-from tools.utils import process_shape
+from tools.utils import scale_mean_ratio
 from tools.det_utils import plot_boxes_cv2
 
 
@@ -49,6 +49,7 @@ class DetctorAttacker(object):
 
     def patch_pos(self, preds):
         height, width = self.cfg.DETECTOR.INPUT_SIZE
+        scale_rate = self.cfg.ATTACKER.PATCH_ATTACK.SCALE
         patch_boxs = []
         # for every bbox in the img
         for pred in preds:
@@ -57,16 +58,7 @@ class DetctorAttacker(object):
             # print('bbox: ', x1, y1, x2, y2)
             # cfg.ATTACKER.ATTACK_CLASS have been processed to an int list
             if -1 in self.attack_list or int(id) in self.attack_list:
-                p_x1 = ((x1 + x2) / 2) - ((math.sqrt(self.cfg.ATTACKER.PATCH_ATTACK.SCALE) * (x2 - x1)) / 2)
-                p_x1 = int(p_x1.clip(0, 1) * width)
-                p_y1 = ((y1 + y2) / 2) - ((math.sqrt(self.cfg.ATTACKER.PATCH_ATTACK.SCALE) * (y2 - y1)) / 2)
-                p_y1 = int(p_y1.clip(0, 1) * height)
-                p_x2 = ((x1 + x2) / 2) + ((math.sqrt(self.cfg.ATTACKER.PATCH_ATTACK.SCALE) * (x2 - x1)) / 2)
-                p_x2 = int(p_x2.clip(0, 1) * width)
-                p_y2 = ((y1 + y2) / 2) + ((math.sqrt(self.cfg.ATTACKER.PATCH_ATTACK.SCALE) * (y2 - y1)) / 2)
-                p_y2 = int(p_y2.clip(0, 1) * height)
-                if self.cfg.ATTACKER.PATCH_ATTACK.FIX_RATIO:
-                    p_x1, p_y1, p_x2, p_y2 = process_shape(p_x1, p_y1, p_x2, p_y2, ratio=self.patch_aspect_ratio())
+                p_x1, p_y1, p_x2, p_y2 = scale_mean_ratio(x1, y1, x2, y2, height, width, scale_rate)
                 patch_boxs.append([p_x1, p_y1, p_x2, p_y2])
                 # print('rectify bbox:', [p_x1, p_y1, p_x2, p_y2])
         return patch_boxs
