@@ -49,7 +49,7 @@ if __name__ == '__main__':
         # 获取所有的检测框位置
         evaluator.get_patch_pos_batch(all_preds)
         # Transform patch
-        adv_img_tensor, _ = evaluator.add_universal_patch(img_numpy_batch, detector)
+        adv_img_tensor, _ = evaluator.apply_universal_patch(img_numpy_batch, detector)
         # 再次检测
         preds, _ = detector.detect_img_batch_get_bbox_conf(adv_img_tensor)
         save_detections(adv_img_tensor[0], path+'/attacked.png')
