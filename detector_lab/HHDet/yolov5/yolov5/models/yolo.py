@@ -47,6 +47,9 @@ class Detect(nn.Module):
         self.inplace = inplace  # use in-place ops (e.g. slice assignment)
 
     def forward(self, x):
+        # TODO: self.inplace modified by cc
+        self.inplace = False
+
         z = []  # inference output
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
@@ -56,8 +59,9 @@ class Detect(nn.Module):
             if not self.training:  # inference
                 if self.onnx_dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
-
+                # print("-----------x: ", self.inplace)#, x[i].requires_grad, x[i].is_leaf)
                 y = x[i].sigmoid()
+                # print("-----------x2: ", x[i].requires_grad, x[i].is_leaf)
                 if self.inplace:
                     y[..., 0:2] = (y[..., 0:2] * 2 - 0.5 + self.grid[i]) * self.stride[i]  # xy
                     y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh

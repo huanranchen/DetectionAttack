@@ -10,6 +10,8 @@ def process_GT_label(args):
    annotations_path = './INRIAPerson/'+source+'/annotations'
    annotations= os.listdir(annotations_path)
    save_path = './INRIAPerson/'+source+'/labels'
+   # print(annotations_path, save_path)
+   # return
    str_XY = "(Xmax, Ymax)"
    str_size = 'Image size (X x Y x C)'
 
@@ -53,6 +55,6 @@ def process_GT_label(args):
 
 if __name__ == "__main__":
    parser = argparse.ArgumentParser()
-   parser.add_argument('-s', '--source', type=str, default='Train')
+   parser.add_argument('-s', '--source', type=str, default='Test')
    args = parser.parse_args()
    process_GT_label(args)

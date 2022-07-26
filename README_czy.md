@@ -1,3 +1,9 @@
+### Environment
+```bash
+conda create -n attack python=3.7
+conda activate attack
+```
+
 ### implementation
 配置参数在配置文件中进行设置
 
@@ -52,7 +58,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         pass
     
     # 根据已获取的规范化检测框，在图像中加入通用的攻击patch
-    def add_universal_patch(self, numpy_batch, detector, is_normalize=True):
+    def apply_universal_patch(self, numpy_batch, detector, is_normalize=True):
         detector.init_img_batch(numpy_batch) # 对图像进行该检测器的预处理
         # 同时对universal_patch进行该检测器规定的预处理 detector.normalize_tensor()
         pass
@@ -130,7 +136,7 @@ if not has_target:
 for i in range(cfg.MAX_ITER):
     for detector in detectors:
         # 获取攻击后的img_tensor
-        adv_img_tensor = add_universal_patch(detector)
+        adv_img_tensor = apply_universal_patch(detector)
         # 进行迭代攻击，（串/并行）更新universal_patch
         non_targeted_attack_batch(adv_img_tensor, detector)
 ```

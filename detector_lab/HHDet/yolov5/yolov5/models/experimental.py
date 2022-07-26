@@ -89,6 +89,7 @@ class Ensemble(nn.ModuleList):
 
 def attempt_load(weights, map_location=None, inplace=True, fuse=True):
     from .yolo import Detect, Model
+    # print("attempt_load: ", inplace)
 
     # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
     model = Ensemble()
@@ -104,6 +105,7 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
         if type(m) in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model]:
             m.inplace = inplace  # pytorch 1.7.0 compatibility
             if type(m) is Detect:
+                print("type Detect")
                 if not isinstance(m.anchor_grid, list):  # new Detect Layer compatibility
                     delattr(m, 'anchor_grid')
                     setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)

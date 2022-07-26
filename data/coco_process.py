@@ -1,23 +1,10 @@
 import argparse
-import sys
-import numpy as np
 import cv2
 import json
 
 import os
 from tqdm import tqdm
 
-from tools.file_handler import load_class_names
-from tools.det_utils import plot_boxes_cv2
-
-# def load_class_names(namesfile):
-#     class_names = []
-#     with open(namesfile, 'r') as fp:
-#         lines = fp.readlines()
-#     for line in lines:
-#         line = line.rstrip()
-#         class_names.append(line)
-#     return class_names
 
 class ConvertCOCOToYOLO:
 
@@ -149,13 +136,19 @@ class ConvertCOCOToYOLO:
 
 # To run in as a class
 if __name__ == "__main__":
+    import sys
+    sys.path.append("..")
+    from tools.parser import load_class_names
+    from tools.det_utils import plot_boxes_cv2
+
     # print(sys.path)
-    target = 'train'
+    target = 'val'
+    postfix = '2017'
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--img_folder', type=str, default=f'.{os.sep}coco{os.sep}{target}/train2017')
-    parser.add_argument('-n', '--name_file', type=str, default=f'..{os.sep}configs{os.sep}namefiles{os.sep}coco-stuff.names')
-    parser.add_argument('-j', '--json_path', type=str, default=f'.{os.sep}coco{os.sep}instances_train2017.json')
-    parser.add_argument('-s', '--save_path', type=str, default=f'.{os.sep}coco{os.sep}{target}/labels')
+    parser.add_argument('-i', '--img_folder', type=str, default=f'./coco/{target}/{target}{postfix}')
+    parser.add_argument('-n', '--name_file', type=str, default=f'../configs/namefiles/coco-stuff.names')
+    parser.add_argument('-j', '--json_path', type=str, default=f'./coco/instances_{target}{postfix}.json')
+    parser.add_argument('-s', '--save_path', type=str, default=f'./coco/{target}/{target}{postfix}_labels')
     args = parser.parse_args()
     util = ConvertCOCOToYOLO(args.img_folder, args.json_path, args.save_path, args.name_file)
     util.convert()

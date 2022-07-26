@@ -1,11 +1,15 @@
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
   NAME: ["YOLOV3", "YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
-  INPUT_SIZE: [416, 416] # height, width
+
   BATCH_SIZE: 2
-  IMG_DIR: './data/coco/train/train2017'
+  IMG_DIR: '/data/coco/train/train2017'
   LAB_DIR:
-  CLASS_NAME_FILE: './configs/namefiles/coco.names'
+  CLASS_NAME_FILE: '/configs/namefiles/coco.names'
+
+  INPUT_SIZE: [416, 416] # the original image size: height, width
+  CONF_THRESH: 0.5
+  NMS_THRESH: 0.45
 
 ATTACKER:
   METHOD: "pgd"

@@ -3,10 +3,14 @@ import os
 import torch
 from tqdm import tqdm
 import random
+
 from tools.parser import ConfigParser
 from tools.data_loader import read_img_np_batch
 from losses import temp_attack_loss
 from evaluate import UniversalPatchEvaluator
+
+from tools.data_loader import detDataSet
+from torch.utils.data import DataLoader
 
 
 class GetLoss():
@@ -16,10 +20,15 @@ class GetLoss():
         self.cfg = ConfigParser(args.config_file)
         self.device = torch.device('cuda')
         self.evaluator = UniversalPatchEvaluator(self.cfg, args, self.device, if_read_patch=False)
-        self.img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
-        self.img_names.sort()
-        if use_which_image is not None:
-            self.img_names = [self.img_names[use_which_image]]
+        # self.img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
+
+        data_set = detDataSet(args.data_root, self.cfg.DETECTOR.INPUT_SIZE)
+        self.data_loader = DataLoader(data_set, batch_size=self.cfg.DETECTOR.BATCH_SIZE, shuffle=False,
+                                 num_workers=4, pin_memory=True)
+
+        # self.img_names.sort()
+        # if use_which_image is not None:
+        #     self.img_names = [self.img_names[use_which_image]]
         self.total_step = total_step
         self.use_which_image = use_which_image
 
@@ -27,17 +36,17 @@ class GetLoss():
         self.evaluator.read_patch_from_memory(patch)
         step = 0
         total_loss = 0
-        random.shuffle(self.img_names)
-        for index in tqdm(range(0, len(self.img_names), self.batch_size)):
-            names = self.img_names[index:index + self.batch_size]
-            img_name = names[0].split('/')[-1]
-            img_numpy_batch = read_img_np_batch(names, self.cfg.DETECTOR.INPUT_SIZE)
+        # random.shuffle(self.img_names)
 
-            all_preds = None
+        for index, img_tensor_batch in tqdm(enumerate(self.data_loader)):
+            # names = self.img_names[index:index + self.batch_size]
+            # img_name = names[0].split('/')[-1]
+            # img_numpy_batch = read_img_np_batch(names, self.cfg.DETECTOR.INPUT_SIZE)
+
             for detector in self.evaluator.detectors:
                 # print(detector.name)
                 all_preds = None
-                img_tensor_batch = detector.init_img_batch(img_numpy_batch)
+                # img_tensor_batch = detector.init_img_batch(img_numpy_batch)
 
                 # 在干净样本上得到所有的目标检测框，定位patch覆盖的位置
                 preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(img_tensor_batch)
@@ -52,11 +61,13 @@ class GetLoss():
                     continue
 
                 # 添加patch，生成对抗样本
-                adv_tensor_batch, patch_tmp = self.evaluator.add_universal_patch(img_numpy_batch, detector)
+                adv_tensor_batch, patch_tmp = self.evaluator.apply_universal_patch(img_tensor_batch, detector)
                 # 对对抗样本进行目标检测
                 preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(adv_tensor_batch)
-                # self.evaluator.get_patch_pos_batch(preds)
-                # self.evaluator.imshow_save(img_numpy_batch, save_path='./Draws/out', save_name='WTF.jpg')
+
+                self.evaluator.get_patch_pos_batch(preds)
+                self.evaluator.imshow_save(img_tensor_batch, save_path='./Draws/out', save_name=f'WTF{index}.jpg')
+
                 loss2 = temp_attack_loss(detections_with_grad)
                 # print(loss2, detections_with_grad.shape)
                 total_loss += loss2.item()

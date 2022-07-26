@@ -1,0 +1,28 @@
+DETECTOR:
+  # "Military_YOLOX", , "YOLOV5"
+  NAME: ["YOLOV3", "YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
+
+  BATCH_SIZE: 4
+  IMG_DIR: './data/coco/train/train2017'
+  LAB_DIR:
+  CLASS_NAME_FILE: './configs/namefiles/coco.names'
+
+  INPUT_SIZE: [416, 416] # # original image size: list [height, width]
+  CONF_THRESH: 0.5 # confidence threshold
+  NMS_THRESH: 0.45 # NMS IOU threshold
+
+ATTACKER:
+  METHOD: "pgd"
+  EPSILON: 255 # 0-255
+  MAX_ITERS: 2000
+  SERIAL_ITER_STEP: 5
+  PARALLEL_ITER_STEP: 10
+  STEP_SIZE: 0.005
+  TARGET_CLASS: 0
+  ATTACK_CLASS: '-1' # String: '-1' attack all classes; appoint a class 'x'; 'a:b' class list a to b - 1
+
+  PATCH_ATTACK:
+    WIDTH: 100
+    HEIGHT: 100
+    SCALE: 0.2
+    FIX_RATIO: 0 # 1: True; 0: False

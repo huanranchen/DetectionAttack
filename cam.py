@@ -1,18 +1,16 @@
 import os
 import cv2
 import numpy as np
-import torch
 from tqdm import tqdm
 
-from detector_lab.HHDet.utils import init_detector
+from BaseDetectionAttack.detector_lab.utils import init_detector
 from tools.data_loader import read_img_np_batch
 from tools.det_utils import plot_boxes_cv2
 from tools.parser import load_class_names
 
-from pytorch_grad_cam import GradCAM, ScoreCAM, GradCAMPlusPlus, AblationCAM, XGradCAM, EigenCAM, FullGrad
+from pytorch_grad_cam import EigenCAM
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam.utils.image import show_cam_on_image
-from torchvision.models import resnet50
 
 model = init_detector('YOLOV4')
 print(model.device)

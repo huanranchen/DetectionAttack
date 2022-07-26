@@ -1,4 +1,0 @@
-truck
-panzer
-tank
-SUV

@@ -60,7 +60,11 @@ class TVLoss(nn.Module):
         return tv_loss
 
 def temp_attack_loss(confs):
-        return torch.nn.MSELoss()(confs, torch.ones(confs.shape).cuda())
+    # print(confs.shape)
+    target = torch.ones(confs.shape)
+    if confs.is_cuda:
+        target = target.cuda()
+    return torch.nn.MSELoss()(confs, target)
 
 def attack_loss(det_score, det_labels, cls_scores, class_id, patch):
     disappear_loss = DisappearLoss()

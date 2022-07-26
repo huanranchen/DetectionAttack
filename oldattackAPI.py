@@ -91,7 +91,7 @@ class DetctorAttacker(object):
             patch = np.random.randint(low=0, high=255, size=(p_y2 - p_y1, p_x2 - p_x1, 3))
             self.patch_boxes[i].append(patch) # x1, y1, x2, y2, patch
 
-    def add_patches(self, img_tensor, detector, is_normalize=True):
+    def apply_patches(self, img_tensor, detector, is_normalize=True):
         # for each patch in the patch_boxes
         for i in range(len(self.patch_boxes)):
             p_x1, p_y1, p_x2, p_y2 = self.patch_boxes[i][:4]
@@ -127,7 +127,7 @@ if __name__ == '__main__':
         # init the adversarial patches
         detector_attacker.init_patches()
         # add patch to the input tensor
-        adv_img_tensor = detector_attacker.add_patches(img_tensor, detector)
+        adv_img_tensor = detector_attacker.apply_patches(img_tensor, detector)
 
         
         adv_img_tensor = detector_attacker.attacker.non_targeted_attack(ori_img_tensor, adv_img_tensor, img_cv2, detector_attacker, detector)
