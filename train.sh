@@ -8,7 +8,7 @@ my_date=$(date '+%m-%d')
 #
 train_cmd="CUDA_VISIBLE_DEVICES=${device} python train.py \
 -cfg=${config}.yaml \
--s=./results/coco/conf/${my_date}"
+-s=./results/inria/${my_date}"
 
 echo $train_cmd
 eval $train_cmd
@@ -19,12 +19,12 @@ do
   config=inria$i
 #  echo $config
   cmd="CUDA_VISIBLE_DEVICES=${device} python evaluate.py -i \
-  -p ./results/inria/conf/${my_date}/patch/1000_${patch_name}.png \
+  -p ./results/inria/${my_date}/patch/1000_${patch_name}.png \
   -cfg ./configs/${config}.yaml \
   -lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/labels \
   -dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/pos \
-  -s /home/chenziyan/work/BaseDetectionAttack/data/inria/conf/${my_date} \
-  -e 0 "
+  -s /home/chenziyan/work/BaseDetectionAttack/data/inria/${my_date} \
+  -e 0 &"
   echo cmd
   eval $cmd
 done

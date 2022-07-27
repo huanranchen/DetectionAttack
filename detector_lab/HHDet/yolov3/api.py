@@ -49,7 +49,7 @@ class HHYolov3(DetectorBase):
     #             tensor_batch = torch.cat((tensor_batch, img_tensor), 0)
     #     return tensor_batch.to(self.device)
 
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, conf_thresh=0.5):
+    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5):
         detections_with_grad = self.detector(batch_tensor) # torch.tensor([1, num, classes_num+4+1])
         preds = non_max_suppression(detections_with_grad, self.conf_thres, self.iou_thres)
         confs = detections_with_grad[:, :, 4]
@@ -75,5 +75,5 @@ class HHYolov3(DetectorBase):
                 #     confs[i][ind] = 0
                 # else:
                 #     confs[i][ind] *= (len(box)/len(self.target[i]))
-        confs = confs[confs > conf_thresh]
+        confs = confs[confs > confs_thresh]
         return bbox_array, confs
