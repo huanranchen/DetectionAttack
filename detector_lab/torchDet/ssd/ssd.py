@@ -402,10 +402,13 @@ class SSD(nn.Module):
             keep = box_ops.batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
             keep = keep[:self.detections_per_img]
 
+            bg_scores = scores[:, 0]
+            print(bg_scores.shape)
             detections.append({
                 'boxes': image_boxes[keep],
                 'scores': image_scores[keep],
                 'labels': image_labels[keep],
+                'bg_scores': bg_scores,
             })
         return detections
 

@@ -22,5 +22,5 @@ do
   -lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/labels \
   -dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/pos \
   -s /home/chenziyan/work/BaseDetectionAttack/data/inria/conf/${my_date} \
-  -e 0"
+  -e 0 "
 done

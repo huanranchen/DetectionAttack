@@ -39,13 +39,11 @@ class TorchSSD(DetectorBase):
                 (pred['labels']-1).view(len, 1)
             ), 1).detach().cpu() if len else torch.FloatTensor([])
 
-            bg_cls_index = torch.where(pred['labels'] == 0)
-            print(bg_cls_index)
-            conf = pred['scores']
+            conf = pred['bg_scores']
+            # print(conf)
             # print(cls.shape, conf.shape)
             ctmp = conf[conf > confs_thresh]
             confs_array = ctmp if confs_array is None else torch.cat((confs_array, ctmp), -1)
-
             bbox_array.append(array)
 
         # bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
