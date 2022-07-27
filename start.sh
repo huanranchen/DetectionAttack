@@ -23,17 +23,17 @@ CUDA_VISIBLE_DEVICES=3 python attackAPI.py -p --attack_method=parallel \
 CUDA_VISIBLE_DEVICES=2 python evaluate.py -i \
 -p ./results/inria/conf/ps/07-25/patch/400_0_ps5.png \
 -cfg ./configs/ps5.yaml \
--lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/labels \
--dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/pos \
+-lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/labels \
+-dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/pos \
 -s /home/chenziyan/work/BaseDetectionAttack/data/inria/conf/ps/$(date '+%m-%d') \
 -e 0 \
 -d YOLOV3 YOLOV3-TINY YOLOV4 YOLOV4-TINY FASTER-RCNN
 
 CUDA_VISIBLE_DEVICES=2 python evaluate.py -i \
--p ./results/naco/patch_1000.pth \
+-p ./results/naco/nesterov.pth \
 -cfg ./configs/inria2.yaml \
--lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/labels \
--dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/pos \
+-lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/labels \
+-dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/pos \
 -s /home/chenziyan/work/BaseDetectionAttack/data/inria/naco/$(date '+%m-%d') \
 -e 0
 

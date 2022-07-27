@@ -82,7 +82,7 @@ class HHYolov5(DetectorBase):
     #     img_numpy_int8 = img_numpy.astype('uint8')
     #     return img_numpy, img_numpy_int8
 
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, conf_thresh=0.5):
+    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5):
         # print("detect: ", batch_tensor.requires_grad)
         output = self.detector(batch_tensor, augment=False, visualize=False)[0]
         # print("output", output)
@@ -98,7 +98,7 @@ class HHYolov5(DetectorBase):
 
         # [batch, num, num_classes] e.g.,[1, 22743, 80]
         confs = output[..., 4]
-        confs = confs[confs > conf_thresh]
+        confs = confs[confs > confs_thresh]
         # print(bbox_array, confs)
         # print('filtered: ', confs.shape)
         return bbox_array, confs

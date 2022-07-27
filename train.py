@@ -13,6 +13,7 @@ def modelDDP(detector_attacker, args):
                                                           output_device=args.local_rank,
                                                           find_unused_parameters=True)
 
+
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
     conf_thresh = cfg.DETECTOR.CONF_THRESH
     if not args.const_confs:
@@ -65,7 +66,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                     detector_attacker.imshow_save(img_tensor_batch, os.path.join(args.save_path, detector.name),
                                                   save_name, detectors=[detector])
 
-            if epoch % 10 == 0:
+            if epoch % 10 == 0 and index == 0:
                 patch_name = f'{epoch}_{save_name}'
                 print(patch_name)
                 detector_attacker.save_patch(args.save_path, patch_name)

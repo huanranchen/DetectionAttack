@@ -39,10 +39,8 @@ class Faster_RCNN(DetectorBase):
             ctmp = conf[conf > confs_thresh]
             confs_array = ctmp if confs_array is None else torch.cat((confs_array, ctmp), -1)
 
-            if array is None:
-                array = np.array([])
-            else:
-                array = array.detach().cpu()
+
+            array = np.array([]) if array is None else array.detach().cpu()
             bbox_array.append(array)
 
         bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)

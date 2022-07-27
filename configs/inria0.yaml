@@ -21,7 +21,7 @@ ATTACKER:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
 
   PATCH_ATTACK:
-    WIDTH: 100
-    HEIGHT: 100
+    WIDTH: 128
+    HEIGHT: 128
     SCALE: 0.2
     FIX_RATIO: 0 # 1: True; 0: False

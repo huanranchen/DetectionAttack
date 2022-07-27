@@ -1,3 +1,5 @@
+import sys
+
 import torch
 import math
 import os
@@ -9,7 +11,7 @@ from attacks.bim import LinfBIMAttack
 from attacks.mim import LinfMIMAttack
 from attacks.pgd import LinfPGDAttack
 from losses import temp_attack_loss
-from tools.utils import scale_mean_ratio
+from tools.utils import scale_area_ratio, transform_patch
 from tools.det_utils import plot_boxes_cv2
 
 
@@ -47,28 +49,30 @@ class DetctorAttacker(object):
         # print(img.dtype, isinstance(img, np.ndarray))
         plot_boxes_cv2(img, np.array(boxes), self.class_names, savename=savename)
 
-    def patch_pos(self, preds):
+    def patch_pos(self, preds, patch):
         height, width = self.cfg.DETECTOR.INPUT_SIZE
         scale_rate = self.cfg.ATTACKER.PATCH_ATTACK.SCALE
         patch_boxs = []
-        # for every bbox in the img
+        # print(preds.shape)
         for pred in preds:
             # print('get pos', pred)
             x1, y1, x2, y2, conf, id = pred
             # print('bbox: ', x1, y1, x2, y2)
             # cfg.ATTACKER.ATTACK_CLASS have been processed to an int list
             if -1 in self.attack_list or int(id) in self.attack_list:
-                p_x1, p_y1, p_x2, p_y2 = scale_mean_ratio(x1, y1, x2, y2, height, width, scale_rate)
+                p_x1, p_y1, p_x2, p_y2 = scale_area_ratio(x1, y1, x2, y2, height, width, scale_rate)
                 patch_boxs.append([p_x1, p_y1, p_x2, p_y2])
                 # print('rectify bbox:', [p_x1, p_y1, p_x2, p_y2])
+        # transform_patch(preds, patch, scale_rate)
+        # sys.exit()
         return patch_boxs
 
     def patch_aspect_ratio(self):
         height, width = self.universal_patch.shape[-2:]
         return width/height
 
-    def get_patch_pos(self, preds, img_cv2):
-        patch_boxs = self.patch_pos(preds)
+    def get_patch_pos(self, preds, img_cv2, patch):
+        patch_boxs = self.patch_pos(preds, patch)
         self.patch_boxes += patch_boxs
         # print("self.patch_boxes", patch_boxs)
 
@@ -116,7 +120,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
 
         for index, preds in enumerate(all_preds):
             # for every image in the batch
-            patch_boxs = self.patch_pos(preds)
+            patch_boxs = self.patch_pos(preds, self.universal_patch)
             self.batch_patch_boxes.append(patch_boxs)
             target_nums.append(len(patch_boxs))
         return target_nums
@@ -133,6 +137,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         else:
             # when attacking
             universal_patch = universal_patch.detach_()
+        if universal_patch.is_leaf:
             universal_patch.requires_grad = True
         # print(len(img_tensor))
         # print(self.detectors[0].name, "universal patch grad: ", universal_patch.requires_grad, universal_patch.is_leaf)
@@ -143,7 +148,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
                 p_x1, p_y1, p_x2, p_y2 = bbox[:4]
                 height = p_y2 - p_y1
                 width = p_x2 - p_x1
-                if height == 0 or width == 0:
+                if height <= 0 or width <= 0:
                     continue
                 patch_tensor = F.interpolate(universal_patch, size=(height, width), mode='bilinear')
                 # print("fn1: ", img_tensor.grad_fn, patch_tensor.grad_fn)
@@ -163,10 +168,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
                 if all_pred.shape[0] and pred.shape[0]:
                     all_preds[i] = np.r_[all_pred, pred]
                     continue
-                if all_pred.shape[0]:
-                    all_preds[i] = all_pred
-                else:
-                    all_preds[i] = pred
+                all_preds[i] = all_pred if all_pred.shape[0] else pred
 
         return all_preds
 
