@@ -6,7 +6,7 @@ DETECTOR:
   LAB_DIR: 'data/INRIAPerson/Train/pos/yolo-labels'
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
   CONF_THRESH: 0.5
-  NMS_THRESH: 0.45
+  IOU_THRESH: 0.45
 
 ATTACKER:
   METHOD: "pgd"

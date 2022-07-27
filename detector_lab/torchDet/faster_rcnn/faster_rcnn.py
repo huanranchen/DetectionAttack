@@ -11,7 +11,7 @@ from torchvision.models.detection.anchor_utils import AnchorGenerator
 from .generalized_rcnn import GeneralizedRCNN
 from .rpn import RPNHead, RegionProposalNetwork
 from torchvision.models.detection.roi_heads import RoIHeads
-from .transform import GeneralizedRCNNTransform
+from ..utils.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone, _validate_trainable_layers, mobilenet_backbone
 
 

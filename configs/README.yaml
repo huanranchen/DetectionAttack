@@ -1,0 +1,26 @@
+DETECTOR:
+  NAME: ["Faster_RCNN"] # YOLOV3, YOLOV3-TINY, YOLOV4, YOLOV4-TINY, YOLOV5, FASTER_RCNN, SSD, 不区分大小写
+  INPUT_SIZE: [416, 416] # height, width
+  BATCH_SIZE: 8 # batch size when training. BATCH_SIZE = const 1 when evaluating
+  IMG_DIR: 'data/INRIAPerson/Train/pos'
+  LAB_DIR: 'data/INRIAPerson/Train/pos/yolo-labels'
+  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names' # a relative path
+
+  CONF_THRESH: 0.5 # confidence thresh in NMS
+  IOU_THRESH: 0.45 # iou thresh in NMS
+
+ATTACKER:
+  METHOD: "pgd" # attack algorithm: ['bim', 'pgd', 'mim']
+  EPSILON: 255 # 0-255
+  MAX_ITERS: 1000 # N Epoches
+  SERIAL_ITER_STEP: 5 # Attack steps in every mini-batch
+  PARALLEL_ITER_STEP: 15 # Attack steps in every mini-batch
+  STEP_SIZE: 0.005 # update rate. e.g. FGSM: step size * grad sign
+  TARGET_CLASS: 0 # targeted attack
+  ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id (corresponds to the namefile)
+
+  PATCH_ATTACK:
+    WIDTH: 128 # Patch width
+    HEIGHT: 128 # Patch height
+    SCALE: 0.2 # patch scale when attaching patch on bbox
+    AREA_RATIO: 1 # 1: scale denotes bbox area ratio(Ours). 0: scale denotes the past baseline definitions

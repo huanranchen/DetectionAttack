@@ -9,7 +9,7 @@ from .HHDet.yolov5.api import HHYolov5
 # from .HHDet.faster_rcnn.api import Faster_RCNN
 from .torchDet.faster_rcnn import Faster_RCNN
 # from .torchDet import Faster_RCNN
-from .torchDet.ssd import SSD
+from .torchDet.ssd import TorchSSD
 
 import sys, os
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,7 +80,7 @@ def init_detector(detector_name, cfg):
 
     elif detector_name == "ssd":
         # pass
-        detector = SSD(name=detector_name, cfg=cfg)
+        detector = TorchSSD(name=detector_name, cfg=cfg)
         detector.load()
         # detector.load('./checkpoints/ssd300_coco_20210803_015428-d231a06e.pth')
         # detector.load(os.path.join(PROJECT_DIR, 'detector_lab/HHDet/ssd/ssd_pytorch/weights/vgg16_reducedfc.pth'))

@@ -26,7 +26,7 @@ class DetectorBase(ABC):
         self.cfg = cfg
 
         self.conf_thres = cfg.CONF_THRESH
-        self.iou_thres = cfg.NMS_THRESH
+        self.iou_thres = cfg.IOU_THRESH
         self.ori_size = cfg.INPUT_SIZE
 
     def detach(self, tensor: torch.tensor):

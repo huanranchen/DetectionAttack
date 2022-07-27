@@ -26,21 +26,20 @@ class Faster_RCNN(DetectorBase):
     def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5):
         shape = batch_tensor.shape[-2]
         preds, confs = self.detector(batch_tensor)
-        # print(confs[0])
+
         confs_array = None
         bbox_array = []
         for ind, (pred, conf) in enumerate(zip(preds, confs)):
-            array = None
-            for box, cls, score in zip(pred['boxes'], pred['labels'], pred['scores']):
-                # cls-1: ignore the background class
-                tmp = torch.cat((box/shape, score.unsqueeze(0), (cls-1).unsqueeze(0)), -1)
-                array = tmp if array is None else torch.vstack((array, tmp))
+            len = pred['scores'].shape[0]
+            array = torch.cat((
+                pred['boxes'] / shape,
+                pred['scores'].view(len, 1),
+                (pred['labels'] - 1).view(len, 1)
+            ), 1).detach().cpu() if len else torch.FloatTensor([])
 
             ctmp = conf[conf > confs_thresh]
             confs_array = ctmp if confs_array is None else torch.cat((confs_array, ctmp), -1)
 
-
-            array = np.array([]) if array is None else array.detach().cpu()
             bbox_array.append(array)
 
         bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)

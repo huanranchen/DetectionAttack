@@ -1,1 +1,2 @@
-from .api import SSD
+from .ssd import SSD, ssd300_vgg16
+from .api import TorchSSD

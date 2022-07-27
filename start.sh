@@ -4,7 +4,7 @@ screen -S military
 cd ~/work/BaseDetectionAttack
 conda activate dassl
 
-CUDA_VISIBLE_DEVICES=2 python train.py -cfg=inria7.yaml -s=./results/inria/conf/$(date '+%m-%d')
+CUDA_VISIBLE_DEVICES=3 python train.py -cfg=inria7.yaml -s=./results/inria/conf/$(date '+%m-%d')
 
 CUDA_VISIBLE_DEVICES=3 nohup python train.py -cfg=ps3.yaml -s=./results/inria/conf/ps/$(date '+%m-%d') > ./results/ps3.out 2>&1 &
 
@@ -21,16 +21,16 @@ CUDA_VISIBLE_DEVICES=3 python attackAPI.py -p --attack_method=parallel \
 > ./results/coco/$(date '+%m-%d')-train.log
 
 CUDA_VISIBLE_DEVICES=2 python evaluate.py -i \
--p ./results/inria/conf/ps/07-25/patch/400_0_ps5.png \
--cfg ./configs/ps5.yaml \
+-p ./results/inria/conf/rcnn/07-26/patch/290_0_inria2.png \
+-cfg ./configs/inria2.yaml \
 -lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/labels \
 -dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/pos \
--s /home/chenziyan/work/BaseDetectionAttack/data/inria/conf/ps/$(date '+%m-%d') \
+-s /home/chenziyan/work/BaseDetectionAttack/data/inria/conf/rcnn/$(date '+%m-%d') \
 -e 0 \
 -d YOLOV3 YOLOV3-TINY YOLOV4 YOLOV4-TINY FASTER-RCNN
 
 CUDA_VISIBLE_DEVICES=2 python evaluate.py -i \
--p ./results/naco/nesterov.pth \
+-p ./results/naco/patch_1000.pth \
 -cfg ./configs/inria2.yaml \
 -lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/labels \
 -dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/pos \

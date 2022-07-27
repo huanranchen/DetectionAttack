@@ -60,7 +60,9 @@ class DetctorAttacker(object):
             # print('bbox: ', x1, y1, x2, y2)
             # cfg.ATTACKER.ATTACK_CLASS have been processed to an int list
             if -1 in self.attack_list or int(id) in self.attack_list:
-                p_x1, p_y1, p_x2, p_y2 = scale_area_ratio(x1, y1, x2, y2, height, width, scale_rate)
+                p_x1, p_y1, p_x2, p_y2 = scale_area_ratio(
+                    x1, y1, x2, y2, height, width, scale_rate,
+                    area_ratio=self.cfg.ATTACKER.PATCH_ATTACK.AREA_RATIO)
                 patch_boxs.append([p_x1, p_y1, p_x2, p_y2])
                 # print('rectify bbox:', [p_x1, p_y1, p_x2, p_y2])
         # transform_patch(preds, patch, scale_rate)

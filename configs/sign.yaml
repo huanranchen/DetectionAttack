@@ -9,7 +9,7 @@ DETECTOR:
 
   INPUT_SIZE: [416, 416] # # original image size: list [height, width]
   CONF_THRESH: 0.5 # confidence threshold
-  NMS_THRESH: 0.45 # NMS IOU threshold
+  IOU_THRESH: 0.45 # NMS IOU threshold
 
 ATTACKER:
   METHOD: "pgd"
@@ -22,7 +22,7 @@ ATTACKER:
   ATTACK_CLASS: '-1' # String: '-1' attack all classes; appoint a class 'x'; 'a:b' class list a to b - 1
 
   PATCH_ATTACK:
-    WIDTH: 100
-    HEIGHT: 100
+    WIDTH: 128
+    HEIGHT: 128
     SCALE: 0.2
-    FIX_RATIO: 0 # 1: True; 0: False
+    AREA_RATIO: 1 # 1: True; 0: False
