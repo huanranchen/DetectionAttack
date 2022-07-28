@@ -11,7 +11,7 @@ DETECTOR:
 ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
-  MAX_ITERS: 10000
+  MAX_ITERS: 1000
   SERIAL_ITER_STEP: 5
   PARALLEL_ITER_STEP: 15
   STEP_SIZE: 0.005
@@ -19,7 +19,7 @@ ATTACKER:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
 
   PATCH_ATTACK:
-    WIDTH: 100
-    HEIGHT: 100
+    WIDTH: 128
+    HEIGHT: 128
     SCALE: 0.3
-    FIX_RATIO: 0 # 1: True; 0: False
+    AREA_RATIO: 1 # 1: True; 0: False

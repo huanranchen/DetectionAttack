@@ -3,7 +3,7 @@ import numpy as np
 
 from . import faster_rcnn, fasterrcnn_resnet50_fpn
 from ...DetectorBase import DetectorBase
-from .utils import inter_nms
+from ..utils import inter_nms
 
 
 class Faster_RCNN(DetectorBase):
@@ -42,6 +42,6 @@ class Faster_RCNN(DetectorBase):
 
             bbox_array.append(array)
 
-        # bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
+        bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
 
         return bbox_array, confs_array

@@ -85,7 +85,7 @@ class HHYolov5(DetectorBase):
     def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5):
         # print("detect: ", batch_tensor.requires_grad)
         output = self.detector(batch_tensor, augment=False, visualize=False)[0]
-        # print("output", output)
+        # print("output       :", output[0].shape)
         preds = non_max_suppression(output.detach().cpu(),
                                     self.conf_thres, self.iou_thres) # [batch, num, 6] e.g., [1, 22743, 1, 4]
         bbox_array = []

@@ -21,7 +21,10 @@ def dir_check(save_path, rebuild=False):
     def check(path, rebuild):
         if rebuild and os.path.exists(path):
             shutil.rmtree(path)
-        os.makedirs(path, exist_ok=True)
+        try:
+            os.makedirs(path, exist_ok=True)
+        except:
+            pass
         # print('mkdir: ', path)
 
     check(save_path, rebuild=rebuild)
@@ -95,6 +98,7 @@ def handle_input():
     parser.add_argument('-o', '--test_origin', action='store_true')
     parser.add_argument('-ul', '--stimulate_uint8_loss', action='store_true')
     parser.add_argument('-i', '--save_imgs', help='to save attacked imgs', action='store_true')
+    parser.add_argument('-g', '--gen_labels', action='store_true')
     parser.add_argument('-e', '--eva_class', type=str, default='-1') # '-1': all classes; '-2': attack seen classes(ATTACK_CLASS in cfg file); '-3': attack unseen classes(all_class - ATTACK_CLASS); or given a list by '['x:y']'/'[0]'
     parser.add_argument('-q', '--quiet', help='output none if set true', action='store_true')
     args = parser.parse_args()
@@ -130,7 +134,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     from tools.data_loader import detDataSet
     from torch.utils.data import DataLoader
 
-    dir_check(args.save, rebuild=True)
+    dir_check(args.save, rebuild=False)
     utils = Utils(cfg)
     batch_size = 1
     print('dataroot:', os.getcwd(), args.data_root)
@@ -194,8 +198,8 @@ if __name__ == '__main__':
     # set the eva classes to be the ones to attack
     evaluator.attack_list = cfg.show_class_index(args.eva_class)
 
-    generate_labels(evaluator, cfg, args)
-    dir_check(args.save, rebuild=False)
+    if args.gen_labels:
+        generate_labels(evaluator, cfg, args)
     save_path = args.save
     # to compute mAP
     for detector in evaluator.detectors:

@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import yaml
 
@@ -22,9 +20,6 @@ def load_class_names(namesfile, trim=True):
         all_class_names.append(line)
     return all_class_names
 
-# def get_empty_class(all_class_names):
-#     return [(id if name is "" else ) for id, name in enumerate(all_class_names)]
-
 
 class ConfigParser:
     def __init__(self, config_file):
@@ -35,7 +30,7 @@ class ConfigParser:
         self.load_config()
         self.all_class_names = load_class_names(
             os.path.join(PROJECT_DIR, self.DETECTOR.CLASS_NAME_FILE))
-        print("all cls num: ", len(self.all_class_names))
+        print("all cls num      : ", len(self.all_class_names))
         self.get_attack_list()
         # self.empty_class = get_empty_class(self.all_class_names)
         # print(self.empty_class)

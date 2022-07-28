@@ -46,16 +46,20 @@ class Utils:
 
 
 if __name__ == "__main__":
-    source = 'Test'
+    source = 'Train'
     parser = argparse.ArgumentParser()
     parser.add_argument('-dr', '--data_root', type=str, default=f"{PROJECT_DIR}/data/INRIAPerson/{source}/pos")
     parser.add_argument('-sr', '--save_root', type=str, default=f'{PROJECT_DIR}/data/INRIAPerson/{source}/labels/')
     parser.add_argument('-cfg', '--config_file', type=str, default=f'test.yaml')
+    parser.add_argument('-d', '--detector_name', nargs='+', default=None)
     args = parser.parse_args()
 
     args.config_file = os.path.join(f'{PROJECT_DIR}/configs', args.config_file)
     cfg = ConfigParser(args.config_file)
+    if args.detector_name is not None:
+        cfg.DETECTOR.NAME = args.detector_name
     detectors = init_detectors(cfg.DETECTOR.NAME, cfg)
+
     utils = Utils(cfg)
     device = torch.device('cuda')
     # evaluator = UniversalPatchEvaluator(cfg, args, device)

@@ -1,17 +1,19 @@
 DETECTOR:
-  NAME: ["YOLOV4-tiny"] # YOLOV3, YOLOV4, YOLOV5
+  # "Military_YOLOX", , "YOLOV5"
+  NAME: ["YOLOV3", "YOLOV3-TINY", "YOLOV4", "YOLOV4-TINY", "YOLOV5", "SSD", "FASTER_RCNN"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
-  BATCH_SIZE: 8
+  BATCH_SIZE: 16
   IMG_DIR: 'data/INRIAPerson/Train/pos'
   LAB_DIR: 'data/INRIAPerson/Train/pos/yolo-labels'
-  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
+
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
 
 ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
-  MAX_ITERS: 10000
+  MAX_ITERS: 1000
   SERIAL_ITER_STEP: 5
   PARALLEL_ITER_STEP: 15
   STEP_SIZE: 0.005
@@ -19,7 +21,7 @@ ATTACKER:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
 
   PATCH_ATTACK:
-    WIDTH: 100
-    HEIGHT: 100
-    SCALE: 0.25
-    FIX_RATIO: 0 # 1: True; 0: False
+    WIDTH: 128
+    HEIGHT: 128
+    SCALE: 0.2
+    AREA_RATIO: 1 # 1: True; 0: False

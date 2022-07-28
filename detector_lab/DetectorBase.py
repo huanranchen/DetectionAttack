@@ -34,13 +34,6 @@ class DetectorBase(ABC):
             return tensor.detach()
         return tensor.cpu().detach()
 
-    def load_class_names(self, label_file):
-        PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-        sys.path.append(PROJECT_DIR)
-        from tools import load_class_names
-
-        self.class_names = load_class_names(label_file)
-
     def zero_grad(self):
         self.detector.zero_grad()
 

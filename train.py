@@ -1,6 +1,7 @@
+import torch
+import os
 from tqdm import tqdm
 from detector_lab.utils import inter_nms
-from tools.data_loader import read_img_np_batch
 
 from tools.data_loader import detDataSet
 from torch.utils.data import DataLoader
@@ -15,6 +16,7 @@ def modelDDP(detector_attacker, args):
 
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
+    print("Attack model     :", cfg.DETECTOR.NAME)
     conf_thresh = cfg.DETECTOR.CONF_THRESH
     if not args.const_confs:
         conf_thresh /= 2
@@ -35,7 +37,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     data_loader = DataLoader(data_set, batch_size=cfg.DETECTOR.BATCH_SIZE, shuffle=False,
                              num_workers=4, pin_memory=True, sampler=data_sampler)
 
-    for epoch in range(cfg.ATTACKER.MAX_ITERS):
+    for epoch in range(cfg.ATTACKER.MAX_ITERS+1):
         # torch.cuda.empty_cache()
         for index, img_tensor_batch in tqdm(enumerate(data_loader)):
             all_preds = None
@@ -66,15 +68,13 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                     detector_attacker.imshow_save(img_tensor_batch, os.path.join(args.save_path, detector.name),
                                                   save_name, detectors=[detector])
 
-            if epoch % 10 == 0 and index == 0:
+            if epoch % 50 == 0 and index == 0:
                 patch_name = f'{epoch}_{save_name}'
                 print(patch_name)
                 detector_attacker.save_patch(args.save_path, patch_name)
 
 
 if __name__ == '__main__':
-    import torch
-    import os
     from tools.parser import ConfigParser
     from attackAPI import UniversalDetectorAttacker
     import argparse

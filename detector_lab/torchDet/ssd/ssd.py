@@ -400,15 +400,17 @@ class SSD(nn.Module):
 
             # non-maximum suppression
             keep = box_ops.batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
+            # print("keep     :", keep)
             keep = keep[:self.detections_per_img]
+            # print(image_boxes.shape, image_boxes[keep].shape)
 
-            bg_scores = scores[:, 0]
-            print(bg_scores.shape)
+            # bg_scores = scores[:, 0]
+            # print(bg_scores.shape)
             detections.append({
                 'boxes': image_boxes[keep],
                 'scores': image_scores[keep],
                 'labels': image_labels[keep],
-                'bg_scores': bg_scores,
+                # 'bg_scores': bg_scores,
             })
         return detections
 

@@ -1,7 +1,8 @@
 ### Environment
 ```bash
-conda create -n attack python=3.7
-conda activate attack
+conda create -n dassl python=3.7
+conda activate dassl
+pip install -r requirements.txt
 ```
 
 ### implementation

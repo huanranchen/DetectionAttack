@@ -5,7 +5,7 @@ import numpy as np
 
 from . import ssd300_vgg16
 from ...DetectorBase import DetectorBase
-# from .utils import inter_nms
+from ..utils import inter_nms
 
 
 class TorchSSD(DetectorBase):
@@ -39,12 +39,12 @@ class TorchSSD(DetectorBase):
                 (pred['labels']-1).view(len, 1)
             ), 1).detach().cpu() if len else torch.FloatTensor([])
 
-            conf = pred['bg_scores']
-            # print(conf)
-            # print(cls.shape, conf.shape)
+            conf = pred['scores']
             ctmp = conf[conf > confs_thresh]
+            # print(ctmp.shape)
             confs_array = ctmp if confs_array is None else torch.cat((confs_array, ctmp), -1)
             bbox_array.append(array)
 
-        # bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
+        bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
+
         return bbox_array, confs_array

@@ -4,21 +4,11 @@ screen -S military
 cd ~/work/BaseDetectionAttack
 conda activate dassl
 
-CUDA_VISIBLE_DEVICES=3 python train.py -cfg=inria0.yaml -s=./results/inria/$(date '+%m-%d')
+CUDA_VISIBLE_DEVICES=5 python train.py -cfg=ensemble.yaml -s=./results/inria/ensemble/$(date '+%m-%d')
+nohup bash train.sh 4 inria7 >./results/inria/$(date '+%m-%d')/inria7.log 2>&1 &
 
-CUDA_VISIBLE_DEVICES=3 nohup python train.py -cfg=ps3.yaml -s=./results/inria/conf/ps/$(date '+%m-%d') > ./results/ps3.out 2>&1 &
+CUDA_VISIBLE_DEVICES=3 python train.py -cfg=inria2.yaml -s=./results/inria/$(date '+%m-%d')
 
-CUDA_VISIBLE_DEVICES=3 python train.py -cfg=sign.yaml -s=./results/coco/sign/$(date '+%m-%d')
-
-CUDA_VISIBLE_DEVICES=2 python evaluate.py --config_file=./configs/parallel.yaml --patch=./test/patch.png --save=./test
-
-CUDA_VISIBLE_DEVICES=1 python militaryAttack.py --attack_method=parallel --config_file=parallel.yaml
-
-# partial
-CUDA_VISIBLE_DEVICES=3 python attackAPI.py -p --attack_method=parallel \
---cfg=coco0.yaml \
--s ./results/coco/$(date '+%m-%d') \
-> ./results/coco/$(date '+%m-%d')-train.log
 
 CUDA_VISIBLE_DEVICES=2 python evaluate.py -i \
 -p ./results/inria/07-27/patch/0_inria0.png \

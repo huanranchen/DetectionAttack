@@ -14,6 +14,9 @@ from losses import temp_attack_loss
 from tools.utils import scale_area_ratio, transform_patch
 from tools.det_utils import plot_boxes_cv2
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 attacker_dict = {
     "bim": LinfBIMAttack,
