@@ -12,22 +12,11 @@ from tqdm import tqdm
 
 import numpy as np
 
+
 def draw_mAP(args):
         # path='./', lab_path='det-results', gt_path='ground-truth', res_prefix='',
         #  no_animation=False, no_plot=False, quiet=False, ignore=None, set_class_iou=None):
     MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
-
-    # args = {}
-    # args['path'] = path
-    # args['lab_path'] = lab_path
-    # args['gt_path'] = gt_path
-    # args['res_prefix'] = res_prefix
-    # args['no-animation'] = no_animation
-    # args['no-plot'] = no_plot
-    # args['quiet'] = quiet
-    # args['ignore'] = ignore
-    # args['set-class-iou'] = set_class_iou
-    # args = obj(args)
 
     '''
         0,0 ------> x (width)
@@ -641,7 +630,7 @@ def draw_mAP(args):
             ""
             )
 
-    return ap_dictionary
+    return ap_dictionary, mAP
 
 
 def merge_plot(ori_aps_dic, gt_aps_dic, output_path):

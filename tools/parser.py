@@ -121,6 +121,10 @@ class ConfigParser:
         # print('-------', cfg)
         # print(cfg.ATTACKER.ATTACK_CLASS)
 
-def get_root():
-    cur_path = os.path.abspath(os.path.dirname(__file__))
-    root_path = cur_path[:cur_path.find("BaseDetectionAttack") + len("BaseDetectionAttack")]
+
+def dict2txt(dict, filename, ljust=16):
+    with open(filename, 'a') as f:
+        for k, v in dict.items():
+            f.write(k.ljust(ljust, ' ') + ':\t' + str(v))
+            f.write('\n')
+

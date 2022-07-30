@@ -12,7 +12,10 @@ from tools.parser import ConfigParser
 
 # from tools.det_utils import plot_boxes_cv2
 
-paths = {'attack-img': 'imgs', 'det-lab': 'det-labels', 'attack-lab': 'attack-labels', 'det-res': 'det-res'}
+paths = {'attack-img': 'imgs',
+         'det-lab': 'det-labels',
+         'attack-lab': 'attack-labels',
+         'det-res': 'det-res'}
 GT = 'ground-truth'
 
 
@@ -122,7 +125,10 @@ def handle_input():
     # print('Eva classes names from evaluation: ', args.eva_class)
 
     args.ignore_class = list(set(cfg.all_class_names).difference(set(args.eva_class)))
-    # print('igore: ', args.ignore_class)
+    if len(args.ignore_class) == 0:
+        args.ignore_class = None
+
+
     print(args.detectors)
     if args.detectors is not None:
         cfg.DETECTOR.NAME = args.detectors
@@ -191,6 +197,9 @@ def generate_labels(evaluator, cfg, args, save_label=False):
 
 
 if __name__ == '__main__':
+    from tools.eva.main import compute_mAP
+    from tools.parser import dict2txt
+
     args, cfg = handle_input()
 
     device = torch.device('cuda')
@@ -201,6 +210,10 @@ if __name__ == '__main__':
     if args.gen_labels:
         generate_labels(evaluator, cfg, args)
     save_path = args.save
+
+    det_mAPs = {}
+    gt_mAPs = {}
+    ori_mAPs = {}
     # to compute mAP
     for detector in evaluator.detectors:
         # tmp_path = os.path.join(cfg.ATTACK_SAVE_PATH, detector.name)
@@ -208,45 +221,52 @@ if __name__ == '__main__':
 
         # link the path of the GT labels
         gt_path = os.path.join(path, GT)
+        if os.path.exists(gt_path):
+            os.remove(gt_path)
+            print("Exists det ground truth path, removing...")
+            # os.system("sleep 1")
+
         cmd = 'ln -s ' + os.path.join(args.label_path, GT) + ' ' + gt_path
+        # print(cmd)
         os.system(cmd)
 
         # link the path of the detection labels
         det_path = os.path.join(*[path, paths['det-lab']])
+
         if os.path.exists(det_path):
             try:
                 os.rmdir(det_path)
             except:
-                pass
+                os.remove(det_path)
+            print("Exists det label path, removing...")
 
         cmd = 'ln -s ' + os.path.join(args.label_path, detector.name+'-labels') + ' ' + det_path
+        print(cmd)
         os.system(cmd)
-        # print('det labels: ', cmd)
-        # assert 0==1
 
-        # print(str(attack_class))
-        cmd = 'python ./tools/mAP.py' + ' -p ' + path
-        if len(args.ignore_class):
-            cmd += ' -i ' + ' '.join(args.ignore_class)
-        cmd += ' --lab-path='
         # (det-results)take clear detection results as GT label: attack results as detections
-        # DET_args = {'gt_path':paths['det-lab'], 'res_prefix': 'det'}
-        # DET_args.update(args)
-        # det_aps_dic = draw_mAP(obj(DET_args))
-        os.system(cmd + paths['attack-lab']+ ' -gt ' + paths['det-lab'] + ' -rp det')
+        det_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
+                                gt_path=paths['det-lab'], res_prefix='det')
+        det_mAPs[detector.name] = "%.2f" % (det_mAP*100) + "%"
 
         # (gt-results)take original labels as GT label(default): attack results as detections
-        # GT_args = {'gt_path': paths['attack-lab']}
-        # GT_args.update(args)
-        # gt_aps_dic = draw_mAP(obj(GT_args))
-        os.system(cmd + paths['attack-lab']+' -rp gt')
+        gt_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
+                                gt_path=GT, res_prefix='gt')
+        gt_mAPs[detector.name] = "%.2f" % (gt_mAP*100) + "%"
 
         if args.test_origin:
+            rp = 'ori'
             # (ori-results)take original labels as GT label(default): clear detection res as detections
-            # ORI_args = {'gt_path': paths['det-res'], 'res_prefix': 'ori'}
-            # ORI_args.update(args)
-            # ori_aps_dic = draw_mAP(obj(ORI_args))
-            os.system(cmd + paths['det-res'] + ' -rp ori')
-        # break
+            ori_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['det-res'],
+                                gt_path=GT, res_prefix=rp)
+            ori_mAPs[rp][detector.name] = "%.2f" % (ori_mAP*100) + "%"
 
         # merge_plot(ori_aps_dic, path, det_aps_dic, gt_aps_dic)
+    print("det mAP      :", det_mAPs)
+    det_mAP_file = os.path.join(save_path, 'det-mAP.txt')
+    if not os.path.exists(det_mAP_file):
+        with open(det_mAP_file, 'w') as f:
+            f.write('scale: '+str(cfg.ATTACKER.PATCH_ATTACK.SCALE)+'\n')
+            f.write('--------------------------\n')
+    dict2txt(det_mAPs, det_mAP_file)
+    dict2txt(gt_mAPs, os.path.join(save_path, 'gt-mAP.txt'))
