@@ -51,6 +51,12 @@ def check_valid(name):
     return name.endswith(('.bmp', '.dib', '.png', '.jpg', '.jpeg', '.pbm', '.pgm', '.ppm', '.tif', '.tiff'))
 
 
+
+# def INRIA_dataset():
+#     data_root = ''
+
+
+
 def read_img_np_batch(names, input_size):
     # read (RGB unit8) numpy img batch from names list and rescale into input_size
     # return: numpy, uint8, RGB, [0, 255], NCHW

@@ -64,7 +64,7 @@ class DetctorAttacker(object):
                 line = line.rstrip()
                 class_names.append(line)
             return class_names
-        class_names = load_class_names(self.cfg.DETECTOR.CLASS_NAME_FILE)
+        class_names = load_class_names(self.cfg.DATA.CLASS_NAME_FILE)
         plot_boxes_cv2(img, boxes, class_names, savename=savename)
     
     def get_patch_pos(self, preds, img_cv2):

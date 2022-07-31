@@ -1,11 +1,13 @@
+DATA:
+  IMG_DIR: 'data/INRIAPerson/Train/pos'
+  LAB_DIR: 'data/INRIAPerson/Train/pos/yolo-labels'
+  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
+
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
   NAME: ["YOLOV3", "YOLOV3-TINY", "YOLOV4", "YOLOV4-TINY", "YOLOV5", "SSD", "FASTER_RCNN"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 16
-  IMG_DIR: 'data/INRIAPerson/Train/pos'
-  LAB_DIR: 'data/INRIAPerson/Train/pos/yolo-labels'
-  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45

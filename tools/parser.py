@@ -8,7 +8,7 @@ sys.path.append(PROJECT_DIR)
 
 
 def load_class_names(namesfile, trim=True):
-    # namesfile = self.DETECTOR.CLASS_NAME_FILE
+    # namesfile = self.DATA.CLASS_NAME_FILE
     all_class_names = []
     with open(namesfile, 'r') as fp:
         lines = fp.readlines()
@@ -29,7 +29,7 @@ class ConfigParser:
 
         self.load_config()
         self.all_class_names = load_class_names(
-            os.path.join(PROJECT_DIR, self.DETECTOR.CLASS_NAME_FILE))
+            os.path.join(PROJECT_DIR, self.DATA.CLASS_NAME_FILE))
         print("all cls num      : ", len(self.all_class_names))
         self.get_attack_list()
         # self.empty_class = get_empty_class(self.all_class_names)

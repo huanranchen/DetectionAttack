@@ -134,10 +134,13 @@ class ConvertCOCOToYOLO:
                 f.close()
                 print('Empty object: ', label_path)
 
+
 # To run in as a class
 if __name__ == "__main__":
     import sys
-    sys.path.append("..")
+    from pathlib import Path
+    PROJECT_ROOT = FILE = Path(__file__).resolve().parents[2]
+    sys.path.append(PROJECT_ROOT)
     from tools.parser import load_class_names
     from tools.det_utils import plot_boxes_cv2
 
@@ -145,10 +148,15 @@ if __name__ == "__main__":
     target = 'val'
     postfix = '2017'
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--img_folder', type=str, default=f'./coco/{target}/{target}{postfix}')
-    parser.add_argument('-n', '--name_file', type=str, default=f'../configs/namefiles/coco-stuff.names')
-    parser.add_argument('-j', '--json_path', type=str, default=f'./coco/instances_{target}{postfix}.json')
-    parser.add_argument('-s', '--save_path', type=str, default=f'./coco/{target}/{target}{postfix}_labels')
+    parser.add_argument('-i', '--img_folder', type=str, help='image dir',
+                        default=f'./coco/{target}/{target}{postfix}')
+    parser.add_argument('-n', '--name_file', type=str,
+                        help='class name file dir', default=f'../configs/namefiles/coco-stuff.names')
+    parser.add_argument('-j', '--json_path', type=str,
+                        help='coco obj annotation .json file path',
+                        default=f'./coco/instances_{target}{postfix}.json')
+    parser.add_argument('-s', '--save_path', type=str, help='label save dir',
+                        default=f'./coco/{target}/{target}{postfix}-labels/ground-truth')
     args = parser.parse_args()
     util = ConvertCOCOToYOLO(args.img_folder, args.json_path, args.save_path, args.name_file)
     util.convert()

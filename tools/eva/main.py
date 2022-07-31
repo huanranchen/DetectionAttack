@@ -1,4 +1,4 @@
-from .eva import draw_mAP
+from . import draw_mAP
 
 class Args:
     def __init__(self, path='./', lab_path='det-results', gt_path='ground-truth', res_prefix='',

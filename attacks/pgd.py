@@ -84,7 +84,6 @@ class LinfPGDAttack(Base_Attacker):
         im_tensor[:, 0, :, :] = torch.clamp(im_tensor[:, 0, :, :], min=min_epsilon[0], max=max_epsilon[0])
         im_tensor[:, 1, :, :] = torch.clamp(im_tensor[:, 1, :, :], min=min_epsilon[1], max=max_epsilon[1])
         im_tensor[:, 2, :, :] = torch.clamp(im_tensor[:, 2, :, :], min=min_epsilon[2], max=max_epsilon[2])
-
         return im_tensor
 
     def serial_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector, confs_thresh=None):

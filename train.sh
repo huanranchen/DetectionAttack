@@ -8,7 +8,7 @@ save=$3
 
 train_cmd="CUDA_VISIBLE_DEVICES=${device} python train.py \
 -cfg=${config}.yaml \
--s=./results/inria/${save}"
+-s=./results/${save}"
 
 echo $train_cmd
 eval $train_cmd
@@ -20,17 +20,18 @@ targets=("Train" "Test")
 for config in ${A[@]}
 do
   echo $config
-  for target in ${targets[@]}
-  do
-    cmd="CUDA_VISIBLE_DEVICES=${device} python evaluate.py -i -g\
-    -p ./results/inria/${save}/patch/1000_${patch_name}.png \
-    -cfg ./configs/${config}.yaml \
-    -lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/$target/labels \
-    -dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/$target/pos \
-    -s /home/chenziyan/work/BaseDetectionAttack/data/inria/${save}/$target \
-    -e 0 &"
-    echo $cmd
-    eval $cmd
-  done
-  sleep 2
+  eval "bash test.sh $device ${save}/patch/${patch_name} ${save} (coco80 coco91) $targets"
+#  for target in ${targets[@]}
+#  do
+#    cmd="CUDA_VISIBLE_DEVICES=${device} python evaluate.py -i -g\
+#    -p ./results/${save}/patch/${patch_name}.png \
+#    -cfg ./configs/${config}.yaml \
+#    -lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/$target/labels \
+#    -dr /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/$target/pos \
+#    -s /home/chenziyan/work/BaseDetectionAttack/data/${save}/$target \
+#    -e 0 &"
+#    echo $cmd
+#    eval $cmd
+#  done
+#  sleep 2
 done

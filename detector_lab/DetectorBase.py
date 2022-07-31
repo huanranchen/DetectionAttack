@@ -37,6 +37,9 @@ class DetectorBase(ABC):
     def zero_grad(self):
         self.detector.zero_grad()
 
+    # def perturb(self):
+    #     self.detector
+
     @abstractmethod
     def load(self, model_weights: str, **args):
         """

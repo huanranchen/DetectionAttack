@@ -24,7 +24,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     # detector_attacker.ddp = False
     data_sampler = None
     detector_attacker.init_universal_patch()
-    data_set = detDataSet(data_root, cfg.DETECTOR.INPUT_SIZE)
+    data_set = detDataSet(data_root, cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT)
 
     # if detector_attacker.ddp:
     #
@@ -37,7 +37,9 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     data_loader = DataLoader(data_set, batch_size=cfg.DETECTOR.BATCH_SIZE, shuffle=False,
                              num_workers=4, pin_memory=True, sampler=data_sampler)
 
-    for epoch in range(cfg.ATTACKER.MAX_ITERS+1):
+    epoch_save_mode = False if len(data_loader) > 5000 else True
+    for epoch in range(0, cfg.ATTACKER.MAX_ITERS+1):
+        start_nums = (epoch-1)*len(data_loader)
         # torch.cuda.empty_cache()
         for index, img_tensor_batch in tqdm(enumerate(data_loader)):
             all_preds = None
@@ -68,10 +70,16 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                     detector_attacker.imshow_save(img_tensor_batch, os.path.join(args.save_path, detector.name),
                                                   save_name, detectors=[detector])
 
-            if epoch % 50 == 0 and index == 0:
-                patch_name = f'{epoch}_{save_name}'
+            # the patch will be saved in every 5000 images
+            if (epoch_save_mode and epoch % 10 == 0 and index == 0) or \
+                    (not epoch_save_mode and index % 5000 == 0):
+                patch_name = f'{epoch}_{index}_{save_name}'
                 print(patch_name)
                 detector_attacker.save_patch(args.save_path, patch_name)
+
+        if epoch == cfg.ATTACKER.MAX_ITERS:
+            patch_name = f'{save_name}'
+            detector_attacker.save_patch(args.save_path, patch_name)
 
 
 if __name__ == '__main__':
@@ -96,7 +104,7 @@ if __name__ == '__main__':
 
     cfg.show_class_label(cfg.attack_list)
 
-    data_root = cfg.DETECTOR.IMG_DIR
+    data_root = cfg.DATA.TRAIN.IMG_DIR
     img_names = [os.path.join(data_root, i) for i in os.listdir(data_root)]
 
     import warnings

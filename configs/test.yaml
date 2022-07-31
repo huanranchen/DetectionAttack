@@ -1,9 +1,16 @@
+DATA:
+  AUGMENT: 0
+  TRAIN:
+    IMG_DIR: 'data/coco/train/train2017'
+    LAB_DIR:
+  TEST:
+    IMG_DIR: 'data/coco/train/train2017'
+    LAB_DIR:
+
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
   NAME: ["YOLOV3", "YOLOV3-TINY", "YOLOV5"] # YOLOV3, YOLOV4, YOLOV5
   BATCH_SIZE: 8
-  IMG_DIR: 'data/coco/train/train2017'
-  LAB_DIR:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
 
   INPUT_SIZE: [416, 416] # the original image size: height, width

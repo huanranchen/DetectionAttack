@@ -18,7 +18,7 @@ from tools.parser import load_class_names
 
 class Utils:
     def __init__(self, cfg):
-        self.class_names = load_class_names(os.path.join(PROJECT_DIR, cfg.DETECTOR.CLASS_NAME_FILE))
+        self.class_names = load_class_names(os.path.join(PROJECT_DIR, cfg.DATA.CLASS_NAME_FILE))
 
     def save_label(self, preds, save_path, save_name, save_conf=True):
         save_name = save_name.split('.')[0] + '.txt'
@@ -54,6 +54,8 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--detector_name', nargs='+', default=None)
     args = parser.parse_args()
 
+    args.data_root = os.path.join(PROJECT_DIR, args.data_root)
+    args.save_root = os.path.join(PROJECT_DIR, args.save_root)
     args.config_file = os.path.join(f'{PROJECT_DIR}/configs', args.config_file)
     cfg = ConfigParser(args.config_file)
     if args.detector_name is not None:

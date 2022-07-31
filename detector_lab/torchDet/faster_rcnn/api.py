@@ -1,3 +1,5 @@
+import sys
+
 import torch
 import numpy as np
 
@@ -30,12 +32,12 @@ class Faster_RCNN(DetectorBase):
         confs_array = None
         bbox_array = []
         for ind, (pred, conf) in enumerate(zip(preds, confs)):
-            len = pred['scores'].shape[0]
+            nums = pred['scores'].shape[0]
             array = torch.cat((
                 pred['boxes'] / shape,
-                pred['scores'].view(len, 1),
-                (pred['labels'] - 1).view(len, 1)
-            ), 1).detach().cpu() if len else torch.FloatTensor([])
+                pred['scores'].view(nums, 1),
+                (pred['labels'] - 1).view(nums, 1)
+            ), 1).detach().cpu() if nums else torch.FloatTensor([])
 
             ctmp = conf[conf > confs_thresh]
             confs_array = ctmp if confs_array is None else torch.cat((confs_array, ctmp), -1)
