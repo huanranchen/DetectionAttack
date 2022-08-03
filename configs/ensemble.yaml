@@ -1,6 +1,8 @@
 DATA:
-  IMG_DIR: 'data/INRIAPerson/Train/pos'
-  LAB_DIR: 'data/INRIAPerson/Train/pos/yolo-labels'
+  AUGMENT: 0
+  TRAIN:
+    IMG_DIR: 'data/INRIAPerson/Train/pos'
+
   CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
 
 DETECTOR:
@@ -11,6 +13,8 @@ DETECTOR:
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
+
+  GRAD_PERTURB: 0
 
 ATTACKER:
   METHOD: "pgd"

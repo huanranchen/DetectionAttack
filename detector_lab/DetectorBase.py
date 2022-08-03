@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 from abc import ABC, abstractmethod
@@ -29,16 +30,45 @@ class DetectorBase(ABC):
         self.iou_thres = cfg.IOU_THRESH
         self.ori_size = cfg.INPUT_SIZE
 
+    def requires_grad_(self, state: bool =False):
+        assert self.detector
+        self.detector.requires_grad_(state)
+
+    def eval(self):
+        assert self.detector
+        self.detector.eval()
+        self.cfg.GRAD_PERTURB = False
+        self.requires_grad_(False)
+
+    def train(self):
+        assert self.detector
+        self.detector.train()
+        self.requires_grad_(True)
+        self.cfg.GRAD_PERTURB = True
+
     def detach(self, tensor: torch.tensor):
         if self.device == torch.device('cpu'):
             return tensor.detach()
         return tensor.cpu().detach()
 
     def zero_grad(self):
+        assert self.detector
         self.detector.zero_grad()
 
-    # def perturb(self):
-    #     self.detector
+    def gradient_opt(self):
+        assert self.cfg.GRAD_PERTURB
+        # self.detector.train()
+        self.ori_model = copy.deepcopy(self.detector)
+        self.optimizer = torch.optim.SGD(self.detector.parameters(), lr=1e-5, momentum=0.9, nesterov=True)#,
+                                         #maximize=True)
+
+    def reset_model(self):
+        assert self.cfg.GRAD_PERTURB
+        self.detector = copy.deepcopy(self.ori_model)
+
+    def perturb(self):
+        assert self.cfg.GRAD_PERTURB
+        self.optimizer.zero_grad()
 
     @abstractmethod
     def load(self, model_weights: str, **args):

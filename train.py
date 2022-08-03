@@ -23,7 +23,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     save_plot=True
     # detector_attacker.ddp = False
     data_sampler = None
-    detector_attacker.init_universal_patch()
+    detector_attacker.init_universal_patch(args.patch)
     data_set = detDataSet(data_root, cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT)
 
     # if detector_attacker.ddp:
@@ -38,8 +38,9 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                              num_workers=4, pin_memory=True, sampler=data_sampler)
 
     epoch_save_mode = False if len(data_loader) > 5000 else True
-    for epoch in range(0, cfg.ATTACKER.MAX_ITERS+1):
-        start_nums = (epoch-1)*len(data_loader)
+
+    start_index = int(args.patch.split('_')[0].split('/')[-1]) if args.patch is not None else 0
+    for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS+1):
         # torch.cuda.empty_cache()
         for index, img_tensor_batch in tqdm(enumerate(data_loader)):
             all_preds = None
@@ -48,7 +49,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                 preds, _ = detector.detect_img_batch_get_bbox_conf(img_tensor_batch)
                 all_preds = detector_attacker.merge_batch_pred(all_preds, preds)
 
-                detector.target = preds
+                detector.target = preds # TODO: CONF_POLICY test
 
             # nms among detectors
             if len(detector_attacker.detectors) > 1:
@@ -65,7 +66,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             elif args.attack_method == 'serial':
                 detector_attacker.serial_attack(img_tensor_batch, confs_thresh=conf_thresh)
 
-            if save_plot:
+            if save_plot and index % 10 == 0:
                 for detector in detector_attacker.detectors:
                     detector_attacker.imshow_save(img_tensor_batch, os.path.join(args.save_path, detector.name),
                                                   save_name, detectors=[detector])
@@ -76,6 +77,15 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                 patch_name = f'{epoch}_{index}_{save_name}'
                 print(patch_name)
                 detector_attacker.save_patch(args.save_path, patch_name)
+
+            if cfg.DETECTOR.GRAD_PERTURB:
+                freq = cfg.DETECTOR.PERTURB_FREQ if hasattr(cfg.DETECTOR, 'PERTURB_FREQ') else 1
+                if index and index % cfg.DETECTOR.RESET_FREQ == 0:
+                    detector.reset_model()
+                elif index % freq == 0:
+                    detector.perturb()
+
+            detector.target = None  # TODO: CONF_POLICY test
 
         if epoch == cfg.ATTACKER.MAX_ITERS:
             patch_name = f'{save_name}'
@@ -88,6 +98,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--patch', type=str, help='fine-tune from a pre-trained patch', default=None)
     parser.add_argument('-m', '--attack_method', type=str, default='serial')
     parser.add_argument('-cfg', '--cfg', type=str, default='test.yaml')
     parser.add_argument('-s', '--save_path', type=str, default='./results/inria')

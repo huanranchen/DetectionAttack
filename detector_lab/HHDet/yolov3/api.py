@@ -2,6 +2,7 @@ import torch
 import numpy as np
 
 from .PyTorch_YOLOv3.pytorchyolo.models import load_model
+from .PyTorch_YOLOv3.pytorchyolo.utils.loss import build_targets
 from .PyTorch_YOLOv3.pytorchyolo.utils.transforms import Resize, DEFAULT_TRANSFORMS
 from .PyTorch_YOLOv3.pytorchyolo.utils.utils import load_classes, rescale_boxes, non_max_suppression, print_environment_info, xywh2xyxy
 from ...DetectorBase import DetectorBase
@@ -16,6 +17,8 @@ class HHYolov3(DetectorBase):
         super().__init__(name, cfg, input_tensor_size, device)
         self.target = None
 
+    def requires_grad_(self, state):
+        self.detector.module_list.requires_grad_(state)
     
     def load(self, model_weights, detector_config_file=None):
         """load model and weights
@@ -29,28 +32,19 @@ class HHYolov3(DetectorBase):
         self.module_list = self.detector.module_list
         self.detector.to(self.device)
         self.detector.eval()
-        self.detector.module_list.requires_grad_(False)
+        if not hasattr(self.cfg, 'GRAD_PERTURB') or not self.cfg.GRAD_PERTURB:
+            print(self.name, ' eval & requires no grad')
+            self.requires_grad_(False)
+            self.detector.eval()
+        else:
+            self.gradient_opt()
 
-    # def init_img(self, img_numpy):
-    #     # img_numpy: uint8, [0, 255], RGB, CHW
-    #     img = np.transpose(img_numpy, (1, 2, 0))
-    #     img_tensor = transforms.Compose([
-    #         DEFAULT_TRANSFORMS])(
-    #         (img, np.zeros((1, 5))))[0].unsqueeze(0)
-    #     return img_tensor
-    #
-    # def init_img_batch(self, img_numpy_batch):
-    #     tensor_batch = None
-    #     for img in img_numpy_batch:
-    #         img_tensor = self.init_img(img)
-    #         if tensor_batch is None:
-    #             tensor_batch = img_tensor
-    #         else:
-    #             tensor_batch = torch.cat((tensor_batch, img_tensor), 0)
-    #     return tensor_batch.to(self.device)
 
     def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5):
         detections_with_grad = self.detector(batch_tensor) # torch.tensor([1, num, classes_num+4+1])
+        # if self.detector.training:
+        #     print(torch.cat(detections_with_grad, 1).shape)
+        # print(len(detections_with_grad))
         preds = non_max_suppression(detections_with_grad, self.conf_thres, self.iou_thres)
         confs = detections_with_grad[:, :, 4]
         # index = confs > 0.5
@@ -66,14 +60,18 @@ class HHYolov3(DetectorBase):
             # print(box)
             bbox_array.append(np.array(box))
 
-            # if self.target is not None:
-                # print(len(box), len(self.target[i]))
-                # ind = confs[i] > 0.5
-                # print(confs[i][ind].shape)
-                # print(i, len(self.target))
-                # if len(box) == 0 or i >= len(self.target):
-                #     confs[i][ind] = 0
-                # else:
-                #     confs[i][ind] *= (len(box)/len(self.target[i]))
+            # TODO: CONF_POLICY test
+            if hasattr(self.cfg, 'CONF_POLICY') and self.cfg.CONF_POLICY and self.target is not None:
+                # print('CONF_POLICY: photo ', i, '/', len(self.target))
+                # print('Currently bbox num: ', len(box), '/', len(self.target[i]))
+                ind = confs[i] > confs_thresh
+                # print(confs[i][ind])
+
+                if len(box) == 0 or i >= len(self.target):
+                    confs[i][ind] = torch.zeros(1).to(self.device)
+                else:
+                    confs[i][ind] *= (len(box)/len(self.target[i]))
+                # print(confs[i][ind])
+                # print('----------------')
         confs = confs[confs > confs_thresh]
         return bbox_array, confs

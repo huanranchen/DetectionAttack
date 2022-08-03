@@ -96,7 +96,7 @@ if __name__ == '__main__':
     y_test = copy.deepcopy(y_train)
 
     x = []
-    # cur = 0
+    cur = 0
     try:
         for patch_file in patch_files:
             args = copy.deepcopy(args_train)
@@ -119,10 +119,10 @@ if __name__ == '__main__':
             args.save += '/all_data'
             args.patch = os.path.join(args.patch_dir, patch_file)
             args, evaluator = init(args, cfg)
-            det_mAPs, _, _ = eva(evaluator, args, cfg)
+            # det_mAPs, _, _ = eva(evaluator, args, cfg)
 
-            for k, v in det_mAPs.items():
-                y_train[k].append(float(v))
+            # for k, v in det_mAPs.items():
+            #     y_train[k].append(float(v))
 
             args.save += '/test'
             print(os.path.exists(args.save))
@@ -133,14 +133,14 @@ if __name__ == '__main__':
             for k, v in det_mAPs.items():
                 y_test[k].append(float(v))
             # cur += 1
-            # if cur == 3:
-            #     break
+            # if cur == 1:
+            # break
     except Exception as e:
         print(e)
 
     args.save = args.save.split('all_data')[0]
     np.save(args.save+'/x.npy', x)
-    np.save(args.save+'/y_train.npy', y_train)
+    # np.save(args.save+'/y_train.npy', y_train)
     np.save(args.save + '/y_test.npy', y_test)
 
     plt.figure()
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         # print(x, train_y)
         # plt.plot(x, train_y)
         # print(x, train_y, test_y)
-        plt.scatter(x, train_y, c='b', label='train')
+        # plt.scatter(x, train_y, c='b', label='train')
         plt.scatter(x, test_y, c='r', label='test')
     plt.legend()
     plt.ylabel('mAP(%)')

@@ -1,28 +1,53 @@
-import sys
-import cv2
+import copy
+import os
+import re
+import matplotlib.pyplot as plt
+import numpy as np
+fp = './data/inria/gap/aug/coco'
+x = np.load(f'{fp}/x.npy')
+y_test = np.load(f'{fp}/y_test.npy', allow_pickle=True).item()
+y_train = np.load(f'{fp}/y_train.npy', allow_pickle=True).item()
 
-from detector_lab.HHDet.yolov5.api_backup import HHYolov5
+print(len(y_test.values()), len(y_train.values()), len(x))
 
-img_path = '/home/chenziyan/work/BaseDetectionAttack/data/coco/train/train2017/000000000030.jpg'
-sys.path.append('~/work/BaseDetectionAttack/detector_lab/HHDet/yolov5')
-hhyolov5 = HHYolov5(name="YOLOV5")
-hhyolov5.load(model_weights='./detector_lab/HHDet/yolov5/yolov5/weight/yolov5s.pt')
-hhyolov5.detect_cv2_show(img_path)
+plt.figure()
+for train_y, test_y in zip(y_train.values(), y_test.values()):
+    print(x, train_y, len(x), len(train_y))
+    # plt.plot(x, train_y)
+    # print(x, train_y, test_y)
+    plt.scatter(x, train_y, c='b', label='train')
+    plt.scatter(x, test_y, c='r', label='test')
+plt.legend()
+plt.ylabel('mAP(%)')
+plt.xlabel('# iteration')
+plt.savefig(f'{fp}/gap.png', dpi=300)
 
-im0s = cv2.imread(img_path)
-# Padded resize
-im = letterbox(im0s, hhyolov5.imgsz, stride=hhyolov5.stride, auto=True)[0]
-# Convert
-im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-im = np.ascontiguousarray(im)
 
-im = torch.from_numpy(im).to(hhyolov5.device).float()
-im /= 255  # 0 - 255 to 0.0 - 1.0
-if len(im.shape) == 3:
-    im = im[None]  # expand for batch dim
+def saveAPs():
+    def readAP(p):
+        with open(p, 'r') as f:
+            mAP = f.readlines()[1].split('%')[0]
+            # print(mAP)
+        return float(mAP)
 
-img_tensor = Variable(im, requires_grad=True)
-box_array, confs = hhyolov5.detect_img_tensor_get_bbox_conf(img_tensor)
-loss = hhyolov5.temp_loss(confs)
-loss.backward()
-print(img_tensor.grad, img_tensor.grad.size())
+    y_test = {'yolov3': []}
+    y_train = copy.deepcopy(y_test)
+    x = []
+    fp = './data/inria/gap/aug/inria0/all_data'
+    all_dirs = os.listdir(fp)
+    for edir in all_dirs:
+        try:
+            x.append(int(edir.split('_')[0]))
+        except:
+            continue
+
+        y_test['yolov3'].append(readAP(os.path.join(*[fp, edir, 'test/yolov3/det-results/results.txt'])))
+        y_train['yolov3'].append(readAP(os.path.join(*[fp, edir, 'yolov3/det-results/results.txt'])))
+
+    np.save('./data/inria/gap/aug/x.npy', x)
+    np.save('./data/inria/gap/aug/y_test.npy', y_test)
+    np.save('./data/inria/gap/aug/y_train.npy', y_train)
+    print(x, y_test['yolov3'], y_train['yolov3'])
+
+
+# saveAPs()

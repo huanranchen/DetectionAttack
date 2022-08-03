@@ -80,7 +80,8 @@ def draw_mAP(args):
     """
      Create a ".temp_files/" and "results/" directory
     """
-    TEMP_FILES_PATH = ".temp_files"
+    TEMP_FILES_PATH = os.path.join(args.path, ".temp_files")
+    # print("temp", os.path.abspath(TEMP_FILES_PATH))
     if not os.path.exists(TEMP_FILES_PATH): # if it doesn't exist already
         os.makedirs(TEMP_FILES_PATH)
     results_files_path = "{}/{}-results".format(args.path, args.res_prefix)

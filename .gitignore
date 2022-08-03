@@ -2,6 +2,9 @@
 evaluation/
 detector_lab/HHDet/faster_rcnn/pytorch_faster_rcnn/
 *.weights
+data/
+results/
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

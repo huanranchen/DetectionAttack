@@ -108,6 +108,9 @@ class LinfPGDAttack(Base_Attacker):
             patch_tmp = self.clamp(patch_tmp, self.max_epsilon, self.min_epsilon)
             adv_tensor_batch, _ = detector_attacker.apply_universal_patch(
                 ori_tensor_batch, detector, is_normalize=False, universal_patch=patch_tmp)
+
+            # if detector_attacker.cfg.DETECTOR.GRAD_PERTURB:
+            #     detector.perturb()
         patch_tmp = detector.unnormalize_tensor(patch_tmp.detach())
         return patch_tmp
 

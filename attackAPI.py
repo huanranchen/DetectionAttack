@@ -1,5 +1,5 @@
 import sys
-
+import cv2
 import torch
 import math
 import os
@@ -107,7 +107,27 @@ class UniversalDetectorAttacker(DetctorAttacker):
         super().__init__(cfg, device)
         self.universal_patch = None
 
-    def init_universal_patch(self):
+    def read_patch(self, patch_file):
+        # patch_file = self.args.patch
+        print('Reading patch from ' + patch_file)
+        if patch_file.endswith('.pth'):
+            universal_patch = torch.load(patch_file, map_location=self.device).unsqueeze(0)
+            # universal_patch.new_tensor(universal_patch)
+            print(universal_patch.shape, universal_patch.requires_grad, universal_patch.is_leaf)
+        else:
+            universal_patch = cv2.imread(patch_file)
+            universal_patch = cv2.cvtColor(universal_patch, cv2.COLOR_BGR2RGB)
+            universal_patch = np.expand_dims(np.transpose(universal_patch, (2, 0, 1)), 0)
+            universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.)
+        self.universal_patch = universal_patch.to(self.device)
+
+    def init_universal_patch(self, patch_file=None):
+        if patch_file is None:
+            self.random_init_patch()
+        else:
+            self.read_patch(patch_file)
+
+    def random_init_patch(self):
         height = self.cfg.ATTACKER.PATCH_ATTACK.HEIGHT
         width = self.cfg.ATTACKER.PATCH_ATTACK.WIDTH
         universal_patch = np.random.randint(low=0, high=255, size=(height, width, 3))

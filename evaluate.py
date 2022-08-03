@@ -50,24 +50,24 @@ class UniversalPatchEvaluator(UniversalDetectorAttacker):
         self.args = args
         self.device = device
         if if_read_patch:
-            self.read_patch()
+            self.read_patch(self.args.patch)
 
     def read_patch_from_memory(self, patch):
         self.universal_patch = patch
 
-    def read_patch(self):
-        patch_file = self.args.patch
-        print('reading patch ' + patch_file)
-        if patch_file.endswith('.pth'):
-            universal_patch = torch.load(patch_file, map_location='cuda').unsqueeze(0)
-            # universal_patch.new_tensor(universal_patch)
-            print(universal_patch.shape, universal_patch.requires_grad, universal_patch.is_leaf)
-        else:
-            universal_patch = cv2.imread(patch_file)
-            universal_patch = cv2.cvtColor(universal_patch, cv2.COLOR_BGR2RGB)
-            universal_patch = np.expand_dims(np.transpose(universal_patch, (2, 0, 1)), 0)
-            universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.)
-        self.universal_patch = universal_patch.to(self.device)
+    # def read_patch(self):
+    #     patch_file = self.args.patch
+    #     print('reading patch ' + patch_file)
+    #     if patch_file.endswith('.pth'):
+    #         universal_patch = torch.load(patch_file, map_location='cuda').unsqueeze(0)
+    #         # universal_patch.new_tensor(universal_patch)
+    #         print(universal_patch.shape, universal_patch.requires_grad, universal_patch.is_leaf)
+    #     else:
+    #         universal_patch = cv2.imread(patch_file)
+    #         universal_patch = cv2.cvtColor(universal_patch, cv2.COLOR_BGR2RGB)
+    #         universal_patch = np.expand_dims(np.transpose(universal_patch, (2, 0, 1)), 0)
+    #         universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.)
+    #     self.universal_patch = universal_patch.to(self.device)
 
 
 def handle_input():
@@ -134,7 +134,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     print('data root     :', args.data_root)
     img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
 
-    data_set = detDataSet(args.data_root, cfg.DETECTOR.INPUT_SIZE)
+    data_set = detDataSet(args.data_root, cfg.DETECTOR.INPUT_SIZE, is_augment=False)
     data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=False,
                              num_workers=8, pin_memory=True)
     save_path = args.save
@@ -195,7 +195,7 @@ def eva(evaluator, args, cfg):
 
     # set the eva classes to be the ones to attack
     evaluator.attack_list = cfg.show_class_index(args.eva_class)
-
+    cfg.GRAD_PERTURB = False
     if args.gen_labels:
         generate_labels(evaluator, cfg, args)
     save_path = args.save
@@ -233,6 +233,7 @@ def eva(evaluator, args, cfg):
         det_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
                                 gt_path=paths['det-lab'], res_prefix='det', quiet=args.quiet)
         det_mAPs[detector.name] = "%.2f" % (det_mAP*100)
+
 
         # (gt-results)take original labels as GT label(default): attack results as detections
         print('ground truth     :', GT)
