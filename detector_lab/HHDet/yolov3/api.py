@@ -60,17 +60,17 @@ class HHYolov3(DetectorBase):
             # print(box)
             bbox_array.append(np.array(box))
 
-            # TODO: CONF_POLICY test
-            if hasattr(self.cfg, 'CONF_POLICY') and self.cfg.CONF_POLICY and self.target is not None:
-                # print('CONF_POLICY: photo ', i, '/', len(self.target))
-                # print('Currently bbox num: ', len(box), '/', len(self.target[i]))
-                ind = confs[i] > confs_thresh
-                # print(confs[i][ind])
-
-                if len(box) == 0 or i >= len(self.target):
-                    confs[i][ind] = torch.zeros(1).to(self.device)
-                else:
-                    confs[i][ind] *= (len(box)/len(self.target[i]))
+            # # TODO: CONF_POLICY test
+            # if hasattr(self.cfg, 'CONF_POLICY') and self.cfg.CONF_POLICY and self.target is not None:
+            #     # print('CONF_POLICY: photo ', i, '/', len(self.target))
+            #     # print('Currently bbox num: ', len(box), '/', len(self.target[i]))
+            # ind = confs[i] > confs_thresh
+            #     # print(confs[i][ind])
+            #
+            #     if len(box) == 0 or i >= len(self.target):
+            #         confs[i][ind] = torch.zeros(1).to(self.device)
+            #     else:
+            #         confs[i][ind] *= (len(box)/len(self.target[i]))
                 # print(confs[i][ind])
                 # print('----------------')
         confs = confs[confs > confs_thresh]

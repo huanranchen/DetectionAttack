@@ -97,6 +97,7 @@ if __name__ == '__main__':
 
     x = []
     # cur = 0
+    args = copy.deepcopy(args_train)
     try:
         for patch_file in patch_files:
             args = copy.deepcopy(args_train)

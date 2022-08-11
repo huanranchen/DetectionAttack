@@ -59,8 +59,8 @@ class DetectorBase(ABC):
         assert self.cfg.GRAD_PERTURB
         # self.detector.train()
         self.ori_model = copy.deepcopy(self.detector)
-        self.optimizer = torch.optim.SGD(self.detector.parameters(), lr=1e-5, momentum=0.9, nesterov=True)#,
-                                         #maximize=True)
+        self.optimizer = torch.optim.SGD(self.detector.parameters(), lr=1e-5, momentum=0.9, nesterov=True)
+        self.optimizer.zero_grad()
 
     def reset_model(self):
         assert self.cfg.GRAD_PERTURB
@@ -68,6 +68,7 @@ class DetectorBase(ABC):
 
     def perturb(self):
         assert self.cfg.GRAD_PERTURB
+        self.optimizer.step()
         self.optimizer.zero_grad()
 
     @abstractmethod
@@ -83,18 +84,6 @@ class DetectorBase(ABC):
         # need to be loaded
         self.detector = None
         pass
-
-    # @abstractmethod
-    # def init_img_batch(self, img_numpy_batch: np.ndarray):
-    #     """
-    #     init img batch from numpy to tensor which can include custom preprocessing methods
-    #     Args:
-    #         input:
-    #             img_numpy_batch: numpy image batch
-    #         output:
-    #             img_tensor: tensor batch
-    #     """
-    #     pass
 
     @abstractmethod
     def detect_img_batch_get_bbox_conf(self, batch_tensor: torch.tensor):

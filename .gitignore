@@ -5,6 +5,7 @@ detector_lab/HHDet/faster_rcnn/pytorch_faster_rcnn/
 data/
 results/
 *.png
+.avi
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

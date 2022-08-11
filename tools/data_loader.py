@@ -18,12 +18,12 @@ class detDataSet(Dataset):
             subpolicy = [
                 transforms.RandomRotation(15),
                 transforms.CenterCrop(256),
-                transforms.RandomResizedCrop(416, scale=(0.7, 1.0)),
-                transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+                transforms.RandomResizedCrop(416, scale=(0.8, 1.0)),
+                transforms.ColorJitter(brightness=0.4, contrast=0.2, saturation=0.3),
             ]
             self.transform = transforms.Compose([
                 transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomEqualize(p=0.3),
+                # transforms.RandomEqualize(p=0.3),
                 transforms.RandomChoice(subpolicy),
                 transforms.Resize(self.input_size),
                 transforms.ToTensor(),
@@ -80,3 +80,13 @@ def read_img_np_batch(names, input_size):
             img_numpy_batch = np.concatenate((img_numpy_batch, img_numpy), axis=0)
     return img_numpy_batch
 
+
+
+def dataLoader(data_root, input_size=None, batch_size=1, is_augment=False,
+               shuffle=False, pin_memory=False, num_workers=16, sampler=None):
+    if input_size is None:
+        input_size = [416, 416]
+    data_set = detDataSet(data_root, input_size, is_augment=is_augment)
+    data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=shuffle,
+                             num_workers=num_workers, pin_memory=pin_memory, sampler=sampler)
+    return data_loader

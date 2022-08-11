@@ -1,9 +1,15 @@
+import copy
+import sys
+
 from .base import Base_Attacker
 
 import torch
 import torch.distributed as dist
 import numpy as np
 
+num_iter = 0
+update_pre = 0
+# patch_tmp = None
 
 class LinfPGDAttack(Base_Attacker):
     """
@@ -34,6 +40,8 @@ class LinfPGDAttack(Base_Attacker):
         self.loss_fn = loss_fuction
         self.epsilon = epsilons
         self.class_id = class_id
+        # self.eta = torch.nn.Parameter(torch.ones((1, 3, 128, 128), requires_grad=True).cuda())
+        # self.optim = torch.optim.Adam([{'params': self.eta}], lr=0.01)
      
     def non_targeted_attack(self, ori_img_tensor, adv_img_tensor, img_cv2, detector_attacker, detector):
 
@@ -86,33 +94,60 @@ class LinfPGDAttack(Base_Attacker):
         im_tensor[:, 2, :, :] = torch.clamp(im_tensor[:, 2, :, :], min=min_epsilon[2], max=max_epsilon[2])
         return im_tensor
 
-    def serial_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector, confs_thresh=None):
-        if confs_thresh is None:
-            confs_thresh = detector_attacker.cfg.DETECTOR.CONF_THRESH/2
+    def serial_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector, confs_thresh=0.3):
+        global update_pre, num_iter
         adv_tensor_batch, patch_tmp = detector_attacker.apply_universal_patch(ori_tensor_batch, detector)
+        print('conf thresh: ', confs_thresh)
         # interative attack
+        # self.optim.zero_grad()
+        losses = []
         for iter in range(detector_attacker.cfg.ATTACKER.SERIAL_ITER_STEP):
+            num_iter += 1
+
             # detect adv img batch to get bbox and obj confs
             preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(
                 adv_tensor_batch, confs_thresh=confs_thresh)
-
+            bbox_num = torch.FloatTensor([len(pred) for pred in preds])
+            # print('bbox num: ', bbox_num)
+            if torch.sum(bbox_num) == 0: break
             detector.zero_grad()
-            disappear_loss = self.loss_fn(detections_with_grad)
-            # print("in pgd: ", detections_with_grad[:2])
+
+            if hasattr(detector_attacker.cfg.DETECTOR, 'ETA') and detector_attacker.cfg.DETECTOR.ETA:
+                disappear_loss, update_func = self.loss_fn(detections_with_grad * bbox_num)
+            else:
+                disappear_loss, update_func = self.loss_fn(detections_with_grad)
+                # print("in pgd: ", detections_with_grad[:2])
             disappear_loss.backward()
-
             grad = patch_tmp.grad
-            patch_tmp = patch_tmp + self.step_size * grad.sign()
 
+            if hasattr(detector_attacker.cfg.ATTACKER, 'nesterov'):
+                momentum_step = detector_attacker.cfg.ATTACKER.nesterov
+                # momentum初期修正
+                # if num_iter < 100:
+                #     update /= (1 - momentum_step)
+                # patch_tmp = patch_tmp - momentum_step * update * self.step_size
+                update = self.step_size * grad
+                l2 = torch.sqrt(torch.sum(torch.pow(update, 2))) / update.numel()
+                print(l2)
+                update /= l2
+                # update = momentum_step * update_pre + self.step_size * grad
+                # update_pre = copy.deepcopy(update)
+            else:
+                update = self.step_size * grad.sign()
+
+            patch_tmp = update_func(patch_tmp, update)
+            losses.append(float(disappear_loss))
             # min_max epsilon clamp of different channels
             patch_tmp = self.clamp(patch_tmp, self.max_epsilon, self.min_epsilon)
             adv_tensor_batch, _ = detector_attacker.apply_universal_patch(
                 ori_tensor_batch, detector, is_normalize=False, universal_patch=patch_tmp)
-
-            # if detector_attacker.cfg.DETECTOR.GRAD_PERTURB:
-            #     detector.perturb()
+        # if hasattr(detector_attacker.cfg.DETECTOR, 'ETA') and detector_attacker.cfg.DETECTOR.ETA:
+        #     self.optim.step()
         patch_tmp = detector.unnormalize_tensor(patch_tmp.detach())
-        return patch_tmp
+        # sys.exit()
+        # print(losses)
+        # print(' Loss: ', np.mean(losses))
+        return patch_tmp, np.mean(losses)
 
     def parallel_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector):
         adv_tensor_batch, patch_tmp = detector_attacker.apply_universal_patch(ori_tensor_batch, detector)

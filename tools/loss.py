@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 import numpy as np
 
+
 # def disappear_loss(cls_score):
 #     mseloss = torch.nn.MSELoss()
 #     loss = 1. - mseloss(cls_score[cls_score>=0.3], torch.zeros(cls_score[cls_score>=0.3].shape).cuda())
@@ -12,7 +13,7 @@ import numpy as np
 class DisappearLoss(nn.Module):
 
     def __init__(self):
-        super(DisappearLoss,self).__init__()
+        super(DisappearLoss, self).__init__()
 
     def forward(self, det_bboxes, det_labels, class_id):
         mseloss = torch.nn.MSELoss()
@@ -22,28 +23,31 @@ class DisappearLoss(nn.Module):
             loss = 1. - mseloss(det_bboxes[select_id], torch.zeros(det_bboxes[select_id].shape).cuda())
         else:
             # 无指定类别攻击
-            loss = 1. - mseloss(det_bboxes[det_bboxes>=0.01], torch.zeros(det_bboxes[det_bboxes>=0.01].shape).cuda())
+            loss = 1. - mseloss(det_bboxes[det_bboxes >= 0.01],
+                                torch.zeros(det_bboxes[det_bboxes >= 0.01].shape).cuda())
         return loss
+
 
 class ClassErrorLoss(nn.Module):
 
     def __init__(self):
-        super(ClassErrorLoss,self).__init__()
+        super(ClassErrorLoss, self).__init__()
 
     def forward(self, cls_scores, class_id):
         mseloss = torch.nn.MSELoss()
         if class_id != -1:
             # 指定类别攻击
-            loss = 1. - mseloss(cls_scores[:,class_id], -torch.ones(cls_scores[:,class_id].shape).cuda())
+            loss = 1. - mseloss(cls_scores[:, class_id], -torch.ones(cls_scores[:, class_id].shape).cuda())
         else:
             # 无指定类别攻击
             loss = 1. - mseloss(cls_scores, -torch.ones(cls_scores.shape).cuda())
         return loss
 
+
 class TVLoss(nn.Module):
 
     def __init__(self):
-        super(TVLoss,self).__init__()
+        super(TVLoss, self).__init__()
 
     def forward(self, inputs, t_mask=None):
         logo = inputs.permute(0, 2, 3, 1)
@@ -59,15 +63,32 @@ class TVLoss(nn.Module):
         tv_loss = tv_final_sum
         return tv_loss
 
+
+def temp_attack_loss_zeors(confs):
+    # print(confs.shape)
+    target = torch.zeros(confs.shape)
+    if confs.is_cuda:
+        target = target.cuda()
+    grad_descend = lambda patch, update: patch - update
+    return torch.nn.MSELoss()(confs, target), grad_descend
+
+
 def temp_attack_loss(confs):
+    return temp_attack_loss_ones(confs)
+
+
+def temp_attack_loss_ones(confs):
     # print(confs.shape)
     target = torch.ones(confs.shape)
     if confs.is_cuda:
         target = target.cuda()
-    return torch.nn.MSELoss()(confs, target)
+    grad_ascend = lambda patch, update: patch + update
+    return torch.nn.MSELoss()(confs, target), grad_ascend
+
 
 def attack_loss(det_score, det_labels, cls_scores, class_id, patch):
     disappear_loss = DisappearLoss()
     class_error_loss = ClassErrorLoss()
     tv_loss = TVLoss()
-    return disappear_loss(det_score, det_labels, class_id) + class_error_loss(cls_scores, class_id) - 10*tv_loss(patch)
+    return disappear_loss(det_score, det_labels, class_id) + class_error_loss(cls_scores, class_id) - 10 * tv_loss(
+        patch)

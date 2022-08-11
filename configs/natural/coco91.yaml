@@ -27,4 +27,4 @@ ATTACKER:
     WIDTH: 128
     HEIGHT: 128
     SCALE: 0.2
-    AREA_RATIO: 1 # 1: True; 0: False
+    AREA_RATIO: 0 # 1: True; 0: False

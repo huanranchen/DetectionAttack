@@ -15,25 +15,31 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # from tools.det_utils import plot_boxes_cv2
-
+label_postfix = '-rescale-labels'
 paths = {'attack-img': 'imgs',
          'det-lab': 'det-labels',
          'attack-lab': 'attack-labels',
-         'det-res': 'det-res'}
-GT = 'ground-truth'
+         'det-res': 'det-res',
+         'ground-truth': 'ground-truth'}
+
+
+def path_remove(path):
+    if os.path.exists(path):
+        try:
+            shutil.rmtree(path) # a dir
+        except:
+            os.remove(path) # a symbolic link
 
 
 def dir_check(save_path, child_paths, rebuild=False):
     # if the target path exists, it will be deleted (for empty dirt) and rebuild-up
     def check(path, rebuild):
-        if rebuild and os.path.exists(path):
-            shutil.rmtree(path)
+        if rebuild:
+            path_remove(path)
         try:
             os.makedirs(path, exist_ok=True)
         except:
             pass
-        # print('mkdir: ', path)
-
     check(save_path, rebuild=rebuild)
     for child_path in child_paths:
         child_path = child_path.lower()
@@ -55,6 +61,12 @@ class UniversalPatchEvaluator(UniversalDetectorAttacker):
     def read_patch_from_memory(self, patch):
         self.universal_patch = patch
 
+
+    def transform_patch(self):
+        from torchvision import transforms
+        trans = transforms.RandomResizedCrop(64, scale=(0.7, 1.0))
+        self.universal_patch = trans(self.universal_patch)
+
     # def read_patch(self):
     #     patch_file = self.args.patch
     #     print('reading patch ' + patch_file)
@@ -74,6 +86,7 @@ def handle_input():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--patch', type=str)
     parser.add_argument('-cfg', '--config_file', type=str)
+    parser.add_argument('-t', '--transform', action='store_true')
     parser.add_argument('-d', '--detectors', nargs='+', default=None)
     parser.add_argument('-s', '--save', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train')
     parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/labels')
@@ -125,8 +138,7 @@ def ignore_class(args, cfg):
 
 
 def generate_labels(evaluator, cfg, args, save_label=False):
-    from tools.data_loader import detDataSet
-    from torch.utils.data import DataLoader
+    from tools.data_loader import dataLoader
 
     dir_check(args.save, cfg.DETECTOR.NAME, rebuild=False)
     utils = Utils(cfg)
@@ -134,9 +146,8 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     print('data root     :', args.data_root)
     img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
 
-    data_set = detDataSet(args.data_root, cfg.DETECTOR.INPUT_SIZE, is_augment=False)
-    data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=False,
-                             num_workers=8, pin_memory=True)
+    data_loader = dataLoader(args.data_root, input_size=cfg.DETECTOR.INPUT_SIZE,
+                             batch_size=batch_size, is_augment=False, pin_memory=True)
     save_path = args.save
     for index, img_tensor_batch in tqdm(enumerate(data_loader)):
         names = img_names[index:index + batch_size]
@@ -187,12 +198,17 @@ def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() el
     args = get_save(args)
     args = ignore_class(args, cfg)
     evaluator = UniversalPatchEvaluator(cfg, args, device)
+    if hasattr(args, 'transform') and args.transform:
+        evaluator.transform_patch()
 
     return args, evaluator
 
 
 def eva(evaluator, args, cfg):
-
+    print('------------------ Evaluating ------------------')
+    print("cfg file     :", args.config_file)
+    print("data root     :", args.data_root)
+    print("label root     :", args.save)
     # set the eva classes to be the ones to attack
     evaluator.attack_list = cfg.show_class_index(args.eva_class)
     cfg.GRAD_PERTURB = False
@@ -200,32 +216,28 @@ def eva(evaluator, args, cfg):
         generate_labels(evaluator, cfg, args)
     save_path = args.save
 
-    det_mAPs = {}
-    gt_mAPs = {}
-    ori_mAPs = {}
+    det_mAPs = {}; gt_mAPs = {}; ori_mAPs = {}
     # to compute mAP
     for detector in evaluator.detectors:
         # tmp_path = os.path.join(cfg.ATTACK_SAVE_PATH, detector.name)
         path = os.path.join(save_path, detector.name)
 
         # link the path of the GT labels
-        gt_path = os.path.join(path, GT)
-        cmd = 'ln -s ' + os.path.join(args.label_path, GT) + ' ' + gt_path
-        # print(cmd)
+        gt_target = os.path.join(path, 'ground-truth')
+        gt_source = os.path.join(args.label_path, paths['ground-truth']+label_postfix)
+        path_remove(gt_target)
+        cmd = ' '.join(['ln -s ', gt_source, gt_target])
+        print(cmd)
         os.system(cmd)
 
         # link the path of the detection labels
-        det_path = os.path.join(*[path, paths['det-lab']])
-        if os.path.exists(det_path):
-            try:
-                os.remove(det_path)
-            except Exception as e:
-                print(e)
-                import shutil
-                shutil.rmtree(det_path)
+        det_path = os.path.join(path, paths['det-lab'])
+        path_remove(det_path)
 
-        cmd = 'ln -s ' + os.path.join(args.label_path, detector.name+'-labels') + ' ' + det_path
-        print(cmd)
+        # cmd = 'ln -s ' + os.path.join(args.label_path, detector.name+'-labels') + ' ' + det_path
+        source = os.path.join(args.label_path, detector.name + label_postfix)
+        cmd = ' '.join(['ln -s ', source, det_path])
+        # print(cmd)
         os.system(cmd)
 
         # (det-results)take clear detection results as GT label: attack results as detections
@@ -236,16 +248,16 @@ def eva(evaluator, args, cfg):
 
 
         # (gt-results)take original labels as GT label(default): attack results as detections
-        print('ground truth     :', GT)
+        # print('ground truth     :', paths['ground-truth'])
         gt_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
-                                gt_path=GT, res_prefix='gt', quiet=args.quiet)
+                                gt_path=paths['ground-truth'], res_prefix='gt', quiet=args.quiet)
         gt_mAPs[detector.name] = "%.2f" % (gt_mAP*100)
 
         if args.test_origin:
             rp = 'ori'
-            # (ori-results)take original labels as GT label(default): clear detection res as detections
+            # (ori-results)take original labels as path['ground-truth'] label(default): clear detection res as detections
             ori_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['det-res'],
-                                gt_path=GT, res_prefix=rp, quiet=args.quiet)
+                                gt_path=paths['ground-truth'], res_prefix=rp, quiet=args.quiet)
             ori_mAPs[rp][detector.name] = "%.2f" % (ori_mAP*100)
 
         # merge_plot(ori_aps_dic, path, det_aps_dic, gt_aps_dic)
@@ -256,6 +268,7 @@ def eva(evaluator, args, cfg):
 if __name__ == '__main__':
     from tools.parser import dict2txt
     args, cfg = handle_input()
+    order = ['yolov3', 'yolov3-tiny', 'yolov4', 'yolov4-tiny', 'yolov5', 'faster_rcnn', 'ssd']
 
     args, evaluator = init(args, cfg)
     det_mAPs, gt_mAPs, ori_mAPs = eva(evaluator, args, cfg)
@@ -269,3 +282,5 @@ if __name__ == '__main__':
             f.write('--------------------------\n')
     dict2txt(det_mAPs, det_mAP_file)
     dict2txt(gt_mAPs, os.path.join(args.save, 'gt-mAP.txt'))
+    # with open(os.path.join(args.save, 'gt-mAP.txt'), 'a'):
+    #     det_mAPs['yolov3']

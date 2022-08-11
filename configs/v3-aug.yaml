@@ -7,10 +7,10 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Train/labels'
 
   TEST:
-#    IMG_DIR: 'data/INRIAPerson/Test/pos'
-#    LAB_DIR: 'data/INRIAPerson/Test/labels'
-    IMG_DIR: 'data/coco/val/val2017'
-    LAB_DIR: 'data/coco/val/val2017_labels'
+    IMG_DIR: 'data/INRIAPerson/Test/pos'
+    LAB_DIR: 'data/INRIAPerson/Test/labels'
+#    IMG_DIR: 'data/coco/val/val2017'
+#    LAB_DIR: 'data/coco/val/val2017_labels'
 
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
@@ -21,8 +21,8 @@ DETECTOR:
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
 
-  GRAD_PERTURB: 1
-  PERTURB_FREQ: 10
+  GRAD_PERTURB: 0
+  GRAD_RESET: 10
   RESET_FREQ: 1000
 
 ATTACKER:

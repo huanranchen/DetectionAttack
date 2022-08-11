@@ -1,12 +1,8 @@
-import argparse
-import os
 import torch
 from tqdm import tqdm
-import random
 
 from tools.parser import ConfigParser
-from tools.data_loader import read_img_np_batch
-from losses import temp_attack_loss
+from tools.loss import temp_attack_loss
 from evaluate import UniversalPatchEvaluator
 
 from tools.data_loader import detDataSet
@@ -85,7 +81,6 @@ class GetLoss():
 
 
 if __name__ == '__main__':
-    from Draws.Landscape import train_valid_3dlandscape, multi_model_3dlandscape, multi_image_contourf, \
-        train_valid_2dlandscape
+    from Draws.Landscape import train_valid_2dlandscape
 
     train_valid_2dlandscape()

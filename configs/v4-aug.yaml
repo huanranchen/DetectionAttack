@@ -1,11 +1,18 @@
+DATA:
+  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  TRAIN:
+    IMG_DIR: 'data/INRIAPerson/Train/pos'
+    LAB_DIR: 'data/INRIAPerson/Train/labels'
+  TEST:
+    IMG_DIR: 'data/INRIAPerson/Test/pos'
+    LAB_DIR: 'data/INRIAPerson/Test/labels'
+  AUGMENT: 1
+
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
   NAME: ["YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
-  IMG_DIR: 'data/INRIAPerson/Train/pos'
-  LAB_DIR: 'data/INRIAPerson/Train/pos/yolo-labels'
-  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
