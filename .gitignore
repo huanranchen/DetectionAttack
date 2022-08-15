@@ -1,6 +1,7 @@
 #custom
 evaluation/
 detector_lab/HHDet/faster_rcnn/pytorch_faster_rcnn/
+detector_lab/weights/
 *.weights
 data/
 results/

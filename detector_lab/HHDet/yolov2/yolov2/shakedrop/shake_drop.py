@@ -48,7 +48,7 @@ class ShakeDropFunction(torch.autograd.Function):
 class ShakeDrop(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, x, training:bool =True, p_drop: float =0.5, alpha_range: list =[-1, 1]):
+    def forward(ctx, x, training:bool =False, p_drop: float =0.5, alpha_range: list =[-1, 1]):
         if training:
             gate = torch.cuda.FloatTensor([0]).bernoulli_(1 - p_drop)
             ctx.save_for_backward(gate)

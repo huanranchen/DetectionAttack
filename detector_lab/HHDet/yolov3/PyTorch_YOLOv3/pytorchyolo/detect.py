@@ -1,4 +1,4 @@
-### 测试所用, 需要删除
+#TODO: 测试所用, 需要删除
 import sys
 sys.path.append('/home/huanghao/BaseDetectionAttack/detector_lab/PyTorch-YOLOv3/')
 ### 测试所用, 需要删除

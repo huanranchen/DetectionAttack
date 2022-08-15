@@ -110,6 +110,19 @@ class Darknet(nn.Module):
                     x2 = outputs[layers[1]]
                     x = torch.cat((x1, x2), 1)
                     outputs[ind] = x
+            elif block['type'] == 'shortcut_shakedrop':
+                from .shakedrop.shake_drop import ShakeDrop
+                from_layer = int(block['from'])
+                activation = block['activation']
+                from_layer = from_layer if from_layer > 0 else from_layer + ind
+                x1 = outputs[from_layer]
+                x2 = outputs[ind - 1]
+                x = ShakeDrop.apply(x1) + x2
+                if activation == 'leaky':
+                    x = F.leaky_relu(x, 0.1, inplace=True)
+                elif activation == 'relu':
+                    x = F.relu(x, inplace=True)
+                outputs[ind] = x
             elif block['type'] == 'shortcut':
                 from_layer = int(block['from'])
                 activation = block['activation']

@@ -81,6 +81,13 @@ def init_detector(detector_name, cfg):
             model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/weight/yolov4.weights'),
             data_config_path=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4'))
 
+    elif detector_name == "v4_shakedrop":
+        detector = HHYolov4(name=detector_name, cfg=cfg)
+        detector.load(
+            cfg_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4-shakedrop.cfg'),
+            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/weight/yolov4.weights'),
+            data_config_path=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4'))
+
     elif detector_name == "yolov5":
         # model = HHYolov5
         detector = HHYolov5(name=detector_name, cfg=cfg)
