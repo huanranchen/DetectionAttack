@@ -17,11 +17,11 @@ class LinfMIMAttack(Base_Attacker):
         a: step size
     """
 
-    def __init__(self, loss_fuction, model, norm='L_infty', epsilons=0.05, max_iters=10, step_size=0.01, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), momentum=1, perturbation=None):
+    def __init__(self, loss_function, model, norm='L_infty', epsilons=0.05, max_iters=10, step_size=0.01, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), momentum=1, perturbation=None):
         """this is init function of MI-FGSM attack (arxiv: https://arxiv.org/pdf/1710.06081.pdf)
 
         Args:
-            loss_fuction ([torch.nn.Loss]): [a loss function to calculate the loss between the inputs and expeced outputs]
+            loss_function ([torch.nn.Loss]): [a loss function to calculate the loss between the inputs and expeced outputs]
             model ([torch.nn.model]): [target model to attack].
             norm (str, optional): [the attack norm and the choices are [L0, L1, L2, L_infty]]. Defaults to 'L_infty'.
             epsilons (float, optional): [the upper bound of perturbation]. Defaults to 0.05.
@@ -35,7 +35,7 @@ class LinfMIMAttack(Base_Attacker):
         self.step_size = step_size
         self.device = device
         self.momentum = momentum
-        self.loss_fn = loss_fuction
+        self.loss_fn = loss_function
         self.epsilon = epsilons
         self.grad = None
      

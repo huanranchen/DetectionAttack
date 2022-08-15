@@ -2,6 +2,10 @@ DATA:
   AUGMENT: 1
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
+    LAB_DIR: 'data/INRIAPerson/Train/labels'
+  TEST:
+    IMG_DIR: 'data/INRIAPerson/Test/pos'
+    LAB_DIR: 'data/INRIAPerson/Test/labels'
 
   CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
 

@@ -1,0 +1,35 @@
+DATA:
+  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  TRAIN:
+    IMG_DIR: 'data/INRIAPerson/Train/pos'
+    LAB_DIR: 'data/INRIAPerson/Train/labels'
+  TEST:
+    IMG_DIR: 'data/INRIAPerson/Test/pos'
+    LAB_DIR: 'data/INRIAPerson/Test/labels'
+  AUGMENT: 0
+
+DETECTOR:
+  NAME: ["YOLOV5"] # YOLOV3, YOLOV4, YOLOV5
+  INPUT_SIZE: [416, 416] # height, width
+  BATCH_SIZE: 8
+
+  CONF_THRESH: 0.3
+  IOU_THRESH: 0.45
+
+  GRAD_PERTURB: 0
+
+ATTACKER:
+  METHOD: "pgd"
+  EPSILON: 255 # 0-255
+  MAX_ITERS: 1000
+  SERIAL_ITER_STEP: 5
+  PARALLEL_ITER_STEP: 15
+  STEP_SIZE: 0.02
+  TARGET_CLASS: 0
+  ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
+
+  PATCH_ATTACK:
+    WIDTH: 128
+    HEIGHT: 128
+    SCALE: 0.2
+    AREA_RATIO: 0 # 1: True; 0: False

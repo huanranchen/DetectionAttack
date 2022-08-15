@@ -24,7 +24,7 @@ do
   echo "./results/${patch_name}.png"
   for target in ${targets[@]}
   do
-    cmd="CUDA_VISIBLE_DEVICES=${device} nohup python evaluate.py $ii $gg\
+    cmd="CUDA_VISIBLE_DEVICES=${device} python evaluate.py $ii $gg\
     -p ./results/${patch_name}.png \
     -cfg ./configs/${config}.yaml \
     -lp /home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/$target/labels \

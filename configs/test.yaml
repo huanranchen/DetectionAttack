@@ -13,8 +13,7 @@ DATA:
 #    LAB_DIR: 'data/coco/val/val2017_labels'
 
 DETECTOR:
-  # "Military_YOLOX", , "YOLOV5"
-  NAME: ["YOLOV3"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV2"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
 
@@ -26,7 +25,7 @@ DETECTOR:
   RESET_FREQ: 1000
 
 ATTACKER:
-  METHOD: "pgd"
+  METHOD: "test"
   EPSILON: 255 # 0-255
   MAX_ITERS: 1000
   SERIAL_ITER_STEP: 5
@@ -34,6 +33,7 @@ ATTACKER:
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
+  start_learning_rate: 0.03
 
   PATCH_ATTACK:
     WIDTH: 128

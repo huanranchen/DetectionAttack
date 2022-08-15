@@ -4,6 +4,7 @@ from detector_lab.utils import init_detectors
 from attacks.bim import LinfBIMAttack
 from attacks.mim import LinfMIMAttack
 from attacks.pgd import LinfPGDAttack
+from attacks.test import attacker
 from tools.loss import temp_attack_loss
 from tools.utils import scale_area_ratio
 from tools.det_utils import plot_boxes_cv2
@@ -12,6 +13,7 @@ attacker_dict = {
     "bim": LinfBIMAttack,
     "mim": LinfMIMAttack,
     "pgd": LinfPGDAttack,
+    "test": attacker
 }
 
 
@@ -28,8 +30,9 @@ class DetctorAttacker(object):
 
     def init_attaker(self):
         cfg = self.cfg
-        self.attacker = attacker_dict[cfg.ATTACKER.METHOD](loss_fuction=temp_attack_loss, model=self.detectors,
+        self.attacker = attacker_dict[cfg.ATTACKER.METHOD](loss_function=temp_attack_loss, model=self.detectors,
                                                            norm='L_infty',
+                                                           device=self.device,
                                                            epsilons=cfg.ATTACKER.EPSILON,
                                                            max_iters=cfg.ATTACKER.MAX_ITERS,
                                                            step_size=cfg.ATTACKER.STEP_SIZE,

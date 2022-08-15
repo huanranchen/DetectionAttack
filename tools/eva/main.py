@@ -19,3 +19,7 @@ def compute_mAP(path='./', lab_path='det-results', gt_path='ground-truth', res_p
     args = Args(path, lab_path, gt_path, res_prefix, no_animation, no_plot, quiet, ignore, set_class_iou)
     ap_dictionary, mAP = draw_mAP(args)
     return mAP
+
+
+def compute_acc():
+    pass

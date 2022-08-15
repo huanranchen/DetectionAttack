@@ -19,11 +19,11 @@ class LinfPGDAttack(Base_Attacker):
         a: step size
     """
 
-    def __init__(self, loss_fuction, model, norm='L_infty', epsilons=0.05, max_iters=50, step_size=0.01, class_id=0, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), momentum=0.5):
+    def __init__(self, loss_function, model, norm='L_infty', epsilons=0.05, max_iters=50, step_size=0.01, class_id=0, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), momentum=0.5):
         """this is init function of PGD attack (arxiv: https://arxiv.org/pdf/1706.06083.pdf)
 
         Args:
-            loss_fuction ([torch.nn.Loss]): [a loss function to calculate the loss between the inputs and expeced outputs]
+            loss_function ([torch.nn.Loss]): [a loss function to calculate the loss between the inputs and expeced outputs]
             model ([torch.nn.model]): [target model to attack].
             norm (str, optional): [the attack norm and the choices are [L0, L1, L2, L_infty]]. Defaults to 'L_infty'.
             epsilons (float, optional): [the upper bound of perturbation]. Defaults to 0.05.
@@ -37,7 +37,7 @@ class LinfPGDAttack(Base_Attacker):
         self.step_size = step_size
         self.device = device
         self.momentum = momentum
-        self.loss_fn = loss_fuction
+        self.loss_fn = loss_function
         self.epsilon = epsilons
         self.class_id = class_id
         # self.eta = torch.nn.Parameter(torch.ones((1, 3, 128, 128), requires_grad=True).cuda())

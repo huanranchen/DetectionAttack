@@ -1,7 +1,7 @@
 import sys
-
-import torch
 import numpy as np
+import torch
+
 
 from . import faster_rcnn, fasterrcnn_resnet50_fpn
 from ...DetectorBase import DetectorBase
@@ -18,8 +18,12 @@ class Faster_RCNN(DetectorBase):
         kwargs = {}
         if self.input_tensor_size is not None:
             kwargs['min_size'] = self.input_tensor_size
-        self.detector = fasterrcnn_resnet50_fpn(pretrained=True, **kwargs) \
-            if model_weights is None else fasterrcnn_resnet50_fpn()
+        if hasattr(self.cfg, 'shake_drop') and self.cfg.shake_drop:
+            from .faster_rcnn import faster_rcnn_resnet50_shakedrop
+            self.detector = faster_rcnn_resnet50_shakedrop()
+        else:
+            self.detector = fasterrcnn_resnet50_fpn(pretrained=True, **kwargs) \
+                if model_weights is None else fasterrcnn_resnet50_fpn()
 
         self.detector = self.detector.to(self.device)
         self.detector.eval()

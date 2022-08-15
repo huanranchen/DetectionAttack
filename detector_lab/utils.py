@@ -2,6 +2,7 @@ import numpy as np
 import torchvision
 import torch
 
+from .HHDet.yolov2.api import HHYolov2
 from .HHDet.yolov3.api import HHYolov3
 from .HHDet.yolov4.api import HHYolov4
 from .HHDet.yolov5.api import HHYolov5
@@ -46,7 +47,15 @@ def init_detectors(detector_names, cfg=None):
 def init_detector(detector_name, cfg):
     detector = None
     detector_name = detector_name.lower()
-    if detector_name == "yolov3":
+
+    if detector_name == "yolov2":
+        detector = HHYolov2(name=detector_name, cfg=cfg)
+        detector.load(
+            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov2/yolov2/weights/yolo.weights'),
+            detector_config_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov2/yolov2/config/yolo.cfg'),
+        )
+
+    elif detector_name == "yolov3":
         detector = HHYolov3(name=detector_name, cfg=cfg)
         detector.load(
             detector_config_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/yolov3.cfg'),

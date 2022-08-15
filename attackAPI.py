@@ -17,7 +17,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
 
     def read_patch(self, patch_file):
         # patch_file = self.args.patch
-        print('Reading patch from ' + patch_file)
+        print('Reading patch from file: ' + patch_file)
         if patch_file.endswith('.pth'):
             universal_patch = torch.load(patch_file, map_location=self.device).unsqueeze(0)
             # universal_patch.new_tensor(universal_patch)
@@ -29,18 +29,23 @@ class UniversalDetectorAttacker(DetctorAttacker):
             universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.)
         self.universal_patch = universal_patch.to(self.device)
 
-    def init_universal_patch(self, patch_file=None):
+    def init_universal_patch(self, patch_file=None, init_mode='random'):
         if patch_file is None:
-            self.random_init_patch()
+            self.generate_universal_patch(init_mode)
         else:
             self.read_patch(patch_file)
 
-    def random_init_patch(self):
-        print('Random initializing a universal patch')
+    def generate_universal_patch(self, init_mode='random'):
         height = self.cfg.ATTACKER.PATCH_ATTACK.HEIGHT
         width = self.cfg.ATTACKER.PATCH_ATTACK.WIDTH
-        universal_patch = np.random.randint(low=0, high=255, size=(height, width, 3))
-        universal_patch = np.expand_dims(np.transpose(universal_patch, (2, 0, 1)), 0)
+        if init_mode.lower() == 'random':
+            print('Random initializing a universal patch')
+            universal_patch = np.random.randint(low=0, high=255, size=(3, height, width))
+        elif init_mode.lower() == 'gray':
+            print('Gray initializing a universal patch')
+            universal_patch = np.ones((3, height, width)) * 127.5
+
+        universal_patch = np.expand_dims(universal_patch, 0)
         self.universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.).to(self.device)
         # self.universal_patch.requires_grad = True
 
@@ -71,6 +76,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         else:
             # when attacking
             universal_patch = universal_patch.detach_()
+        # print('====================is leaf: ', universal_patch.is_leaf)
         if universal_patch.is_leaf:
             universal_patch.requires_grad = True
         # print(len(img_tensor))
@@ -137,6 +143,12 @@ class UniversalDetectorAttacker(DetctorAttacker):
             # cv2.imwrite('./patch.png', tmp)
             cv2.imwrite(save_patch_name, tmp)
         print('saving patch to ' + save_patch_name)
+
+    def attack_test(self, img_tensor_batch, optimizer):
+        img_tensor_batch.requires_grad = True
+        for detector in self.detectors:
+            loss = self.attacker.serial_non_targeted_attack(img_tensor_batch, self, detector, optimizer)
+        return loss
 
     def serial_attack(self, img_tensor_batch, confs_thresh=None):
         detectors_loss = []

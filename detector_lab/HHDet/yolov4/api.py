@@ -1,3 +1,4 @@
+import numpy as np
 
 from .Pytorch_YOLOv4.tool.utils import *
 from .Pytorch_YOLOv4.tool.torch_utils import *
@@ -43,7 +44,10 @@ class HHYolov4(DetectorBase):
         # print(self.name, confs.shape)
         preds = self.post_processing(batch_tensor, self.conf_thres, self.iou_thres, output)
         for i, pred in enumerate(preds):
-            preds[i] = np.array(pred) # shape([1, 6])
+            pred = np.array(pred)
+            if len(pred) != 0:
+                pred[:, :4] = np.clip(pred[:, :4], a_min=0, a_max=1)
+            preds[i] = pred # shape([1, 6])
         # print('v4 h: ', confs.shape, confs.requires_grad)
 
         confs = confs[torch.where(confs > confs_thresh)]

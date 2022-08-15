@@ -51,14 +51,13 @@ class HHYolov3(DetectorBase):
         # print(len(preds))
         bbox_array = []
         for i, pred in enumerate(preds):
-            box = rescale_boxes(pred, self.input_tensor_size, self.ori_size)
+            box = np.array(rescale_boxes(pred, self.input_tensor_size, self.ori_size))
             # print(box)
-            box[:,0] /= self.ori_size[1]
-            box[:,1] /= self.ori_size[0]
-            box[:,2] /= self.ori_size[1]
-            box[:,3] /= self.ori_size[0]
+            box[:, [0, 2]] /= self.ori_size[1]
+            box[:, [1, 3]] /= self.ori_size[0]
+            box[:, :4] = np.clip(box[:, :4], a_min=0, a_max=1)
             # print(box)
-            bbox_array.append(np.array(box))
+            bbox_array.append(box)
 
             # # TODO: CONF_POLICY test
             # if hasattr(self.cfg, 'CONF_POLICY') and self.cfg.CONF_POLICY and self.target is not None:

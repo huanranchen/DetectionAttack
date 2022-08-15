@@ -9,7 +9,7 @@ from PIL import Image
 
 
 class detDataSet(Dataset):
-    def __init__(self, images_path, input_size, is_augment=True):
+    def __init__(self, images_path, input_size, is_augment=False):
         self.imgs = [os.path.join(images_path, i) for i in os.listdir(images_path)]
         self.input_size = input_size
         self.n_samples = len(self.imgs)

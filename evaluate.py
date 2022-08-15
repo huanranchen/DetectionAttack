@@ -29,6 +29,8 @@ def path_remove(path):
             shutil.rmtree(path) # a dir
         except:
             os.remove(path) # a symbolic link
+    cmd = f'rm {path}'
+    os.system(cmd)
 
 
 def dir_check(save_path, child_paths, rebuild=False):
@@ -50,13 +52,12 @@ def dir_check(save_path, child_paths, rebuild=False):
 
 
 class UniversalPatchEvaluator(UniversalDetectorAttacker):
-    def __init__(self, cfg, args, device, if_read_patch = True):
+    def __init__(self, cfg, patch_path, device, if_read_patch = True):
         super().__init__(cfg, device)
         self.cfg = cfg
-        self.args = args
         self.device = device
         if if_read_patch:
-            self.read_patch(self.args.patch)
+            self.read_patch(patch_path)
 
     def read_patch_from_memory(self, patch):
         self.universal_patch = patch
@@ -167,11 +168,11 @@ def generate_labels(evaluator, cfg, args, save_label=False):
             if save_label:
                 # for saving the original detection info
                 fp = os.path.join(tmp_path, paths['det-lab'])
-                utils.save_label(preds[0], fp, img_name, save_conf=False)
+                utils.save_label(preds[0], fp, img_name, save_conf=False, rescale=True)
 
             if args.test_origin:
                 fp = os.path.join(tmp_path, paths['det-res'])
-                utils.save_label(preds[0], fp, img_name, save_conf=True)
+                utils.save_label(preds[0], fp, img_name, save_conf=True, rescale=True)
 
             evaluator.get_patch_pos_batch(all_preds)
 
@@ -188,7 +189,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
             # for saving the attacked detection info
             lpath = os.path.join(tmp_path, paths['attack-lab'])
             # print(lpath)
-            utils.save_label(preds[0], lpath, img_name)
+            utils.save_label(preds[0], lpath, img_name, rescale=True)
             # break
         # break
 
@@ -197,7 +198,7 @@ def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() el
     # preprocessing the cfg
     args = get_save(args)
     args = ignore_class(args, cfg)
-    evaluator = UniversalPatchEvaluator(cfg, args, device)
+    evaluator = UniversalPatchEvaluator(cfg, args.patch, device)
     if hasattr(args, 'transform') and args.transform:
         evaluator.transform_patch()
 

@@ -14,6 +14,8 @@ from torchvision.models.detection.roi_heads import RoIHeads
 from ..utils.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone, _validate_trainable_layers, mobilenet_backbone
 
+# modified!!!!!!!!
+from .shakedrop.backbone_utils import my_resnet_fpn_backbone
 
 __all__ = [
     "FasterRCNN", "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_320_fpn",
@@ -236,10 +238,10 @@ class FasterRCNN(GeneralizedRCNN):
 
         super(FasterRCNN, self).__init__(backbone, rpn, roi_heads, transform)
 
-    def requires_grad_(self, requires_grad: bool = True):
-        self.backbone.requires_grad_(requires_grad)
-        self.rpn.requires_grad_(requires_grad)
-        self.roi_heads.requires_grad_(requires_grad)
+    # def requires_grad_(self, requires_grad: bool = True):
+    #     self.backbone.requires_grad_(requires_grad)
+    #     self.rpn.requires_grad_(requires_grad)
+    #     self.roi_heads.requires_grad_(requires_grad)
 
 class TwoMLPHead(nn.Module):
     """
@@ -466,3 +468,25 @@ def fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_class
     return _fasterrcnn_mobilenet_v3_large_fpn(weights_name, pretrained=pretrained, progress=progress,
                                               num_classes=num_classes, pretrained_backbone=pretrained_backbone,
                                               trainable_backbone_layers=trainable_backbone_layers, **kwargs)
+
+
+def faster_rcnn_resnet50_shakedrop(pretrained=True, progress=True,
+                                   num_classes=91, pretrained_backbone=True,
+                                   trainable_backbone_layers=None, **kwargs
+                                   ):
+    trainable_backbone_layers = _validate_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
+    )
+
+    if pretrained:
+        # no need to download the backbone if pretrained is set
+        pretrained_backbone = False
+
+    backbone = my_resnet_fpn_backbone('resnet50_shakedrop', pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    model = FasterRCNN(backbone, num_classes, **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls["fasterrcnn_resnet50_fpn_coco"], progress=progress)
+        model.load_state_dict(state_dict)
+        overwrite_eps(model, 0.0)
+    return model
+

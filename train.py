@@ -22,7 +22,12 @@ def logger(cfg, args, attack_confs_thresh):
     print('IOU_THRESH                   :', cfg.DETECTOR.IOU_THRESH)
     print('Input size                   :', cfg.DETECTOR.INPUT_SIZE)
     print('Batch size                   :', cfg.DETECTOR.BATCH_SIZE)
-    print('To perturb(self-ensemble)    :', cfg.DETECTOR.GRAD_PERTURB)
+
+    to_perturb = False
+    if hasattr(cfg.DETECTOR, 'GRAD_PERTURB'):
+        to_perturb = cfg.DETECTOR.GRAD_PERTURB
+    print('To perturb(self-ensemble)    :', to_perturb)
+
     print('-------------------ATTACKER---------------------')
     print('Attack method                : ', args.attack_method)
     print("Attack confs thresh          : ", attack_confs_thresh)
@@ -131,6 +136,7 @@ if __name__ == '__main__':
     parser.add_argument('-rk', '--local_rank', default=os.getenv('LOCAL_RANK', -1), type=int)
     args = parser.parse_args()
 
+    print('-----------------------Training----------------------------')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('device               : ', device)
     save_patch_name = args.cfg.split('.')[0] + '.png'
