@@ -117,7 +117,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
             detectors = self.detectors
         os.makedirs(save_path, exist_ok=True)
         for detector in detectors:
-            tmp, _ = self.apply_universal_patch(img_tensor, detector)
+            tmp, _ = self.apply_universal_patch(img_tensor[0].unsqueeze(0), detector)
             preds, _ = detector.detect_img_batch_get_bbox_conf(tmp)
             img_numpy, img_numpy_int8 = detector.unnormalize(tmp[0])
             self.plot_boxes(img_numpy_int8, preds[0],

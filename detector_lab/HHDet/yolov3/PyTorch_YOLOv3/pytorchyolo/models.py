@@ -85,6 +85,10 @@ def create_modules(module_defs):
             filters = output_filters[1:][int(module_def["from"])]
             modules.add_module(f"shortcut_{module_i}", nn.Sequential())
 
+        elif module_def["type"] == "shortcut_shakedrop":
+            filters = output_filters[1:][int(module_def["from"])]
+            modules.add_module(f"shortcut_{module_i}", nn.Sequential())
+
         elif module_def["type"] == "yolo":
             anchor_idxs = [int(x) for x in module_def["mask"].split(",")]
             # Extract anchors

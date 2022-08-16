@@ -14,8 +14,14 @@ class HHYolov4(DetectorBase):
         # name
         super().__init__(name, cfg, input_tensor_size, device)
 
-    def load(self, model_weights, cfg_file=None, data_config_path=None):
-        self.detector = Darknet(cfg_file)
+    def load(self, model_weights, cfg_file=None, data_config_path=None, shakedrop=False):
+        if shakedrop:
+            from .Pytorch_YOLOv4.tool.darknet_shakedrop import DarknetShakedrop
+            print(cfg_file)
+            self.detector = DarknetShakedrop(cfg_file)
+            # print(self.detector)
+        else:
+            self.detector = Darknet(cfg_file)
 
         # data config
         # self.num_classes = self.detector.num_classes

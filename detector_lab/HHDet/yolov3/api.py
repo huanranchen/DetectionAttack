@@ -20,7 +20,7 @@ class HHYolov3(DetectorBase):
     def requires_grad_(self, state):
         self.detector.module_list.requires_grad_(state)
     
-    def load(self, model_weights, detector_config_file=None):
+    def load(self, model_weights, detector_config_file=None, shakedrop=False):
         """load model and weights
 
         Args:

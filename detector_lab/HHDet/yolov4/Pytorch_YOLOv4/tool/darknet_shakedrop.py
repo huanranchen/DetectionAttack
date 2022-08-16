@@ -123,9 +123,9 @@ class EmptyModule(nn.Module):
 
 
 # support route shortcut and reorg
-class Darknet(nn.Module):
+class DarknetShakedrop(nn.Module):
     def __init__(self, cfgfile, inference=False):
-        super(Darknet, self).__init__()
+        super(DarknetShakedrop, self).__init__()
         self.inference = inference
         self.training = not self.inference
 

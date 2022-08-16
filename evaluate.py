@@ -277,10 +277,10 @@ if __name__ == '__main__':
 
     print("det mAP      :", det_mAPs)
     det_mAP_file = os.path.join(args.save, 'det-mAP.txt')
-    if not os.path.exists(det_mAP_file):
-        with open(det_mAP_file, 'w') as f:
-            f.write('scale: ' + str(cfg.ATTACKER.PATCH_ATTACK.SCALE) + '\n')
-            f.write('--------------------------\n')
+    with open(det_mAP_file, 'w') as f:
+        where = 'ours' if cfg.ATTACKER.PATCH_ATTACK.AREA_RATIO else 'natural'
+        f.write(where+' scale: ' + str(cfg.ATTACKER.PATCH_ATTACK.SCALE) + '\n')
+        f.write('--------------------------\n')
     dict2txt(det_mAPs, det_mAP_file)
     dict2txt(gt_mAPs, os.path.join(args.save, 'gt-mAP.txt'))
     # with open(os.path.join(args.save, 'gt-mAP.txt'), 'a'):

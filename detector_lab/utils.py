@@ -57,9 +57,14 @@ def init_detector(detector_name, cfg):
 
     elif detector_name == "yolov3":
         detector = HHYolov3(name=detector_name, cfg=cfg)
+
+        model_cfg = cfg.model_cfg if hasattr(cfg, 'model_cfg') else 'yolov3.cfg'
+        shake_drop = cfg.shake_drop if hasattr(cfg, 'shake_drop') else False
         detector.load(
-            detector_config_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/yolov3.cfg'),
-            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/weights/yolov3.weights'))
+            detector_config_file=os.path.join(PROJECT_DIR, f'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/{model_cfg}'),
+            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/weights/yolov3.weights'),
+            shakedrop=shake_drop
+        )
 
     elif detector_name == "yolov3-tiny":
         detector = HHYolov3(name=detector_name, cfg=cfg)
@@ -76,17 +81,14 @@ def init_detector(detector_name, cfg):
 
     elif detector_name == "yolov4":
         detector = HHYolov4(name=detector_name, cfg=cfg)
+        model_cfg = cfg.model_cfg if hasattr(cfg, 'model_cfg') else 'yolov4.cfg'
+        shake_drop = cfg.shake_drop if hasattr(cfg, 'shake_drop') else False
         detector.load(
-            cfg_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4.cfg'),
+            cfg_file=os.path.join(PROJECT_DIR, f'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/cfg/{model_cfg}'),
             model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/weight/yolov4.weights'),
-            data_config_path=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4'))
-
-    elif detector_name == "v4_shakedrop":
-        detector = HHYolov4(name=detector_name, cfg=cfg)
-        detector.load(
-            cfg_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4-shakedrop.cfg'),
-            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/weight/yolov4.weights'),
-            data_config_path=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4'))
+            data_config_path=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4'),
+            shakedrop=shake_drop
+        )
 
     elif detector_name == "yolov5":
         # model = HHYolov5
