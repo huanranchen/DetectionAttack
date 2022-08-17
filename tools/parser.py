@@ -123,6 +123,12 @@ class ConfigParser:
         # print(cfg.ATTACKER.ATTACK_CLASS)
 
 
+def merge_dict_by_key(dict_s, dict_d):
+    for k, v in dict_s.items():
+        dict_d[k] = [v, dict_d[k]]
+    return dict_d
+
+
 def dict2txt(dict, filename, ljust=16):
     with open(filename, 'a') as f:
         for k, v in dict.items():

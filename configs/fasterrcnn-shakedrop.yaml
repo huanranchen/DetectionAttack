@@ -1,22 +1,20 @@
 DATA:
-  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
+  AUGMENT: 1
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
     LAB_DIR: 'data/INRIAPerson/Train/labels'
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
     LAB_DIR: 'data/INRIAPerson/Test/labels'
-  AUGMENT: 1
 
 DETECTOR:
-  NAME: ["YOLOV3-tiny"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["Faster_RCNN"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
-
-  CONF_THRESH: 0.25
-  IOU_THRESH: 0.4
-
-  GRAD_PERTURB: 0
+  CONF_THRESH: 0.5
+  IOU_THRESH: 0.45
+  shake_drop: 1
 
 ATTACKER:
   METHOD: "pgd"
@@ -26,10 +24,10 @@ ATTACKER:
   PARALLEL_ITER_STEP: 15
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
-  ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
+  ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id (corresponds to the namefile)
 
   PATCH_ATTACK:
     WIDTH: 128
     HEIGHT: 128
     SCALE: 0.2
-    AREA_RATIO: 1 # 1: True; 0: False
+    ASPECT_RATIO: -1

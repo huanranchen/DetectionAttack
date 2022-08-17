@@ -129,3 +129,143 @@ def rescale_boxes(boxes, current_dim, original_shape):
     boxes[:, 2] = ((boxes[:, 2] - pad_x // 2) / unpad_w) * orig_w
     boxes[:, 3] = ((boxes[:, 3] - pad_y // 2) / unpad_h) * orig_h
     return boxes
+
+
+def rescale_patches(bboxes, image_height, image_width, scale, aspect_ratio):
+    def compute(bwidth, bheight, scale, aspect_ratio):
+        # fix aspect area ratio
+        if aspect_ratio > 0:
+            target_y = np.sqrt(bwidth * bheight * scale / aspect_ratio)
+            target_x = aspect_ratio * target_y
+        # oiginal' scale
+        elif aspect_ratio == -1:
+            target_x = (np.sqrt(scale) * bwidth)
+            target_y = (np.sqrt(scale) * bheight)
+        # natural's scale
+        elif aspect_ratio == -2:
+            target_x = np.sqrt((scale * bheight) ** 2 + (scale * bwidth) ** 2)
+            # adjust patch height as rectangle
+            target_y = target_x * 1.5
+        else:
+            assert False, 'aspect ratio undefined!'
+        return target_x / 2, target_y / 2
+    # print(torch.FloatTensor(bboxes).numpy())
+    bboxes = bboxes[:, :4]
+    # print('bbox: ', bboxes)
+    bwidth = bboxes[:, 2] - bboxes[:, 0]
+    bheight = bboxes[:, 3] - bboxes[:, 1]
+    xc = (bboxes[:, 2] + bboxes[:, 0]) / 2
+    yc = (bboxes[:, 3] + bboxes[:, 1]) / 2
+
+    # target_y = math.sqrt(bwidth * bheight * scale / aspect_ratio)
+    # target_x = aspect_ratio * target_y
+    target_x, target_y = compute(bwidth, bheight, scale, aspect_ratio)
+
+    target = np.c_[-target_x, -target_y, target_x, target_y]
+    # print('target: ', target)
+    len = np.array([image_width, image_height, image_width, image_height])
+    bcenter = np.c_[xc, yc, xc, yc]
+
+    bboxes = (bcenter + target).clip(0, 1) * len
+    # print('rescaled bbox: ', bboxes)
+    return bboxes.astype(int)
+
+
+def process_shape(x_min, y_min, x_max, y_max, ratio):
+    # rectify the bbox shape into a shape of given ratio(width/height)
+    # for the patches could be added with shape being fixed
+    # keep the short side and trim the long side to fix the aspect ratio
+    if ratio != -1:
+        # print('original:', x_min, y_min, x_max, y_max)
+        w = x_max - x_min
+        h = y_max - y_min
+        cur_ratio = w/h
+        if cur_ratio > ratio:
+            # width to be trimed
+            trim_w = w - int(ratio * h)
+            trim_w = int(trim_w / 2)
+            x_min += trim_w
+            x_max -= trim_w
+        elif cur_ratio < ratio:
+            # height to be trimed
+            trim_h = h - int(w/ratio)
+            trim_h = int(trim_h / 2)
+            y_min += trim_h
+            y_max -= trim_h
+
+        # print('trimed:', x_min, y_min, x_max, y_max)
+
+    return x_min, y_min, x_max, y_max
+
+
+def compute_aspect_ratio(x1, y1, x2, y2, scale, aspect_ratio):
+    bw = x2 - x1
+    bh = y2 - y1
+    target_y = math.sqrt(bw * bh * scale / aspect_ratio)
+    target_x = aspect_ratio * target_y
+    return target_x / 2, target_y / 2
+
+def scale_area_ratio(x1, y1, x2, y2, image_height, image_width,
+                     scale, aspect_ratio):
+
+    # print(x1, y1, x2, y2)
+    xc = (x1 + x2) / 2
+    yc = (y1 + y2) / 2
+    bwidth = x2 - x1
+    bheight = y2 - y1
+
+    # fix aspect area ratio
+    if aspect_ratio > 0:
+        target_x, target_y = compute_aspect_ratio(x1, y1, x2, y2, scale, aspect_ratio)
+    # oiginal' scale
+    elif aspect_ratio == -1:
+        target_x = (math.sqrt(scale) * bwidth) / 2
+        target_y = (math.sqrt(scale) * bheight) / 2
+    # natural's scale
+    elif aspect_ratio == -2:
+        target_x = math.sqrt((scale * bheight) ** 2 + (scale * bwidth) ** 2) / 2
+        # adjust patch height as rectangle
+        target_y = target_x * 1.5
+    else:
+        assert False, 'aspect ratio undefined!'
+
+    p_x1 = int((xc - target_x).clip(0, 1) * image_width)
+    p_y1 = int((yc - target_y).clip(0, 1) * image_height)
+    p_x2 = int((xc + target_x).clip(0, 1) * image_width)
+    p_y2 = int((yc + target_y).clip(0, 1) * image_height)
+
+    # if keep_patch_ratio:
+    #     p_x1, p_y1, p_x2, p_y2 = process_shape(p_x1, p_y1, p_x2, p_y2, ratio=patch_aspect_ratio)
+    # print(p_x1, p_y1, p_x2, p_y2)
+    return p_x1, p_y1, p_x2, p_y2
+
+
+def transform_patch(preds, adv_batch, scale, angle=torch.FloatTensor([0])):
+    import torch.nn.functional as F
+    preds = torch.FloatTensor(preds)
+    scale = torch.FloatTensor([scale])
+    batch_size = 1
+    target_x = preds[0, 0].view(1)
+    target_y = preds[0, 1].view(1)
+    target_y = target_y - 0.05
+
+    tx = torch.FloatTensor((-target_x + 0.5) * 2)
+    ty = torch.FloatTensor((-target_y + 0.5) * 2)
+    sin = torch.sin(angle)
+    cos = torch.cos(angle)
+
+    print(tx, ty)
+
+    theta = torch.cuda.FloatTensor(1, 2, 3).fill_(0)
+    theta[:, 0, 0] = (cos/scale)
+    theta[:, 0, 1] = sin/scale
+    theta[:, 0, 2] = (tx*cos/scale+ty*sin/scale)
+    theta[:, 1, 0] = -sin/scale
+    theta[:, 1, 1] = (cos/scale)
+    theta[:, 1, 2] = (-tx*sin/scale+ty*cos/scale)
+
+    grid = F.affine_grid(theta, adv_batch.shape)
+    adv_batch_t = F.grid_sample(adv_batch, grid)
+    cv2.imwrite('./adv.png', adv_batch[0].detach().cpu().numpy().transpose(1, 2, 0) * 255.)
+    cv2.imwrite('./adv_t.png', adv_batch_t[0].detach().cpu().numpy().transpose(1, 2, 0) * 255.)
+    return adv_batch_t

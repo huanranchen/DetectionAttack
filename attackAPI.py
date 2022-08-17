@@ -1,3 +1,5 @@
+import sys
+
 import cv2
 import torch
 import os
@@ -5,6 +7,7 @@ import numpy as np
 import torch.nn.functional as F
 
 from simgleAttack import DetctorAttacker
+from tools.det_utils import rescale_patches
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -49,20 +52,42 @@ class UniversalDetectorAttacker(DetctorAttacker):
         self.universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.).to(self.device)
         # self.universal_patch.requires_grad = True
 
-    def get_patch_pos_batch(self, all_preds):
+    def filter_bbox(self, preds):
+        # print('attack list: ', self.cfg.attack_list)
+        # print('preds: ', preds)
+        filt = []
+        for pred in preds:
+            # print(pred[-1], pred[-1] in self.cfg.attack_list)
+            filt.append(pred[-1] in self.cfg.attack_list)
+        # preds = list(filter(lambda bbox: (bbox[-1] in self.cfg.attack_list), preds))
+        preds = preds[filt]
+        # print(preds)
+        return np.array(preds)
+
+    def get_patch_pos_batch(self, all_preds, aspect_ratio=None):
         # get all bboxs of setted target. If none target bbox is got, return has_target=False
-        # img_cv2: [b, h, w, c]
+        height, width = self.cfg.DETECTOR.INPUT_SIZE
+        scale = self.cfg.ATTACKER.PATCH_ATTACK.SCALE
         self.batch_patch_boxes = []
+
         target_nums = []
-        # has_target = False
-        # print(self.universal_patch.shape)
+        if aspect_ratio is None:
+            aspect_ratio = self.cfg.ATTACKER.PATCH_ATTACK.ASPECT_RATIO
 
         for index, preds in enumerate(all_preds):
             # for every image in the batch
-            patch_boxs = self.patch_pos(preds, self.universal_patch)
+            # print('before filter: ', preds)
+            if len(preds):
+                preds = self.filter_bbox(preds)
+                # print('filtered :', preds)
+                patch_boxs = rescale_patches(preds, height, width, scale, aspect_ratio)
+            else:
+                patch_boxs = np.array([])
+            # print(patch_boxs)
+
             self.batch_patch_boxes.append(patch_boxs)
             target_nums.append(len(patch_boxs))
-        return target_nums
+        return np.array(target_nums)
 
     def apply_universal_patch(self, img_tensor, detector, is_normalize=True, universal_patch=None):
         if universal_patch is None:

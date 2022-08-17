@@ -8,7 +8,7 @@ def parser_input():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-cfg', '--config_file', type=str)
+    parser.add_argument('-cfg', '--cfg', type=str)
     parser.add_argument('-p', '--patch_dir', type=str)
     parser.add_argument('-r', '--rule', type=str, default=None)
     parser.add_argument('-s', '--save', type=str)
@@ -18,11 +18,11 @@ def parser_input():
 
     args.patch_dir = os.path.join(ROOT, args.patch_dir)
     if args.rule is None:
-        args.rule = args.config_file
-    args.save = os.path.join(args.save, args.config_file)
+        args.rule = args.cfg
+    args.save = os.path.join(args.save, args.cfg)
     os.makedirs(args.save, exist_ok=True)
-    args.config_file = './configs/' + args.config_file + '.yaml'
-    cfg = ConfigParser(args.config_file)
+    args.cfg = './configs/' + args.cfg + '.yaml'
+    cfg = ConfigParser(args.cfg)
     args.label_path = os.path.join(ROOT, cfg.DATA.TRAIN.LAB_DIR)
     args.save = os.path.join(ROOT, args.save)
     args.data_root = os.path.join(ROOT, cfg.DATA.TRAIN.IMG_DIR)
@@ -50,8 +50,8 @@ def batch_mAP(cfg, key_dir):
             args = copy.deepcopy(args_train)
             args.save += key_dir
             args.patch = os.path.join(args.patch_dir, patch_file)
-            args, evaluator = init(args, cfg)
-            det_mAPs, _, _ = eva(evaluator, args, cfg)
+
+            det_mAPs, _, _ = eva(args, cfg)
 
             for k, v in det_mAPs.items():
                 y[k].append(float(v))
@@ -59,7 +59,7 @@ def batch_mAP(cfg, key_dir):
             args.save += '/test'
             args.data_root = os.path.join(ROOT, cfg.DATA.TEST.IMG_DIR)
             args.label_path = os.path.join(ROOT, cfg.DATA.TEST.LAB_DIR)
-            det_mAPs, _, _ = eva(evaluator, args, cfg)
+            det_mAPs, _, _ = eva(args, cfg)
             for k, v in det_mAPs.items():
                 y_test[k].append(float(v))
     except Exception as e:

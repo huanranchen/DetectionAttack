@@ -18,7 +18,7 @@ def modelDDP(detector_attacker, args):
 def logger(cfg, args, attack_confs_thresh):
     print('-------------------DETECTOR---------------------')
     print("Attacking model              :", cfg.DETECTOR.NAME)
-    print('Conf thresh                  :', cfg.DETECTOR.CONF_THRESH)
+    print('CONF_THRESH                  :', cfg.DETECTOR.CONF_THRESH)
     print('IOU_THRESH                   :', cfg.DETECTOR.IOU_THRESH)
     print('Input size                   :', cfg.DETECTOR.INPUT_SIZE)
     print('Batch size                   :', cfg.DETECTOR.BATCH_SIZE)
@@ -39,7 +39,11 @@ def logger(cfg, args, attack_confs_thresh):
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
     from tools.lr_decay import cosine_decay
+
     attack_confs_thresh = cfg.DETECTOR.CONF_THRESH - 0.2
+    if hasattr(cfg.DETECTOR, 'ATTACK_CONF_THRESH'):
+        attack_confs_thresh = cfg.DETECTOR.ATTACK_CONF_THRESH
+
     logger(cfg, args, attack_confs_thresh)
     save_plot=True
     # detector_attacker.ddp = False

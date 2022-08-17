@@ -52,11 +52,13 @@ def dir_check(save_path, child_paths, rebuild=False):
 
 
 class UniversalPatchEvaluator(UniversalDetectorAttacker):
-    def __init__(self, cfg, patch_path, device, if_read_patch = True):
+    def __init__(self, cfg, patch_path=None,
+                 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+                 ):
         super().__init__(cfg, device)
         self.cfg = cfg
         self.device = device
-        if if_read_patch:
+        if patch_path is not None:
             self.read_patch(patch_path)
 
     def read_patch_from_memory(self, patch):
@@ -85,14 +87,15 @@ class UniversalPatchEvaluator(UniversalDetectorAttacker):
 
 def handle_input():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--patch', type=str)
-    parser.add_argument('-cfg', '--config_file', type=str)
+    parser.add_argument('-p', '--patch', type=str, default=None)
+    parser.add_argument('-cfg', '--cfg', type=str, default=None)
     parser.add_argument('-t', '--transform', action='store_true')
     parser.add_argument('-d', '--detectors', nargs='+', default=None)
-    parser.add_argument('-s', '--save', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train')
+    parser.add_argument('-s', '--save', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/inria/')
     parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/labels')
     parser.add_argument('-dr', '--data_root', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/pos')
-    parser.add_argument('-o', '--test_origin', action='store_true')
+    parser.add_argument('-to', '--test_origin', action='store_true')
+    parser.add_argument('-tg', '--test_gt', action='store_true')
     parser.add_argument('-ul', '--stimulate_uint8_loss', action='store_true')
     parser.add_argument('-i', '--save_imgs', help='to save attacked imgs', action='store_true')
     parser.add_argument('-g', '--gen_labels', action='store_true')
@@ -101,7 +104,7 @@ def handle_input():
     args = parser.parse_args()
 
     print("save root: ", args.save)
-    cfg = ConfigParser(args.config_file)
+    cfg = ConfigParser(args.cfg)
 
     print(args.detectors)
     if args.detectors is not None:
@@ -129,11 +132,11 @@ def ignore_class(args, cfg):
     # while the 'eva_list' denotes the class list to be evaluated, which are to attack in the evaluation
     # (When the eva classes are different from the original attack classes,
     # it is mainly for the partial attack in evaluating unseen-class/cross-class performance)
-    args.eva_class = cfg.rectify_class_list(args.eva_class, dtype='str')
-    # print('Eva(Attack) classes from evaluation: ', cfg.show_class_index(args.eva_class))
-    # print('Eva classes names from evaluation: ', args.eva_class)
+    args.eva_class_list = cfg.rectify_class_list(args.eva_class, dtype='str')
+    # print('Eva(Attack) classes from evaluation: ', cfg.show_class_index(args.eva_class_list))
+    # print('Eva classes names from evaluation: ', args.eva_class_list)
 
-    args.ignore_class = list(set(cfg.all_class_names).difference(set(args.eva_class)))
+    args.ignore_class = list(set(cfg.all_class_names).difference(set(args.eva_class_list)))
     if len(args.ignore_class) == 0: args.ignore_class = None
     return args
 
@@ -150,10 +153,15 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     data_loader = dataLoader(args.data_root, input_size=cfg.DETECTOR.INPUT_SIZE,
                              batch_size=batch_size, is_augment=False, pin_memory=True)
     save_path = args.save
+    aspect_ratio = args.aspect_ratio if hasattr(args, 'aspect_ratio') else None
+    accs_total = {}
+    for detector in evaluator.detectors:
+        accs_total[detector.name] = []
+    # print(evaluator.detectors)
     for index, img_tensor_batch in tqdm(enumerate(data_loader)):
         names = img_names[index:index + batch_size]
         img_name = names[0].split('/')[-1]
-
+        # print(img_name)
         for detector in evaluator.detectors:
             tmp_path = os.path.join(save_path, detector.name)
             # print('----------------', detector.name)
@@ -170,29 +178,40 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 fp = os.path.join(tmp_path, paths['det-lab'])
                 utils.save_label(preds[0], fp, img_name, save_conf=False, rescale=True)
 
-            if args.test_origin:
+            if hasattr(args, 'test_origin') and args.test_origin:
                 fp = os.path.join(tmp_path, paths['det-res'])
                 utils.save_label(preds[0], fp, img_name, save_conf=True, rescale=True)
 
-            evaluator.get_patch_pos_batch(all_preds)
+            target_nums_clean = evaluator.get_patch_pos_batch(all_preds, aspect_ratio=aspect_ratio)[0]
+            # print(detector.name, '\nclean: ', target_nums_clean)
 
-            if args.save_imgs:
+            if hasattr(args, 'save_imgs') and args.save_imgs:
                 # for saving the attacked imgs
                 ipath = os.path.join(tmp_path, 'imgs')
                 evaluator.imshow_save(img_tensor_batch, ipath, img_name, detectors=[detector])
 
             adv_img_tensor, _ = evaluator.apply_universal_patch(img_tensor_batch, detector)
-            if args.stimulate_uint8_loss:
+            if hasattr(args, 'stimulate_uint8_loss') and args.stimulate_uint8_loss:
                 adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)
             preds, _ = detector.detect_img_batch_get_bbox_conf(adv_img_tensor)
-
             # for saving the attacked detection info
             lpath = os.path.join(tmp_path, paths['attack-lab'])
             # print(lpath)
             utils.save_label(preds[0], lpath, img_name, rescale=True)
+
+            if target_nums_clean:
+                target_adv = evaluator.filter_bbox(preds[0])
+                target_nums_adv = len(target_adv)
+                # print('--------adv: ', target_adv, target_nums_adv)
+                acc = target_nums_clean - target_nums_adv
+                acc = 0 if acc < 0 else acc / target_nums_clean
+                # print('acc: ', acc)
+                accs_total[detector.name].append(round(acc*100, 2))
             # break
         # break
-
+    for detector in evaluator.detectors:
+        accs_total[detector.name] = np.mean(accs_total[detector.name])
+    return accs_total
 
 def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
     # preprocessing the cfg
@@ -205,19 +224,23 @@ def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() el
     return args, evaluator
 
 
-def eva(evaluator, args, cfg):
+def eva(args, cfg):
+    args, evaluator = init(args, cfg)
     print('------------------ Evaluating ------------------')
-    print("cfg file     :", args.config_file)
+    print("cfg file     :", args.cfg)
     print("data root     :", args.data_root)
-    print("label root     :", args.save)
+    print("label root     :", args.label_path)
+    print("save root     :", args.save)
     # set the eva classes to be the ones to attack
-    evaluator.attack_list = cfg.show_class_index(args.eva_class)
-    cfg.GRAD_PERTURB = False
+    evaluator.attack_list = cfg.show_class_index(args.eva_class_list)
+    cfg.DETECTOR.GRAD_PERTURB = False
+    accs_dict = None
     if args.gen_labels:
-        generate_labels(evaluator, cfg, args)
+        accs_dict = generate_labels(evaluator, cfg, args)
     save_path = args.save
 
     det_mAPs = {}; gt_mAPs = {}; ori_mAPs = {}
+    quiet = args.quiet if hasattr(args, 'quiet') else False
     # to compute mAP
     for detector in evaluator.detectors:
         # tmp_path = os.path.join(cfg.ATTACK_SAVE_PATH, detector.name)
@@ -244,44 +267,53 @@ def eva(evaluator, args, cfg):
         # (det-results)take clear detection results as GT label: attack results as detections
         print('ground truth     :', os.path.join(path, paths['det-lab']))
         det_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
-                                gt_path=paths['det-lab'], res_prefix='det', quiet=args.quiet)
-        det_mAPs[detector.name] = "%.2f" % (det_mAP*100)
+                                gt_path=paths['det-lab'], res_prefix='det', quiet=quiet)
+        det_mAPs[detector.name] = round(det_mAP*100, 2)
 
 
-        # (gt-results)take original labels as GT label(default): attack results as detections
-        # print('ground truth     :', paths['ground-truth'])
-        gt_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
-                                gt_path=paths['ground-truth'], res_prefix='gt', quiet=args.quiet)
-        gt_mAPs[detector.name] = "%.2f" % (gt_mAP*100)
+        if hasattr(args, 'test_gt') and args.test_gt:
+            # (gt-results)take original labels as GT label(default): attack results as detections
+            # print('ground truth     :', paths['ground-truth'])
+            gt_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
+                                    gt_path=paths['ground-truth'], res_prefix='gt', quiet=quiet)
+            gt_mAPs[detector.name] = round(gt_mAP*100, 2)
 
-        if args.test_origin:
+        if hasattr(args, 'test_origin') and args.test_origin:
             rp = 'ori'
             # (ori-results)take original labels as path['ground-truth'] label(default): clear detection res as detections
             ori_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['det-res'],
-                                gt_path=paths['ground-truth'], res_prefix=rp, quiet=args.quiet)
-            ori_mAPs[rp][detector.name] = "%.2f" % (ori_mAP*100)
+                                gt_path=paths['ground-truth'], res_prefix=rp, quiet=quiet)
+            ori_mAPs[rp][detector.name] = round(ori_mAP*100, 2)
 
         # merge_plot(ori_aps_dic, path, det_aps_dic, gt_aps_dic)
 
-    return det_mAPs, gt_mAPs, ori_mAPs
+    return det_mAPs, gt_mAPs, ori_mAPs, accs_dict
 
 
 if __name__ == '__main__':
-    from tools.parser import dict2txt
+    from tools.parser import dict2txt, merge_dict_by_key
+
     args, cfg = handle_input()
     order = ['yolov3', 'yolov3-tiny', 'yolov4', 'yolov4-tiny', 'yolov5', 'faster_rcnn', 'ssd']
 
-    args, evaluator = init(args, cfg)
-    det_mAPs, gt_mAPs, ori_mAPs = eva(evaluator, args, cfg)
+    # args, evaluator = init(args, cfg)
+    det_mAPs, gt_mAPs, ori_mAPs, accs_dict = eva(args, cfg)
 
 
-    print("det mAP      :", det_mAPs)
+
     det_mAP_file = os.path.join(args.save, 'det-mAP.txt')
-    with open(det_mAP_file, 'w') as f:
-        where = 'ours' if cfg.ATTACKER.PATCH_ATTACK.AREA_RATIO else 'natural'
-        f.write(where+' scale: ' + str(cfg.ATTACKER.PATCH_ATTACK.SCALE) + '\n')
-        f.write('--------------------------\n')
-    dict2txt(det_mAPs, det_mAP_file)
+    if not os.path.exists(det_mAP_file):
+        with open(det_mAP_file, 'a') as f:
+            where = cfg.ATTACKER.PATCH_ATTACK.ASPECT_RATIO
+            f.write('aspect ratio: '+str(where)+'\n')
+            f.write('scale: ' + str(cfg.ATTACKER.PATCH_ATTACK.SCALE) + '\n')
+            f.write('--------------------------\n')
+
+    det_dict = det_mAPs
+    if accs_dict is not None:
+        det_dict = merge_dict_by_key(det_mAPs, accs_dict)
+    dict2txt(det_dict, det_mAP_file)
     dict2txt(gt_mAPs, os.path.join(args.save, 'gt-mAP.txt'))
+    print("det dict      [mAP, acc]:", det_dict)
     # with open(os.path.join(args.save, 'gt-mAP.txt'), 'a'):
     #     det_mAPs['yolov3']
