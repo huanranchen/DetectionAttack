@@ -11,44 +11,38 @@ class HHYolov4(DetectorBase):
     def __init__(self, name, cfg,
                  input_tensor_size=416,
                  device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
-        # name
         super().__init__(name, cfg, input_tensor_size, device)
 
-    def load(self, model_weights, cfg_file=None, data_config_path=None, shakedrop=False):
-        if shakedrop:
+    def requires_grad_(self, state: bool):
+        assert self.detector
+        self.detector.models.requires_grad_(state)
+
+    def load(self, model_weights, detector_config_file=None, data_config_path=None):
+        if self.cfg.PERTURB.GATE == 'shake_drop':
             from .Pytorch_YOLOv4.tool.darknet_shakedrop import DarknetShakedrop
-            print(cfg_file)
-            self.detector = DarknetShakedrop(cfg_file)
-            # print(self.detector)
+            tmp = detector_config_file.split('/')
+            detector_cfg = self.cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
+            print('Self ensemble! Shake drop model cfg :', detector_config_file)
+            tmp[-1] = detector_cfg
+            self.detector = DarknetShakedrop('/'.join(tmp)).to(self.device)
+
+            self.clean_model = Darknet(detector_config_file).to(self.device)
+            self.clean_model.load_weights(model_weights)
+            self.clean_model.eval()
+            self.clean_model.models.requires_grad_(False)
         else:
-            self.detector = Darknet(cfg_file)
-
-        # data config
-        # self.num_classes = self.detector.num_classes
-        # self.namesfile = load_class_names(self.cfg.CLASS_NAME_FILE)
-
-        # post_processing method | input (img, conf_thresh, nms_thresh, output) | return bboxes_batch
-        self.post_processing = post_processing
+            self.detector = Darknet(detector_config_file).to(self.device)
 
         self.detector.load_weights(model_weights)
-        self.detector.eval()
-        self.detector.to(self.device)
-
-        self.module_list = self.detector.models
-
-        self.module_list.requires_grad_(False)
+        self.eval()
 
 
-    # def init_img_batch(self, img_numpy_batch):
-    #     img_tensor = Variable(torch.from_numpy(img_numpy_batch).float().div(255.0).to(self.device))
-    #     return img_tensor
-
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5):
-        output = self.detector(batch_tensor)
-        # output: [ [batch, num, 1, 4], [batch, num, num_classes] ]
-        confs = output[1]
-        # print(self.name, confs.shape)
-        preds = self.post_processing(batch_tensor, self.conf_thres, self.iou_thres, output)
+    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5, clean_model=False):
+        if clean_model and hasattr(self, 'clean_model'):
+            output = self.clean_model(batch_tensor)
+        else:
+            output = self.detector(batch_tensor)
+        preds = post_processing(batch_tensor, self.conf_thres, self.iou_thres, output)
         for i, pred in enumerate(preds):
             pred = np.array(pred)
             if len(pred) != 0:
@@ -56,6 +50,8 @@ class HHYolov4(DetectorBase):
             preds[i] = pred # shape([1, 6])
         # print('v4 h: ', confs.shape, confs.requires_grad)
 
+        # output: [ [batch, num, 1, 4], [batch, num, num_classes] ]
+        confs = output[1]
         confs = confs[torch.where(confs > confs_thresh)]
 
         return preds, confs

@@ -24,7 +24,7 @@ class TorchSSD(DetectorBase):
         self.detector.eval()
         self.detector.requires_grad_(False)
 
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5):
+    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5, **kwargs):
         shape = batch_tensor.shape[-2]
         preds = self.detector(batch_tensor)
 

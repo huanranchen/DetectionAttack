@@ -1,5 +1,4 @@
 import sys
-
 import torch
 import numpy as np
 
@@ -19,14 +18,13 @@ class HHYolov2(DetectorBase):
         print(detector_config_file)
         self.detector = Darknet(detector_config_file).to(self.device)
         self.detector.load_weights(model_weights)
-        self.detector.eval()
-        self.detector.requires_grad_(False)
+        self.eval()
 
     def detect_test(self, batch_tensor):
         detections_with_grad = self.detector(batch_tensor)
         return detections_with_grad
 
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5):
+    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5, **kwargs):
         detections_with_grad = self.detector(batch_tensor)  # torch.tensor([1, num, classes_num+4+1])
         # print(detections_with_grad.shape, detections_with_grad.dim())
 

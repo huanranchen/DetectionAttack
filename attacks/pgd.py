@@ -81,9 +81,9 @@ class LinfPGDAttack(Base_Attacker):
         c1 = [0, 0, 0]
         c2 = [self.epsilon, self.epsilon, self.epsilon]
         c = np.vstack([c1, c2])
-        c = np.resize(c, (1, 2, 3))
+        epsilon = np.resize(c, (1, 2, 3))
         # print("init: ", c.shape, c.dtype)
-        epsilon = detector.normalize(c)
+        # epsilon = detector.normalize(epsilon)
 
         self.min_epsilon = [epsilon[0, 0, 0, 0].item(), epsilon[0, 1, 0, 0].item(), epsilon[0, 2, 0, 0].item()]
         self.max_epsilon = [epsilon[0, 1, 0, 1].item(), epsilon[0, 1, 0, 1].item(), epsilon[0, 2, 0, 1].item()]
@@ -141,12 +141,9 @@ class LinfPGDAttack(Base_Attacker):
             patch_tmp = self.clamp(patch_tmp, self.max_epsilon, self.min_epsilon)
             adv_tensor_batch, _ = detector_attacker.apply_universal_patch(
                 ori_tensor_batch, detector, is_normalize=False, universal_patch=patch_tmp)
-        # if hasattr(detector_attacker.cfg.DETECTOR, 'ETA') and detector_attacker.cfg.DETECTOR.ETA:
-        #     self.optim.step()
+
         patch_tmp = detector.unnormalize_tensor(patch_tmp.detach())
-        # sys.exit()
-        # print(losses)
-        # print(' Loss: ', np.mean(losses))
+
         return patch_tmp, np.mean(losses)
 
     def parallel_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector):

@@ -3,7 +3,6 @@ DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
 
 DETECTOR:
-  # "Military_YOLOX", , "YOLOV5"
   NAME: ["FASTER_RCNN", "SSD"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 16
@@ -11,7 +10,8 @@ DETECTOR:
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
 
-  GRAD_PERTURB: 0
+  PERTURB:
+    GATE: null
 
 ATTACKER:
   METHOD: "pgd"

@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
-  AUGMENT: 0
+  AUGMENT: 1
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
     LAB_DIR: 'data/INRIAPerson/Train/labels'
@@ -9,7 +9,7 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["Faster_RCNN"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
   CONF_THRESH: 0.5
@@ -18,7 +18,7 @@ DETECTOR:
   PERTURB:
     GATE: 'shake_drop' # ['shake_drop', 'grad_descend', 'random', null]
     SHAKE_DROP:
-      MODEL_CONFIG:
+      MODEL_CONFIG: 'yolov4-shakedrop.cfg' # rewrite model cfg when shake drop
 
     GRAD_DESCEND:
       GRAD_RESET: 10
@@ -27,7 +27,7 @@ DETECTOR:
 ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
-  MAX_ITERS: 1000
+  MAX_ITERS: 700
   SERIAL_ITER_STEP: 5
   PARALLEL_ITER_STEP: 15
   STEP_SIZE: 0.005

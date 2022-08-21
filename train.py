@@ -22,16 +22,13 @@ def logger(cfg, args, attack_confs_thresh):
     print('IOU_THRESH                   :', cfg.DETECTOR.IOU_THRESH)
     print('Input size                   :', cfg.DETECTOR.INPUT_SIZE)
     print('Batch size                   :', cfg.DETECTOR.BATCH_SIZE)
-
-    to_perturb = False
-    if hasattr(cfg.DETECTOR, 'GRAD_PERTURB'):
-        to_perturb = cfg.DETECTOR.GRAD_PERTURB
-    print('To perturb(self-ensemble)    :', to_perturb)
+    print('Self-ensemble                :', cfg.DETECTOR.PERTURB.GATE)
 
     print('-------------------ATTACKER---------------------')
     print('Attack method                : ', args.attack_method)
     print("Attack confs thresh          : ", attack_confs_thresh)
-    print("Patch size                   : ", cfg.ATTACKER.PATCH_ATTACK)
+    print("Patch size                   : ",
+          '['+str(cfg.ATTACKER.PATCH_ATTACK.HEIGHT)+', '+str(cfg.ATTACKER.PATCH_ATTACK.WIDTH)+']')
     print('Attack method                : ', cfg.ATTACKER.METHOD)
     print('To Augment data              : ', cfg.DATA.AUGMENT)
     print('Step size                    : ', cfg.ATTACKER.STEP_SIZE)
@@ -44,12 +41,19 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     if hasattr(cfg.DETECTOR, 'ATTACK_CONF_THRESH'):
         attack_confs_thresh = cfg.DETECTOR.ATTACK_CONF_THRESH
 
+    data_sampler = None
+    data_loader = dataLoader(data_root, cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT,
+                             batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler)
     logger(cfg, args, attack_confs_thresh)
+    save_step = 5000
     save_plot=True
     # detector_attacker.ddp = False
-    data_sampler = None
+
+    epoch_save_mode = False if len(data_loader) > save_step else True
+    start_index = int(args.patch.split('/')[-1].split('_')[0]) if args.patch is not None else 1
     detector_attacker.init_universal_patch(args.patch)
-    detector_attacker.save_patch(args.save_path, f'0_{save_name}')
+
+    detector_attacker.save_patch(args.save_path, f'{str(start_index)}_{save_name}')
     # if detector_attacker.ddp:
     #
     #     import torch.distributed as dist
@@ -58,13 +62,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     #     data_sampler = torch.utils.data.distributed.DistributedSampler(data_set)
     #     modelDDP(detector_attacker, args)
 
-    data_loader = dataLoader(data_root, cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT,
-                             batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler)
-
-    save_step = 5000
-    epoch_save_mode = False if len(data_loader) > save_step else True
-
-    start_index = int(args.patch.split('_')[0].split('/')[-1]) if args.patch is not None else 1
     losses = []
     for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS+1):
         if args.confs_thresh_decay:
@@ -74,12 +71,11 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         for index, img_tensor_batch in tqdm(enumerate(data_loader)):
             now_step = index + epoch * len(data_loader)
             all_preds = None
+            img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
             for detector in detector_attacker.detectors:
                 # detector.target = None  # TODO: CONF_POLICY test
-                img_tensor_batch = img_tensor_batch.to(detector.device)
-                preds, _ = detector.detect_img_batch_get_bbox_conf(img_tensor_batch)
+                preds, _ = detector.detect_img_batch_get_bbox_conf(img_tensor_batch, clean_model=True)
                 all_preds = detector_attacker.merge_batch_pred(all_preds, preds)
-
                 detector.target = preds # TODO: CONF_POLICY test
 
             # nms among detectors
@@ -92,19 +88,14 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                 print('no target detected.')
                 continue
 
-            if args.attack_method == 'parallel':
-                detector_attacker.parallel_attack(img_tensor_batch)
-            elif args.attack_method == 'serial':
-                loss = detector_attacker.serial_attack(img_tensor_batch, confs_thresh=attack_confs_thresh)
+            detector_attacker.attack(img_tensor_batch, args.attack_method,
+                                     confs_thresh=attack_confs_thresh)
 
-            losses.append(loss)
             if save_plot and index % 10 == 0:
-                for detector in detector_attacker.detectors:
-                    detector_attacker.imshow_save(img_tensor_batch, os.path.join(args.save_path, detector.name),
-                                                  save_name, detectors=[detector])
+                detector_attacker.imshow_save(img_tensor_batch,
+                                              os.path.join(args.save_path, detector.name),
+                                              save_name)
 
-            # if index == 1:
-            #     detector_attacker.save_patch(args.save_path, '1_'+save_name)
             # the patch will be saved in every 5000 images
             if (epoch_save_mode and index == 1 and epoch % 10 == 0) \
                     or (not epoch_save_mode and now_step % save_step == 0):
@@ -112,9 +103,14 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                 patch_name = f'{prefix}_{save_name}'
                 detector_attacker.save_patch(args.save_path, patch_name)
 
-            if hasattr(cfg.DETECTOR, 'GRAD_PERTURB') and cfg.DETECTOR.GRAD_PERTURB:
-                freq = cfg.DETECTOR.PERTURB_FREQ if hasattr(cfg.DETECTOR, 'PERTURB_FREQ') else 1
-                print('GRAD_PERTURB: every('.lower(), freq, ' step)')
+            if cfg.DETECTOR.PERTURB.GATE == 'grad_descend':
+                try:
+                    freq = cfg.DETECTOR.PERTURB.GRAD_DESCEND.PERTURB_FREQ
+                except Exception as e:
+                    print(e, 'From grad perturb: Resetting model reset freq...')
+                    freq = 1
+
+                print('GRAD_PERTURB: every(', freq, ' step)')
                 if now_step and now_step % cfg.DETECTOR.RESET_FREQ == 0:
                     print(now_step, ' : resetting the model')
                     detector.reset_model()

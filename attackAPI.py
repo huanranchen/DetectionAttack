@@ -7,7 +7,8 @@ import numpy as np
 import torch.nn.functional as F
 
 from simgleAttack import DetctorAttacker
-from tools.det_utils import rescale_patches
+from tools.det_utils import rescale_patches, tensor2numpy
+from tools.data_loader import DataTransformer
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -17,6 +18,8 @@ class UniversalDetectorAttacker(DetctorAttacker):
     def __init__(self, cfg, device):
         super().__init__(cfg, device)
         self.universal_patch = None
+        if cfg.DATA.AUGMENT:
+            self.data_transformer = DataTransformer()
 
     def read_patch(self, patch_file):
         # patch_file = self.args.patch
@@ -53,15 +56,8 @@ class UniversalDetectorAttacker(DetctorAttacker):
         # self.universal_patch.requires_grad = True
 
     def filter_bbox(self, preds):
-        # print('attack list: ', self.cfg.attack_list)
-        # print('preds: ', preds)
-        filt = []
-        for pred in preds:
-            # print(pred[-1], pred[-1] in self.cfg.attack_list)
-            filt.append(pred[-1] in self.cfg.attack_list)
-        # preds = list(filter(lambda bbox: (bbox[-1] in self.cfg.attack_list), preds))
+        filt = [pred[-1] in self.cfg.attack_list for pred in preds]
         preds = preds[filt]
-        # print(preds)
         return np.array(preds)
 
     def get_patch_pos_batch(self, all_preds, aspect_ratio=None):
@@ -89,22 +85,21 @@ class UniversalDetectorAttacker(DetctorAttacker):
             target_nums.append(len(patch_boxs))
         return np.array(target_nums)
 
+
+
     def apply_universal_patch(self, img_tensor, detector, is_normalize=True, universal_patch=None):
         if universal_patch is None:
             universal_patch = self.universal_patch
-        # print("fn0: ", img_tensor.grad_fn)
-        img_tensor = detector.normalize_tensor(img_tensor)
+        # img_tensor = detector.normalize_tensor(img_tensor)
 
-        if is_normalize:
+        # if is_normalize:
             # init the patches
-            universal_patch = detector.normalize_tensor(universal_patch)
-        else:
+            # universal_patch = detector.normalize_tensor(universal_patch)
+        # else:
             # when attacking
-            universal_patch = universal_patch.detach_()
-        # print('====================is leaf: ', universal_patch.is_leaf)
-        if universal_patch.is_leaf:
-            universal_patch.requires_grad = True
-        # print(len(img_tensor))
+            # universal_patch = universal_patch.detach_()
+        # if universal_patch.is_leaf:
+        #     universal_patch.requires_grad = True
         # print(self.detectors[0].name, "universal patch grad: ", universal_patch.requires_grad, universal_patch.is_leaf)
         for i, img in enumerate(img_tensor):
             # print('adding patch, ', i, 'got box num:', len(self.batch_patch_boxes[i]))
@@ -144,7 +139,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         for detector in detectors:
             tmp, _ = self.apply_universal_patch(img_tensor[0].unsqueeze(0), detector)
             preds, _ = detector.detect_img_batch_get_bbox_conf(tmp)
-            img_numpy, img_numpy_int8 = detector.unnormalize(tmp[0])
+            img_numpy_int8 = tensor2numpy(tmp[0])
             self.plot_boxes(img_numpy_int8, preds[0],
                             savename=os.path.join(save_path, save_name))
 
@@ -174,6 +169,14 @@ class UniversalDetectorAttacker(DetctorAttacker):
         for detector in self.detectors:
             loss = self.attacker.serial_non_targeted_attack(img_tensor_batch, self, detector, optimizer)
         return loss
+
+    def attack(self, img_tensor_batch, mode='serial', confs_thresh=None):
+        if self.cfg.DATA.AUGMENT:
+            self.data_transformer(img_tensor_batch)
+        if mode == 'serial':
+            self.serial_attack(img_tensor_batch, confs_thresh)
+        elif mode == 'parallel':
+            self.parallel_attack(img_tensor_batch)
 
     def serial_attack(self, img_tensor_batch, confs_thresh=None):
         detectors_loss = []

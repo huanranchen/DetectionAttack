@@ -3,7 +3,7 @@ DATA:
   AUGMENT: 1
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
-    LAB_DIR: 'data/INRIAPerson/Train/labels'
+    LAB_DIR: 'data/INRIAPerson/Train/labels/ground-truth-labels'
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
     LAB_DIR: 'data/INRIAPerson/Test/labels'
@@ -15,8 +15,14 @@ DETECTOR:
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
 
-  model_cfg: 'yolov4-shakedrop.cfg'
-  shake_drop: 1
+  PERTURB:
+    GATE: 'shake_drop' # ['shake_drop', 'grad_descend', 'random', null]
+    SHAKE_DROP:
+      MODEL_CONFIG: 'yolov4-shakedrop.cfg' # rewrite model cfg when shake drop
+
+    GRAD_DESCEND:
+      GRAD_RESET: 10
+      RESET_FREQ: 1000
 
 ATTACKER:
   METHOD: "pgd"

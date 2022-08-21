@@ -7,24 +7,47 @@ from torchvision import transforms
 from PIL import Image
 
 
+class DataTransformer(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        subpolicy1 = [
+            transforms.CenterCrop(256),
+            transforms.RandomResizedCrop(416, scale=(0.8, 0.9)),
+        ]
+        subpolicy2 = [
+            transforms.RandomRotation(20),
+            transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+        ]
+        self.transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(p=0.5),
+            # transforms.RandomEqualize(p=0.3),
+            transforms.RandomChoice(subpolicy1),
+            transforms.RandomChoice(subpolicy2)
+        ])
+
+    def forward(self, img_tensor):
+        return self.transform(img_tensor)
 
 class detDataSet(Dataset):
     def __init__(self, images_path, input_size, is_augment=False):
         self.imgs = [os.path.join(images_path, i) for i in os.listdir(images_path)]
         self.input_size = input_size
         self.n_samples = len(self.imgs)
-
+        is_augment = False
         if is_augment:
-            subpolicy = [
-                transforms.RandomRotation(15),
+            subpolicy1 = [
                 transforms.CenterCrop(256),
-                transforms.RandomResizedCrop(416, scale=(0.8, 1.0)),
-                transforms.ColorJitter(brightness=0.4, contrast=0.2, saturation=0.3),
+                transforms.RandomResizedCrop(416, scale=(0.8, 0.9)),
+            ]
+            subpolicy2 = [
+                transforms.RandomRotation(20),
+                transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
             ]
             self.transform = transforms.Compose([
                 transforms.RandomHorizontalFlip(p=0.5),
                 # transforms.RandomEqualize(p=0.3),
-                transforms.RandomChoice(subpolicy),
+                transforms.RandomChoice(subpolicy1),
+                transforms.RandomChoice(subpolicy2),
                 transforms.Resize(self.input_size),
                 transforms.ToTensor(),
             ])
@@ -36,10 +59,8 @@ class detDataSet(Dataset):
 
     def __getitem__(self, index):
         """ Reading image """
-        # bgr_img_numpy = cv2.imread(self.imgs[index])
-        # image = cv2.cvtColor(bgr_img_numpy, cv2.COLOR_BGR2RGB)
+        # print(self.imgs[index], index)
         image = Image.open(self.imgs[index]).convert('RGB')
-
         image = self.transform(image)
         return image
 
@@ -49,11 +70,6 @@ class detDataSet(Dataset):
 
 def check_valid(name):
     return name.endswith(('.bmp', '.dib', '.png', '.jpg', '.jpeg', '.pbm', '.pgm', '.ppm', '.tif', '.tiff'))
-
-
-
-# def INRIA_dataset():
-#     data_root = ''
 
 
 
@@ -79,7 +95,6 @@ def read_img_np_batch(names, input_size):
         else:
             img_numpy_batch = np.concatenate((img_numpy_batch, img_numpy), axis=0)
     return img_numpy_batch
-
 
 
 def dataLoader(data_root, input_size=None, batch_size=1, is_augment=False,

@@ -46,7 +46,9 @@ def draw_all_picture_of_aspect_ratio(cfg, args, postfix=''):
         # else:
         #     args.gen_labels = True
 
-        det_mAPs, _, _, acc = eva(args, cfg)
+        det_mAPs, _, _, accs_dict = eva(args, cfg)
+        acc = list(accs_dict.values())[0]
+        print(acc)
         # print(det_mAPs.values())
         xs.append(float(str(ratio)[:3]))
         ys.append(float(list(det_mAPs.values())[0]))
@@ -79,7 +81,7 @@ if __name__ == '__main__':
     import argparse
 
     targets = ['v2', 'v3', 'v3tiny', 'v4', 'v4tiny', 'v5']
-    targets = ['v2']
+    targets = ['v4tiny']
     for target in targets:
         parser = argparse.ArgumentParser()
         parser.add_argument('-p', '--patch', type=str,
@@ -94,6 +96,6 @@ if __name__ == '__main__':
         args = parser.parse_args()
         acc_fig = plt.figure()
         map_fig = plt.figure()
-        args.patch = f'{PROJECT_ROOT}/results/object_score.png'
+        args.patch = f'{PROJECT_ROOT}/results/v4tiny.png'
         cfg = ConfigParser(f'{PROJECT_ROOT}/configs/{args.cfg}')
         draw_all_picture_of_aspect_ratio(cfg, args, postfix='-obj_score')

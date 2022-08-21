@@ -20,12 +20,15 @@ DETECTOR:
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
 
-  model_cfg: 'yolov3-shakedrop.cfg'
-  shake_drop: 1
+  PERTURB:
+    GATE: 'shake_drop' # ['shake_drop', 'grad_descend', 'random', null]
 
-  GRAD_PERTURB: 0
-  GRAD_RESET: 10
-  RESET_FREQ: 1000
+    SHAKE_DROP:
+      MODEL_CONFIG: 'yolov3-shakedrop.cfg' # rewrite model cfg when shake drop
+
+    GRAD_DESCEND:
+      GRAD_RESET: 10
+      RESET_FREQ: 1000
 
 ATTACKER:
   METHOD: "pgd"

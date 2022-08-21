@@ -14,7 +14,7 @@ def logger(cfg, args, attack_confs_thresh):
     print('IOU_THRESH                   :', cfg.DETECTOR.IOU_THRESH)
     print('Input size                   :', cfg.DETECTOR.INPUT_SIZE)
     print('Batch size                   :', cfg.DETECTOR.BATCH_SIZE)
-    print('To perturb(self-ensemble)    :', cfg.DETECTOR.GRAD_PERTURB)
+    print('Self-ensemble                :', cfg.DETECTOR.PERTURB.GATE)
     print('-------------------ATTACKER---------------------')
     print('Attack method                : ', args.attack_method)
     print("Attack confs thresh          : ", attack_confs_thresh)
@@ -105,18 +105,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                 prefix = epoch if epoch_save_mode else int(now_step / 5000)
                 patch_name = f'{prefix}_{save_name}'
                 detector_attacker.save_patch(args.save_path, patch_name)
-
-            if hasattr(cfg.DETECTOR, 'GRAD_PERTURB') and cfg.DETECTOR.GRAD_PERTURB:
-                freq = cfg.DETECTOR.PERTURB_FREQ if hasattr(cfg.DETECTOR, 'PERTURB_FREQ') else 1
-                print('GRAD_PERTURB: every('.lower(), freq, ' step)')
-                if now_step and now_step % cfg.DETECTOR.RESET_FREQ == 0:
-                    print(now_step, ' : resetting the model')
-                    detector.reset_model()
-                elif index % freq == 0:
-                    print(now_step, ': perturbing')
-                    detector.perturb()
-
-    np.save(args.save_path+'/losses.npy', np.array(losses))
 
 
 if __name__ == '__main__':

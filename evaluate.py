@@ -159,6 +159,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
         accs_total[detector.name] = []
     # print(evaluator.detectors)
     for index, img_tensor_batch in tqdm(enumerate(data_loader)):
+        img_tensor_batch = img_tensor_batch.to(evaluator.device)
         names = img_names[index:index + batch_size]
         img_name = names[0].split('/')[-1]
         # print(img_name)
@@ -166,13 +167,9 @@ def generate_labels(evaluator, cfg, args, save_label=False):
             tmp_path = os.path.join(save_path, detector.name)
             # print('----------------', detector.name)
             all_preds = None
-            img_tensor_batch = img_tensor_batch.to(detector.device)
-            # img_tensor_batch = detector.init_img_batch(img_numpy_batch)
             # get object bbox: preds bbox list; detections_with_grad: confs tensor
             preds, _ = detector.detect_img_batch_get_bbox_conf(img_tensor_batch)
-
             all_preds = evaluator.merge_batch_pred(all_preds, preds)
-
             if save_label:
                 # for saving the original detection info
                 fp = os.path.join(tmp_path, paths['det-lab'])
@@ -213,6 +210,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
         accs_total[detector.name] = np.mean(accs_total[detector.name])
     return accs_total
 
+
 def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
     # preprocessing the cfg
     args = get_save(args)
@@ -221,19 +219,26 @@ def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() el
     if hasattr(args, 'transform') and args.transform:
         evaluator.transform_patch()
 
-    return args, evaluator
+    cfg = cfg_save_modify(cfg)
+    return args, cfg, evaluator
+
+
+def cfg_save_modify(cfg):
+    cfg.DETECTOR.PERTURB.GATE = None
+    cfg.DATA.AUGMENT = False
+    return cfg
 
 
 def eva(args, cfg):
-    args, evaluator = init(args, cfg)
+    args, cfg, evaluator = init(args, cfg)
     print('------------------ Evaluating ------------------')
-    print("cfg file     :", args.cfg)
-    print("data root     :", args.data_root)
-    print("label root     :", args.label_path)
-    print("save root     :", args.save)
+    print("cfg file             : ", args.cfg)
+    print("data root            : ", args.data_root)
+    print("label root           : ", args.label_path)
+    print("save root            : ", args.save)
     # set the eva classes to be the ones to attack
     evaluator.attack_list = cfg.show_class_index(args.eva_class_list)
-    cfg.DETECTOR.GRAD_PERTURB = False
+
     accs_dict = None
     if args.gen_labels:
         accs_dict = generate_labels(evaluator, cfg, args)
@@ -305,8 +310,8 @@ if __name__ == '__main__':
     if not os.path.exists(det_mAP_file):
         with open(det_mAP_file, 'a') as f:
             where = cfg.ATTACKER.PATCH_ATTACK.ASPECT_RATIO
-            f.write('aspect ratio: '+str(where)+'\n')
-            f.write('scale: ' + str(cfg.ATTACKER.PATCH_ATTACK.SCALE) + '\n')
+            f.write('aspect ratio   : '+str(where)+'\n')
+            f.write('scale          : ' + str(cfg.ATTACKER.PATCH_ATTACK.SCALE) + '\n')
             f.write('--------------------------\n')
 
     det_dict = det_mAPs
@@ -314,6 +319,6 @@ if __name__ == '__main__':
         det_dict = merge_dict_by_key(det_mAPs, accs_dict)
     dict2txt(det_dict, det_mAP_file)
     dict2txt(gt_mAPs, os.path.join(args.save, 'gt-mAP.txt'))
-    print("det dict      [mAP, acc]:", det_dict)
+    print("det dict      [mAP, acc] :", det_dict)
     # with open(os.path.join(args.save, 'gt-mAP.txt'), 'a'):
     #     det_mAPs['yolov3']

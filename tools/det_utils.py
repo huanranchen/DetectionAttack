@@ -4,6 +4,14 @@ import math
 import numpy as np
 import torch
 import torchvision
+from torchvision import transforms
+
+
+def tensor2numpy(img_tensor, bgr=True):
+    img = np.array(torchvision.transforms.ToPILImage()(img_tensor))
+    if bgr:
+        img_numpy_int8 = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    return img_numpy_int8
 
 
 def inter_nms(all_predictions, conf_thres=0.25, iou_thres=0.45):
@@ -38,6 +46,22 @@ def inter_nms(all_predictions, conf_thres=0.25, iou_thres=0.45):
         # print('i', predictions[i].shape)
         out.append(predictions[i])
     return out
+
+
+def tensor2bgr_numpy(im_tensor):
+    img_numpy = im_tensor.numpy().transpose((1, 2, 0))
+    bgr_im = cv2.cvtColor(img_numpy, cv2.COLOR_RGB2BGR) * 255.
+    bgr_im_int8 = bgr_im.astype('uint8')
+    return bgr_im_int8
+
+
+def cv2_im2tensor(bgr_img_numpy):
+    image_data = cv2.cvtColor(bgr_img_numpy.astype(np.uint8), cv2.COLOR_BGR2RGB)
+
+    # to CHW & normalize: auto scale when dtype=uint8
+    image = transforms.ToTensor()(image_data)
+    img_tensor = image.unsqueeze(0)
+    return img_tensor
 
 
 def plot_boxes_cv2(imgfile, boxes, class_names, savename=None):
