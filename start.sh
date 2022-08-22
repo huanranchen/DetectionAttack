@@ -34,7 +34,7 @@ CUDA_VISIBLE_DEVICES=2 python evaluate.py -i -l \
 -p ./results/military/patch/595parallel.png \
 -cfg ./configs/parallel.yaml
 
-CUDA_VISIBLE_DEVICES=3 python entry.py --attack_method=serial --cfg=inria3.yaml --cuda=3
+CUDA_VISIBLE_DEVICES=3 python entry.py --attack_method=sequential --cfg=inria3.yaml --cuda=3
 
 ####################For test in coco
 CUDA_VISIBLE_DEVICES=3 python evaluate.py -i \

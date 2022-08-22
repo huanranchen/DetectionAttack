@@ -30,7 +30,7 @@ class ConfigParser:
         self.load_config()
         self.all_class_names = load_class_names(
             os.path.join(PROJECT_DIR, self.DATA.CLASS_NAME_FILE))
-        print("all cls num      : ", len(self.all_class_names))
+        # print("all cls num      : ", len(self.all_class_names))
         self.get_attack_list()
         self.num_classes = len(self.all_class_names)
         # self.empty_class = get_empty_class(self.all_class_names)

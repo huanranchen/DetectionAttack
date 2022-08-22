@@ -42,7 +42,7 @@ class DetctorAttacker(object):
         pass
 
     # 将patch加到图片对应位置
-    def apply_patches(self, img_tensor, detector, is_normalize=True):
+    def apply_patches(self, img_tensor, detector, attacking=False):
         pass
 ```
 

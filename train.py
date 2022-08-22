@@ -16,22 +16,23 @@ def modelDDP(detector_attacker, args):
 
 
 def logger(cfg, args, attack_confs_thresh):
-    print('-------------------DETECTOR---------------------')
-    print("Attacking model              :", cfg.DETECTOR.NAME)
-    print('CONF_THRESH                  :', cfg.DETECTOR.CONF_THRESH)
-    print('IOU_THRESH                   :', cfg.DETECTOR.IOU_THRESH)
-    print('Input size                   :', cfg.DETECTOR.INPUT_SIZE)
-    print('Batch size                   :', cfg.DETECTOR.BATCH_SIZE)
-    print('Self-ensemble                :', cfg.DETECTOR.PERTURB.GATE)
+    print('--------------------------DETECTOR----------------------------')
+    print("             Attacking model :", cfg.DETECTOR.NAME)
+    print('                 CONF_THRESH :', cfg.DETECTOR.CONF_THRESH)
+    print('                  IOU_THRESH :', cfg.DETECTOR.IOU_THRESH)
+    print('                  Input size :', cfg.DETECTOR.INPUT_SIZE)
+    print('                  Batch size :', cfg.DETECTOR.BATCH_SIZE)
+    print('               Self-ensemble :', cfg.DETECTOR.PERTURB.GATE)
 
-    print('-------------------ATTACKER---------------------')
-    print('Attack method                : ', args.attack_method)
-    print("Attack confs thresh          : ", attack_confs_thresh)
-    print("Patch size                   : ",
+    print('--------------------------ATTACKER---------------------------')
+    print('               Attack method : ', args.attack_method)
+    print("         Attack confs thresh : ", attack_confs_thresh)
+    print("                  Patch size : ",
           '['+str(cfg.ATTACKER.PATCH_ATTACK.HEIGHT)+', '+str(cfg.ATTACKER.PATCH_ATTACK.WIDTH)+']')
-    print('Attack method                : ', cfg.ATTACKER.METHOD)
-    print('To Augment data              : ', cfg.DATA.AUGMENT)
-    print('Step size                    : ', cfg.ATTACKER.STEP_SIZE)
+    print('               Attack method : ', cfg.ATTACKER.METHOD)
+    print('             To Augment data : ', cfg.DATA.AUGMENT)
+    print('                   Step size : ', cfg.ATTACKER.STEP_SIZE)
+    print('------------------------------------------------------------')
 
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
@@ -92,7 +93,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                                      confs_thresh=attack_confs_thresh)
 
             if save_plot and index % 10 == 0:
-                detector_attacker.imshow_save(img_tensor_batch,
+                detector_attacker.adv_detect_save(img_tensor_batch,
                                               os.path.join(args.save_path, detector.name),
                                               save_name)
 
@@ -128,7 +129,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--patch', type=str, help='fine-tune from a pre-trained patch', default=None)
-    parser.add_argument('-m', '--attack_method', type=str, default='serial')
+    parser.add_argument('-m', '--attack_method', type=str, default='sequential')
     parser.add_argument('-n', '--nesterov', action='store_true')
     parser.add_argument('-cfg', '--cfg', type=str, default='test.yaml')
     parser.add_argument('-s', '--save_path', type=str, default='./results/inria')
@@ -136,12 +137,12 @@ if __name__ == '__main__':
     parser.add_argument('-rk', '--local_rank', default=os.getenv('LOCAL_RANK', -1), type=int)
     args = parser.parse_args()
 
-    print('-----------------------Training----------------------------')
+    print('-------------------------Training-------------------------')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print('device               : ', device)
+    print('                       device : ', device)
     save_patch_name = args.cfg.split('.')[0] + '.png'
     args.cfg = './configs/' + args.cfg
-    print('cfg                  :', args.cfg)
+    print('                          cfg :', args.cfg)
     cfg = ConfigParser(args.cfg)
     detector_attacker = UniversalDetectorAttacker(cfg, device)
 

@@ -8,25 +8,37 @@ from PIL import Image
 
 
 class DataTransformer(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, image_size):
         super().__init__()
-        subpolicy1 = [
+        self.image_size = image_size
+        self.subpolicy1 = [
             transforms.CenterCrop(256),
             transforms.RandomResizedCrop(416, scale=(0.8, 0.9)),
         ]
-        subpolicy2 = [
+        self.subpolicy2 = [
             transforms.RandomRotation(20),
             transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+            transforms.RandomEqualize(p=0.3),
         ]
-        self.transform = transforms.Compose([
-            transforms.RandomHorizontalFlip(p=0.5),
-            # transforms.RandomEqualize(p=0.3),
-            transforms.RandomChoice(subpolicy1),
-            transforms.RandomChoice(subpolicy2)
-        ])
+        # self.transform = transforms.Compose([
+        #     transforms.RandomHorizontalFlip(p=0.5),
+        #     transforms.RandomChoice(subpolicy1),
+        #     transforms.RandomChoice(subpolicy2)
+        # ])
 
     def forward(self, img_tensor):
-        return self.transform(img_tensor)
+        for batch_i, im in enumerate(img_tensor):
+            # print(torch.max(im))
+            im = torch.tensor(im * 255., dtype=torch.uint8)
+            trans = transforms.Compose([
+                     transforms.RandomHorizontalFlip(p=0.5),
+                     transforms.RandomChoice(self.subpolicy1),
+                     transforms.RandomChoice(self.subpolicy2),
+                     transforms.Resize(self.image_size),
+                    ])
+            img_tensor[batch_i] = torch.tensor(trans(im) / 255., dtype=torch.float16)
+        return img_tensor
+
 
 class detDataSet(Dataset):
     def __init__(self, images_path, input_size, is_augment=False):

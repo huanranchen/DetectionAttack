@@ -80,8 +80,8 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
             if args.attack_method == 'parallel':
                 detector_attacker.parallel_attack(img_tensor_batch)
-            elif args.attack_method == 'serial':
-                loss = detector_attacker.serial_attack(img_tensor_batch, confs_thresh=attack_confs_thresh)
+            elif args.attack_method == 'sequential':
+                loss = detector_attacker.sequential_attack(img_tensor_batch, confs_thresh=attack_confs_thresh)
             elif args.attack_method == 'test':
                 loss = detector_attacker.attack_test(img_tensor_batch, optimizer)
             print('                 loss : ', loss)
@@ -92,7 +92,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             losses.append(loss)
             if save_plot and index % 10 == 0:
                 for detector in detector_attacker.detectors:
-                    detector_attacker.imshow_save(img_tensor_batch, os.path.join(args.save_path, detector.name),
+                    detector_attacker.adv_detect_save(img_tensor_batch, os.path.join(args.save_path, detector.name),
                                                   save_name, detectors=[detector])
             detector_attacker.universal_patch.clamp(0, 1)
             del loss
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--patch', type=str, help='fine-tune from a pre-trained patch', default=None)
-    parser.add_argument('-m', '--attack_method', type=str, default='serial')
+    parser.add_argument('-m', '--attack_method', type=str, default='sequential')
     parser.add_argument('-n', '--nesterov', action='store_true')
     parser.add_argument('-cfg', '--cfg', type=str, default='test.yaml')
     parser.add_argument('-s', '--save_path', type=str, default='./results/inria')

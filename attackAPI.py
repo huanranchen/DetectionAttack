@@ -7,8 +7,9 @@ import numpy as np
 import torch.nn.functional as F
 
 from simgleAttack import DetctorAttacker
-from tools.det_utils import rescale_patches, tensor2numpy
-from tools.data_loader import DataTransformer
+from tools.det_utils import rescale_patches
+from tools import FormatConverter, DataTransformer, save_tensor
+from tools.adv import PatchManager
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -17,43 +18,14 @@ warnings.filterwarnings("ignore")
 class UniversalDetectorAttacker(DetctorAttacker):
     def __init__(self, cfg, device):
         super().__init__(cfg, device)
-        self.universal_patch = None
+
+        self.patch_obj = PatchManager(cfg.ATTACKER.PATCH_ATTACK, device)
         if cfg.DATA.AUGMENT:
-            self.data_transformer = DataTransformer()
+            self.data_transformer = DataTransformer(cfg.DETECTOR.INPUT_SIZE)
 
-    def read_patch(self, patch_file):
-        # patch_file = self.args.patch
-        print('Reading patch from file: ' + patch_file)
-        if patch_file.endswith('.pth'):
-            universal_patch = torch.load(patch_file, map_location=self.device).unsqueeze(0)
-            # universal_patch.new_tensor(universal_patch)
-            print(universal_patch.shape, universal_patch.requires_grad, universal_patch.is_leaf)
-        else:
-            universal_patch = cv2.imread(patch_file)
-            universal_patch = cv2.cvtColor(universal_patch, cv2.COLOR_BGR2RGB)
-            universal_patch = np.expand_dims(np.transpose(universal_patch, (2, 0, 1)), 0)
-            universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.)
-        self.universal_patch = universal_patch.to(self.device)
-
-    def init_universal_patch(self, patch_file=None, init_mode='random'):
-        if patch_file is None:
-            self.generate_universal_patch(init_mode)
-        else:
-            self.read_patch(patch_file)
-
-    def generate_universal_patch(self, init_mode='random'):
-        height = self.cfg.ATTACKER.PATCH_ATTACK.HEIGHT
-        width = self.cfg.ATTACKER.PATCH_ATTACK.WIDTH
-        if init_mode.lower() == 'random':
-            print('Random initializing a universal patch')
-            universal_patch = np.random.randint(low=0, high=255, size=(3, height, width))
-        elif init_mode.lower() == 'gray':
-            print('Gray initializing a universal patch')
-            universal_patch = np.ones((3, height, width)) * 127.5
-
-        universal_patch = np.expand_dims(universal_patch, 0)
-        self.universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.).to(self.device)
-        # self.universal_patch.requires_grad = True
+    def init_universal_patch(self, patch_file=None):
+        self.patch_obj.init(patch_file)
+        self.universal_patch = self.patch_obj.patch
 
     def filter_bbox(self, preds):
         filt = [pred[-1] in self.cfg.attack_list for pred in preds]
@@ -85,24 +57,17 @@ class UniversalDetectorAttacker(DetctorAttacker):
             target_nums.append(len(patch_boxs))
         return np.array(target_nums)
 
-
-
-    def apply_universal_patch(self, img_tensor, detector, is_normalize=True, universal_patch=None):
+    def apply_universal_patch(self, img_tensor, attacking=False, universal_patch=None):
         if universal_patch is None:
             universal_patch = self.universal_patch
-        # img_tensor = detector.normalize_tensor(img_tensor)
+        img_tensor = img_tensor.clone()
 
-        # if is_normalize:
-            # init the patches
-            # universal_patch = detector.normalize_tensor(universal_patch)
-        # else:
-            # when attacking
-            # universal_patch = universal_patch.detach_()
-        # if universal_patch.is_leaf:
-        #     universal_patch.requires_grad = True
-        # print(self.detectors[0].name, "universal patch grad: ", universal_patch.requires_grad, universal_patch.is_leaf)
+        universal_patch = universal_patch.detach_() if attacking else universal_patch.clone()
+        # print('is leaf patch: ', universal_patch.is_leaf)
+        if universal_patch.is_leaf:
+            universal_patch.requires_grad = True
+
         for i, img in enumerate(img_tensor):
-            # print('adding patch, ', i, 'got box num:', len(self.batch_patch_boxes[i]))
             for j, bbox in enumerate(self.batch_patch_boxes[i]):
                 # for jth bbox in ith-img's bboxes
                 p_x1, p_y1, p_x2, p_y2 = bbox[:4]
@@ -110,10 +75,9 @@ class UniversalDetectorAttacker(DetctorAttacker):
                 width = p_x2 - p_x1
                 if height <= 0 or width <= 0:
                     continue
+
                 patch_tensor = F.interpolate(universal_patch, size=(height, width), mode='bilinear')
-                # print("fn1: ", img_tensor.grad_fn, patch_tensor.grad_fn)
                 img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = patch_tensor[0]
-                # print("fn2: ", img_tensor.grad_fn)
 
         return img_tensor, universal_patch
 
@@ -132,68 +96,58 @@ class UniversalDetectorAttacker(DetctorAttacker):
 
         return all_preds
 
-    def imshow_save(self, img_tensor, save_path, save_name, detectors=None):
+    def adv_detect_save(self, img_tensor, save_path, save_name, detectors=None):
         if detectors is None:
             detectors = self.detectors
         os.makedirs(save_path, exist_ok=True)
         for detector in detectors:
-            tmp, _ = self.apply_universal_patch(img_tensor[0].unsqueeze(0), detector)
+            print('adv_detect_save, apply universal patch')
+            tmp, _ = self.apply_universal_patch(img_tensor[0].unsqueeze(0))
             preds, _ = detector.detect_img_batch_get_bbox_conf(tmp)
-            img_numpy_int8 = tensor2numpy(tmp[0])
+            img_numpy_int8 = FormatConverter.tensor2numpy_cv2(tmp[0].cpu().detach())
             self.plot_boxes(img_numpy_int8, preds[0],
                             savename=os.path.join(save_path, save_name))
 
-    def save_patch(self, save_path, save_patch_name, patch=None, pth=False):
-        import cv2
+    def save_patch(self, save_path, save_patch_name):
         save_path = save_path + '/patch/'
-        os.makedirs(save_path, exist_ok=True)
-        save_patch_name = os.path.join(save_path, save_patch_name)
-        if patch is None:
-            patch = self.universal_patch.clone()
-
-        if pth:
-            torch.save(patch, save_patch_name)
-        else:
-            tmp = patch.cpu().detach().squeeze(0).numpy()
-            tmp *= 255.
-            tmp = np.transpose(tmp, (1, 2, 0))
-            tmp = cv2.cvtColor(tmp, cv2.COLOR_RGB2BGR)
-            tmp = tmp.astype(np.uint8)
-            # print(tmp.shape)
-            # cv2.imwrite('./patch.png', tmp)
-            cv2.imwrite(save_patch_name, tmp)
-        print('saving patch to ' + save_patch_name)
+        # save_patch_name = os.path.join(save_path, save_patch_name)
+        save_tensor(self.universal_patch, save_patch_name, save_path)
+        print(self.universal_patch.is_leaf)
+        print('Saving patch to ', os.path.join(save_path, save_patch_name))
 
     def attack_test(self, img_tensor_batch, optimizer):
         img_tensor_batch.requires_grad = True
         for detector in self.detectors:
-            loss = self.attacker.serial_non_targeted_attack(img_tensor_batch, self, detector, optimizer)
+            loss = self.attacker.sequential_non_targeted_attack(img_tensor_batch, self, detector, optimizer)
         return loss
 
-    def attack(self, img_tensor_batch, mode='serial', confs_thresh=None):
-        if self.cfg.DATA.AUGMENT:
-            self.data_transformer(img_tensor_batch)
-        if mode == 'serial':
-            self.serial_attack(img_tensor_batch, confs_thresh)
+    def attack(self, img_tensor_batch, mode='sequential', confs_thresh=None):
+        # if self.cfg.DATA.AUGMENT:
+        #     print(img_tensor_batch.shape)
+        #     img_tensor_batch = self.data_transformer(img_tensor_batch)
+        if mode == 'sequential':
+            loss = self.sequential_attack(img_tensor_batch, confs_thresh)
+            print("sequential attack loss ")
         elif mode == 'parallel':
             self.parallel_attack(img_tensor_batch)
 
-    def serial_attack(self, img_tensor_batch, confs_thresh=None):
+    def sequential_attack(self, img_tensor_batch, confs_thresh=None):
         detectors_loss = []
         for detector in self.detectors:
-            patch, loss = self.attacker.serial_non_targeted_attack(
+            patch, loss = self.attacker.sequential_non_targeted_attack(
                 img_tensor_batch, self, detector, confs_thresh=confs_thresh)
-            self.universal_patch = patch
+            self.patch_obj.update(patch)
             detectors_loss.append(loss)
         return np.mean(detectors_loss)
 
     def parallel_attack(self, img_tensor_batch):
         patch_updates = torch.zeros(self.universal_patch.shape).to(self.device)
         for detector in self.detectors:
-            # adv_img_tensor = self.apply_universal_patch(img_numpy_batch, detector)
+            # adv_img_tensor = self.apply_universal_patch(img_numpy_batch)
             # print('------------------', detector.name)
             patch_update = self.attacker.parallel_non_targeted_attack(img_tensor_batch, self, detector)
             patch_updates += patch_update
         # print('self.universal: ', self.universal_patch)
-        self.universal_patch += patch_updates / len(self.detectors)
+        self.patch_obj.update(self.universal_patch + patch_updates / len(self.detectors))
+
 

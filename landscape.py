@@ -57,12 +57,12 @@ class GetLoss():
                     continue
 
                 # 添加patch，生成对抗样本
-                adv_tensor_batch, patch_tmp = self.evaluator.apply_universal_patch(img_tensor_batch, detector)
+                adv_tensor_batch, patch_tmp = self.evaluator.apply_universal_patch(img_tensor_batch)
                 # 对对抗样本进行目标检测
                 preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(adv_tensor_batch)
 
                 self.evaluator.get_patch_pos_batch(preds)
-                self.evaluator.imshow_save(img_tensor_batch, save_path='./Draws/out', save_name=f'WTF{index}.jpg')
+                self.evaluator.adv_detect_save(img_tensor_batch, save_path='./Draws/out', save_name=f'WTF{index}.jpg')
 
                 loss2 = temp_attack_loss(detections_with_grad)
                 # print(loss2, detections_with_grad.shape)

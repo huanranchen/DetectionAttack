@@ -8,9 +8,9 @@ class attacker:
     def init_epsilon(self, detector):
         pass
 
-    def serial_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector, optimizer):
+    def sequential_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector, optimizer):
         # print('============================================')
-        adv_tensor_batch, p = detector_attacker.apply_universal_patch(ori_tensor_batch, detector, is_normalize=True)
+        adv_tensor_batch, p = detector_attacker.apply_universal_patch(ori_tensor_batch, attacking=True)
         # print('requires_grad: ', adv_tensor_batch.requires_grad)
         # interative attack
         # self.optim.zero_grad()

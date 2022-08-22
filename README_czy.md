@@ -59,8 +59,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         pass
     
     # 根据已获取的规范化检测框，在图像中加入通用的攻击patch
-    def apply_universal_patch(self, numpy_batch, detector, is_normalize=True):
-        detector.init_img_batch(numpy_batch) # 对图像进行该检测器的预处理
+    def apply_universal_patch(self, numpy_batch, attacking=False):
         # 同时对universal_patch进行该检测器规定的预处理 detector.normalize_tensor()
         pass
     
@@ -71,7 +70,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         return has_target
 
     # 所有检测器对 攻击后的img_batch 的检测结果，将batch的第一张保存到results/下
-    def imshow_save(self, img_numpy_batch, save_postfix):
+    def adv_detect_save(self, img_numpy_batch, save_postfix):
         pass
 ```
 
@@ -133,18 +132,18 @@ if not has_target:
 
 
 ```python
-# Serial or Parallel attack
+# Sequential or Parallel attack
 for i in range(cfg.MAX_ITER):
     for detector in detectors:
         # 获取攻击后的img_tensor
-        adv_img_tensor = apply_universal_patch(detector)
+        adv_img_tensor = apply_universal_patch()
         # 进行迭代攻击，（串/并行）更新universal_patch
         non_targeted_attack_batch(adv_img_tensor, detector)
 ```
 目前攻击只写了第一种串行更新的方法
 在条件
 MAX_ITER=100，
-SERIAL_ITER_STEP=2，
+SEQUENTIAL_ITER_STEP=2，
 BATCH_SIZE=2下，
 攻击一整轮所需时间:
 

@@ -16,7 +16,7 @@ ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
   MAX_ITERS: 1000
-  SERIAL_ITER_STEP: 5
+  SEQUENTIAL_ITER_STEP: 5
   PARALLEL_ITER_STEP: 15
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
@@ -26,4 +26,5 @@ ATTACKER:
     WIDTH: 128
     HEIGHT: 128
     SCALE: 0.3
+    INIT: "random" # ['random', 'gray']
     ASPECT_RATIO: -1 # 1: True; 0: False

@@ -72,36 +72,37 @@ class LinfPGDAttack(Base_Attacker):
                 detector_attacker.patch_boxes[i][-1] = patch
                 
             detector.zero_grad()
-            adv_img_tensor = detector_attacker.apply_patches(ori_img_tensor, detector, is_normalize=False)
+            adv_img_tensor = detector_attacker.apply_patches(ori_img_tensor, detector, attacking=False)
             avg_conf = sum(item[4] for item in preds) / (len(preds) + 0.01)
             # print(len(preds), avg_conf, disappear_loss.item())
         return adv_img_tensor
 
-    def init_epsilon(self, detector):
-        c1 = [0, 0, 0]
-        c2 = [self.epsilon, self.epsilon, self.epsilon]
-        c = np.vstack([c1, c2])
-        epsilon = np.resize(c, (1, 2, 3))
-        # print("init: ", c.shape, c.dtype)
-        # epsilon = detector.normalize(epsilon)
+    # def init_epsilon(self, detector):
+    #     c1 = [0, 0, 0]
+    #     c2 = [self.epsilon, self.epsilon, self.epsilon]
+    #     c = np.vstack([c1, c2])
+    #     epsilon = np.resize(c, (1, 2, 3))
+    #     # print("init: ", c.shape, c.dtype)
+    #     # epsilon = detector.normalize(epsilon)
+    #
+    #     self.min_epsilon = [epsilon[0, 0, 0, 0].item(), epsilon[0, 1, 0, 0].item(), epsilon[0, 2, 0, 0].item()]
+    #     self.max_epsilon = [epsilon[0, 1, 0, 1].item(), epsilon[0, 1, 0, 1].item(), epsilon[0, 2, 0, 1].item()]
+    #
+    # def clamp(self, im_tensor):
+    #     im_tensor[:, 0, :, :] = torch.clamp(im_tensor[:, 0, :, :], min=min_epsilon[0], max=max_epsilon[0])
+    #     im_tensor[:, 1, :, :] = torch.clamp(im_tensor[:, 1, :, :], min=min_epsilon[1], max=max_epsilon[1])
+    #     im_tensor[:, 2, :, :] = torch.clamp(im_tensor[:, 2, :, :], min=min_epsilon[2], max=max_epsilon[2])
+    #     return im_tensor
 
-        self.min_epsilon = [epsilon[0, 0, 0, 0].item(), epsilon[0, 1, 0, 0].item(), epsilon[0, 2, 0, 0].item()]
-        self.max_epsilon = [epsilon[0, 1, 0, 1].item(), epsilon[0, 1, 0, 1].item(), epsilon[0, 2, 0, 1].item()]
 
-    def clamp(self, im_tensor, max_epsilon, min_epsilon):
-        im_tensor[:, 0, :, :] = torch.clamp(im_tensor[:, 0, :, :], min=min_epsilon[0], max=max_epsilon[0])
-        im_tensor[:, 1, :, :] = torch.clamp(im_tensor[:, 1, :, :], min=min_epsilon[1], max=max_epsilon[1])
-        im_tensor[:, 2, :, :] = torch.clamp(im_tensor[:, 2, :, :], min=min_epsilon[2], max=max_epsilon[2])
-        return im_tensor
-
-    def serial_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector, confs_thresh=0.3):
+    def sequential_eta_attack(self, ori_tensor_batch, detector_attacker, detector, confs_thresh=0.3):
         global update_pre, num_iter
-        adv_tensor_batch, patch_tmp = detector_attacker.apply_universal_patch(ori_tensor_batch, detector)
+        adv_tensor_batch, patch_tmp = detector_attacker.apply_universal_patch(ori_tensor_batch)
         print('conf thresh: ', confs_thresh)
         # interative attack
         # self.optim.zero_grad()
         losses = []
-        for iter in range(detector_attacker.cfg.ATTACKER.SERIAL_ITER_STEP):
+        for iter in range(detector_attacker.cfg.ATTACKER.SEQUENTIAL_ITER_STEP):
             num_iter += 1
 
             # detect adv img batch to get bbox and obj confs
@@ -112,11 +113,7 @@ class LinfPGDAttack(Base_Attacker):
             if torch.sum(bbox_num) == 0: break
             detector.zero_grad()
 
-            if hasattr(detector_attacker.cfg.DETECTOR, 'ETA') and detector_attacker.cfg.DETECTOR.ETA:
-                disappear_loss, update_func = self.loss_fn(detections_with_grad * bbox_num)
-            else:
-                disappear_loss, update_func = self.loss_fn(detections_with_grad)
-                # print("in pgd: ", detections_with_grad[:2])
+            disappear_loss, update_func = self.loss_fn(detections_with_grad * bbox_num)
             disappear_loss.backward()
             grad = patch_tmp.grad
 
@@ -132,32 +129,62 @@ class LinfPGDAttack(Base_Attacker):
                 update /= l2
                 # update = momentum_step * update_pre + self.step_size * grad
                 # update_pre = copy.deepcopy(update)
-            else:
-                update = self.step_size * grad.sign()
 
             patch_tmp = update_func(patch_tmp, update)
             losses.append(float(disappear_loss))
             # min_max epsilon clamp of different channels
             patch_tmp = self.clamp(patch_tmp, self.max_epsilon, self.min_epsilon)
             adv_tensor_batch, _ = detector_attacker.apply_universal_patch(
-                ori_tensor_batch, detector, is_normalize=False, universal_patch=patch_tmp)
+                ori_tensor_batch, attacking=False, universal_patch=patch_tmp)
 
-        patch_tmp = detector.unnormalize_tensor(patch_tmp.detach())
+        # patch_tmp = detector.unnormalize_tensor(patch_tmp.detach())
 
         return patch_tmp, np.mean(losses)
 
-    def parallel_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector):
-        adv_tensor_batch, patch_tmp = detector_attacker.apply_universal_patch(ori_tensor_batch, detector)
+    def sequential_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector, confs_thresh=0.3):
+        adv_tensor_batch, patch_tmp = detector_attacker.apply_universal_patch(ori_tensor_batch)
+        # print('tensor: ', torch.min(adv_tensor_batch), torch.max(adv_tensor_batch))
+        # print('patch: ', torch.min(patch_tmp), torch.max(patch_tmp), patch_tmp.requires_grad)
+        losses = []
+        for iter in range(detector_attacker.cfg.ATTACKER.SEQUENTIAL_ITER_STEP):
 
+            # detect adv img batch to get bbox and obj confs
+            preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(
+                adv_tensor_batch)
+            detections_with_grad = detections_with_grad[detections_with_grad > confs_thresh]
+            detections_with_grad = torch.max(detections_with_grad)
+            bbox_num = torch.FloatTensor([len(pred) for pred in preds])
+            # print('bbox num: ', bbox_num)
+            if torch.sum(bbox_num) == 0: break
+
+            detector.zero_grad()
+            disappear_loss, update_func = self.loss_fn(detections_with_grad)
+            disappear_loss.backward()
+
+            grad = patch_tmp.grad
+            # print(iter, 'grad: ', grad.shape, disappear_loss)
+            update = self.step_size * grad.sign()
+            patch_tmp = update_func(patch_tmp, update)
+            patch_tmp = torch.clamp(patch_tmp, min=0, max=1)
+
+            losses.append(float(disappear_loss))
+            adv_tensor_batch, _ = detector_attacker.apply_universal_patch(
+                ori_tensor_batch, attacking=True, universal_patch=patch_tmp)
+
+        # patch_tmp = detector.unnormalize_tensor(patch_tmp.detach())
+        return patch_tmp, np.mean(losses)
+
+    def parallel_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector):
+        adv_tensor_batch, patch_tmp = detector_attacker.apply_universal_patch(ori_tensor_batch)
+
+        loss = []
         # max_epsilon, min_epsilon = self.init_epsilon(detector)
         for iter in range(detector_attacker.cfg.ATTACKER.PARALLEL_ITER_STEP):
             preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(adv_tensor_batch)
             disappear_loss = self.loss_fn(detections_with_grad)
-
+            loss.append(float(disappear_loss))
             if detector_attacker.ddp:
-
-                print('Rank ',
-                      dist.get_rank(), disappear_loss)
+                print('Rank ', dist.get_rank(), disappear_loss)
                 dist.all_reduce(disappear_loss, op=dist.ReduceOp.AVG)
 
             # print('leaf1: ', patch_tmp)
@@ -167,10 +194,10 @@ class LinfPGDAttack(Base_Attacker):
             grad = patch_tmp.grad
             patch_tmp = patch_tmp + self.step_size * grad.sign()
             # print('get grad!-----------------------------')
-            patch_tmp = self.clamp(patch_tmp, self.max_epsilon, self.min_epsilon)
+            patch_tmp = torch.clamp(patch_tmp, min=0, max=1)
 
-            adv_tensor_batch, _ = detector_attacker.apply_universal_patch(ori_tensor_batch, detector,
-                                                                     is_normalize=False, universal_patch=patch_tmp)
+            adv_tensor_batch, _ = detector_attacker.apply_universal_patch(
+                ori_tensor_batch, attacking=True, universal_patch=patch_tmp)
 
             # detector_attacker.save_patch('./results/self'+str(iter)+'.png', patch=patch_tmp)
             # detector_attacker.save_patch('./results/tmp'+str(iter)+'.png', patch=detector_attacker.universal_patch)

@@ -64,7 +64,7 @@ class TVLoss(nn.Module):
         return tv_loss
 
 
-def temp_attack_loss_zeors(confs):
+def descend_mse_loss(confs):
     # print(confs.shape)
     target = torch.zeros(confs.shape)
     if confs.is_cuda:
@@ -74,10 +74,10 @@ def temp_attack_loss_zeors(confs):
 
 
 def temp_attack_loss(confs):
-    return temp_attack_loss_ones(confs)
+    return ascend_mse_loss(confs)
 
 
-def temp_attack_loss_ones(confs):
+def ascend_mse_loss(confs):
     # print(confs.shape)
     target = torch.ones(confs.shape)
     if confs.is_cuda:

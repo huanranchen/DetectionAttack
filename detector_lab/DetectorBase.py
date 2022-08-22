@@ -111,54 +111,54 @@ class DetectorBase(ABC):
         """
         pass
 
-    def normalize(self, bgr_img_numpy: np.ndarray):
-        """
-        normalize numpy data to tensor data
-        :param bgr_img_numpy: BGR numpy uint8 data HWC
-        :return img_tensor: normalized tensor
-        """
+    # def normalize(self, bgr_img_numpy: np.ndarray):
+    #     """
+    #     normalize numpy data to tensor data
+    #     :param bgr_img_numpy: BGR numpy uint8 data HWC
+    #     :return img_tensor: normalized tensor
+    #     """
+    #
+    #     # convert to RGB
+    #     image_data = cv2.cvtColor(bgr_img_numpy.astype(np.uint8), cv2.COLOR_BGR2RGB)
+    #
+    #     # to CHW & normalize: auto scale when dtype=uint8
+    #     image = transforms.ToTensor()(image_data)
+    #     img_tensor = image.unsqueeze(0).to(self.device)
+    #     # img_tensor.requires_grad = True
+    #     return img_tensor
 
-        # convert to RGB
-        image_data = cv2.cvtColor(bgr_img_numpy.astype(np.uint8), cv2.COLOR_BGR2RGB)
+    # def unnormalize(self, img_tensor: torch.tensor):
+    #     """
+    #     unnormalize the tensor into numpy
+    #     :param img_tensor: input tensor
+    #     """
+    #     # img_tensor: tensor [1, c, h, w]
+    #     img_numpy = self.detach(img_tensor.squeeze(0)).numpy()
+    #     # convert to BGR & HWC
+    #     img_numpy = img_numpy.transpose((1, 2, 0))
+    #     img_numpy *= 255
+    #     img_numpy = cv2.cvtColor(img_numpy, cv2.COLOR_RGB2BGR)
+    #     img_numpy_int8 = img_numpy.astype('uint8')
+    #     return img_numpy, img_numpy_int8
 
-        # to CHW & normalize: auto scale when dtype=uint8
-        image = transforms.ToTensor()(image_data)
-        img_tensor = image.unsqueeze(0).to(self.device)
-        # img_tensor.requires_grad = True
-        return img_tensor
+    # def unnormalize_tensor(self, img_tensor: torch.tensor):
+    #     """
+    #     default: no unnormalization (depends on the detector)
+    #     Rewrite the func if 'normalize_tensor' func has specifically edited
+    #     :param img_tensor
+    #     :return: img_tensor
+    #     """
+    #     return img_tensor
 
-    def unnormalize(self, img_tensor: torch.tensor):
-        """
-        unnormalize the tensor into numpy
-        :param img_tensor: input tensor
-        """
-        # img_tensor: tensor [1, c, h, w]
-        img_numpy = self.detach(img_tensor.squeeze(0)).numpy()
-        # convert to BGR & HWC
-        img_numpy = img_numpy.transpose((1, 2, 0))
-        img_numpy *= 255
-        img_numpy = cv2.cvtColor(img_numpy, cv2.COLOR_RGB2BGR)
-        img_numpy_int8 = img_numpy.astype('uint8')
-        return img_numpy, img_numpy_int8
-
-    def unnormalize_tensor(self, img_tensor: torch.tensor):
-        """
-        default: no unnormalization (depends on the detector)
-        Rewrite the func if 'normalize_tensor' func has specifically edited
-        :param img_tensor
-        :return: img_tensor
-        """
-        return img_tensor
-
-    def normalize_tensor(self, img_tensor: torch.tensor):
-        """
-        normalize tensor (for patch)
-        default: no normalization (depends on the detector), return a newly cloned tensor
-        Rewrite the func if a normalization needed
-        """
-        tensor_data = img_tensor.clone()
-        # print("normalize: ", tensor_data.is_leaf)
-        return tensor_data
+    # def normalize_tensor(self, img_tensor: torch.tensor):
+    #     """
+    #     normalize tensor (for patch)
+    #     default: no normalization (depends on the detector), return a newly cloned tensor
+    #     Rewrite the func if a normalization needed
+    #     """
+    #     tensor_data = img_tensor.clone()
+    #     # print("normalize: ", tensor_data.is_leaf)
+    #     return tensor_data
 
     def int8_precision_loss(self, img_tensor: torch.tensor):
         """

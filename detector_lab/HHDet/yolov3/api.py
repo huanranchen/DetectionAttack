@@ -39,6 +39,7 @@ class HHYolov3(DetectorBase):
             detections_with_grad = self.clean_model(batch_tensor)
         else:
             detections_with_grad = self.detector(batch_tensor) # torch.tensor([1, num, classes_num+4+1])
+
         preds = non_max_suppression(detections_with_grad, self.conf_thres, self.iou_thres)
         confs = detections_with_grad[:, :, 4]
 

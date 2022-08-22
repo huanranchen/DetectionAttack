@@ -185,9 +185,9 @@ def generate_labels(evaluator, cfg, args, save_label=False):
             if hasattr(args, 'save_imgs') and args.save_imgs:
                 # for saving the attacked imgs
                 ipath = os.path.join(tmp_path, 'imgs')
-                evaluator.imshow_save(img_tensor_batch, ipath, img_name, detectors=[detector])
+                evaluator.adv_detect_save(img_tensor_batch, ipath, img_name, detectors=[detector])
 
-            adv_img_tensor, _ = evaluator.apply_universal_patch(img_tensor_batch, detector)
+            adv_img_tensor, _ = evaluator.apply_universal_patch(img_tensor_batch)
             if hasattr(args, 'stimulate_uint8_loss') and args.stimulate_uint8_loss:
                 adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)
             preds, _ = detector.detect_img_batch_get_bbox_conf(adv_img_tensor)

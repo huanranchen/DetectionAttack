@@ -9,8 +9,6 @@ DATA:
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
     LAB_DIR: 'data/INRIAPerson/Test/labels'
-#    IMG_DIR: 'data/coco/val/val2017'
-#    LAB_DIR: 'data/coco/val/val2017_labels'
 
 DETECTOR:
   NAME: ["YOLOV3"] # YOLOV3, YOLOV4, YOLOV5
@@ -21,22 +19,24 @@ DETECTOR:
   IOU_THRESH: 0.45
   ATTACK_CONF_THRESH: 0.3
 
-  GRAD_PERTURB: 0
-  GRAD_RESET: 10
-  RESET_FREQ: 1000
+  PERTURB:
+    GATE: null
 
 ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
   MAX_ITERS: 1000
-  SERIAL_ITER_STEP: 5
+  SEQUENTIAL_ITER_STEP: 5
   PARALLEL_ITER_STEP: 15
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
 
+  LOSS_FUNC: "descend-mse" # [null, descend-mse, ascend-mse]
+
   PATCH_ATTACK:
     WIDTH: 128
     HEIGHT: 128
     SCALE: 0.2
+    INIT: "random" # ['random', 'gray']
     ASPECT_RATIO: -1
