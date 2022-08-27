@@ -18,7 +18,6 @@ class PatchManager:
             self.generate(init_mode)
         else:
             self.read(patch_file)
-        self.patch = self.ori_patch
 
     def total_variation(self):
         pass
@@ -41,7 +40,7 @@ class PatchManager:
             patch = FormatConverter.PIL2tensor(patch)
         if patch.ndim == 3:
             patch = patch.unsqueeze(0)
-        self.ori_patch = patch.to(self.device)
+        self.patch = patch.to(self.device)
 
     def generate(self, init_mode='random'):
         height = self.cfg.HEIGHT
@@ -52,8 +51,4 @@ class PatchManager:
         elif init_mode.lower() == 'gray':
             print('Gray initializing a universal patch')
             patch = torch.full((1, 3, height, width), 0.5)
-        self.ori_patch = patch.to(self.device)
-
-    def patch_clone(self):
-        del self.patch
-        self.patch = self.ori_patch.clone()
+        self.patch = patch.to(self.device)

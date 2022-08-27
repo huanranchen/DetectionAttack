@@ -25,7 +25,7 @@ DETECTOR:
 ATTACKER:
   METHOD: "optim"
   EPSILON: 255 # 0-255
-  MAX_ITERS: 1000
+  MAX_ITERS: 500
   ITER_STEP: 1
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
@@ -36,6 +36,6 @@ ATTACKER:
   PATCH_ATTACK:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.2
+    SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

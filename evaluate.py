@@ -9,6 +9,7 @@ from tqdm import tqdm
 from attackAPI import UniversalDetectorAttacker
 from data.gen_det_labels import Utils
 from tools.parser import ConfigParser
+from detector_lab.utils import inter_nms
 from tools.eva.main import compute_mAP
 
 import warnings
@@ -137,14 +138,15 @@ def generate_labels(evaluator, cfg, args, save_label=False):
         accs_total[detector.name] = []
     # print(evaluator.detectors)
     for index, img_tensor_batch in enumerate(tqdm(data_loader, total=len(data_loader))):
-        evaluator.patch_obj.patch_clone()
         img_tensor_batch = img_tensor_batch.to(evaluator.device)
+        evaluator.patch_obj.patch_clone()
         names = img_names[index:index + batch_size]
         img_name = names[0].split('/')[-1]
         # print(img_name)
         for detector in evaluator.detectors:
+            # make sure every detector detect in a new batch of img tensors
             tmp_path = os.path.join(save_path, detector.name)
-            all_preds = evaluator.detect_bbox(img_tensor_batch)
+            all_preds = evaluator.detect_bbox(img_tensor_batch, detectors=[detector])
             if save_label:
                 # for saving the original detection info
                 fp = os.path.join(tmp_path, paths['det-lab'])

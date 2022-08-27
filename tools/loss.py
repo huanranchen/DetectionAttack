@@ -78,6 +78,12 @@ def obj_tv_loss(confs, patch):
     # print('tv loss: ', tv_loss)
     return tv_loss, obj_loss
 
+def obj_loss(confs):
+    obj_loss = torch.mean(confs)
+    # print('obj loss: ', obj_loss)
+    # print('tv loss: ', tv_loss)
+    return obj_loss
+
 
 def descend_mse_loss(confs):
     # print(confs.shape)

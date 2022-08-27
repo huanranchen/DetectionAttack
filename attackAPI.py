@@ -62,8 +62,12 @@ class UniversalDetectorAttacker(DetctorAttacker):
     def uap_apply(self, img_tensor, universal_patch=None):
         if universal_patch is None:
             universal_patch = self.universal_patch
-
-        for i, img in enumerate(img_tensor):
+        # print(universal_patch)
+        # FormatConverter.tensor2PIL(universal_patch[0]).save('universal_patch.png')
+        # make sure the original img tensor keep clean, the cloned tensor will be an adversarial sample
+        img_tensor = img_tensor.clone()
+        # del img_batch
+        for i in range(img_tensor.size(0)):
             for j, bbox in enumerate(self.batch_patch_boxes[i]):
                 # for jth bbox in ith-img's bboxes
                 p_x1, p_y1, p_x2, p_y2 = bbox[:4]
@@ -72,13 +76,16 @@ class UniversalDetectorAttacker(DetctorAttacker):
                 if height <= 0 or width <= 0:
                     continue
                 if self.cfg.DATA.AUGMENT == 3:
-                    universal_patch = self.data_transformer.jitter(universal_patch)
-
-                adv = F.interpolate(universal_patch, size=(height, width), mode='bilinear')[0]
-                img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = torch.where((adv == 0), img_tensor[i][:, p_y1:p_y2, p_x1:p_x2], adv)
+                    adv = self.data_transformer.jitter(universal_patch)
+                else:
+                    adv = universal_patch
+                # print('universal patch: ', torch.sum(universal_patch), torch.sum(adv))
+                # if i == 0 and j == 2:
+                #     FormatConverter.tensor2PIL(adv[0]).save('adv_patch.png')
+                adv = F.interpolate(adv, size=(height, width), mode='bilinear')[0]
+                img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = adv
         # FormatConverter.tensor2PIL(img_tensor[0]).save('img_tensor.png')
-
-        if self.cfg.DATA.AUGMENT == 2:
+        if self.cfg.DATA.AUGMENT > 1:
             img_tensor = self.data_transformer(img_tensor, True, True)
 
         return img_tensor, universal_patch
@@ -87,11 +94,11 @@ class UniversalDetectorAttacker(DetctorAttacker):
         if all_preds is None:
             return preds
         for i, (all_pred, pred) in enumerate(zip(all_preds, preds)):
-            if all_pred.shape[0] and pred.shape[0]:
-                all_preds[i] = torch.cat((all_pred, pred))
+            if pred.shape[0]:
+                all_preds[i] = torch.cat((all_pred, pred), dim=0)
                 continue
             all_preds[i] = all_pred if all_pred.shape[0] else pred
-        print(all_preds)
+
         return all_preds
 
     def adv_detect_save(self, img_tensor, save_path, save_name, detectors=None):
@@ -114,13 +121,16 @@ class UniversalDetectorAttacker(DetctorAttacker):
     def detect_bbox(self, img_batch, detectors=None):
         if detectors is None:
             detectors = self.detectors
+
         all_preds = None
         for detector in detectors:
             preds = detector(img_batch)['bbox_array']
             all_preds = self.merge_batch_pred(all_preds, preds)
 
         # nms among detectors
+        # print(all_preds)
         if len(detectors) > 1: all_preds = inter_nms(all_preds)
+        # print(all_preds)
         return all_preds
 
     def attack(self, img_tensor_batch, mode='sequential'):
@@ -133,7 +143,6 @@ class UniversalDetectorAttacker(DetctorAttacker):
                 print("sequential attack loss ", loss)
             elif mode == 'parallel':
                 loss = self.parallel_attack(img_tensor_batch)
-        print(loss)
         return loss
 
     def sequential_attack(self, img_tensor_batch):

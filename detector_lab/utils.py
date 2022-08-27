@@ -73,16 +73,14 @@ def init_detector(detector_name, cfg):
         detector = HHYolov4(name=detector_name, cfg=cfg)
         detector.load(
             detector_config_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4-tiny.cfg'),
-            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/weights/yolov4-tiny.weights'),
-            data_config_path=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4'))
+            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/weights/yolov4-tiny.weights'))
 
     elif detector_name == "yolov4":
         detector = HHYolov4(name=detector_name, cfg=cfg)
         model_cfg = 'yolov4.cfg'
         detector.load(
             detector_config_file=os.path.join(PROJECT_DIR, f'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/cfg/{model_cfg}'),
-            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/weight/yolov4.weights'),
-            data_config_path=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4')
+            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/weight/yolov4.weights')
         )
 
     elif detector_name == "yolov5":

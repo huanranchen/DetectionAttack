@@ -14,9 +14,9 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     data_sampler = None
     detector_attacker.init_universal_patch(args.patch)
     data_loader = dataLoader(data_root, cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT == 1,
-                             batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler)
+                             batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
 
-    p_obj = detector_attacker.patch_obj.ori_patch
+    p_obj = detector_attacker.patch_obj.patch
     p_obj.requires_grad = True
     optimizer = torch.optim.Adam([p_obj], lr=0.03, amsgrad=True)
 
@@ -31,7 +31,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS+1):
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
-            detector_attacker.patch_obj.patch_clone()
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
 
             all_preds = detector_attacker.detect_bbox(img_tensor_batch)
@@ -42,7 +41,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             loss = detector_attacker.attack(img_tensor_batch, mode='optim')
             # print('                 loss : ', loss)
             ep_loss += loss
-            if save_plot and index % 10 == 0:
+            if save_plot and index % 5 == 0:
                 # for detector-specific dir name
                 for detector in detector_attacker.detectors:
                     detector_attacker.adv_detect_save(img_tensor_batch,
@@ -50,10 +49,10 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                                                       save_name,
                                                       detectors=[detector])
 
-            if index == 1 and epoch % 10 == 0:
-                prefix = epoch
-                patch_name = f'{prefix}_{save_name}'
-                detector_attacker.save_patch(args.save_path, patch_name)
+        if epoch % 10 == 0:
+            patch_name = f'{epoch}_{save_name}'
+            detector_attacker.save_patch(args.save_path, patch_name)
+        torch.cuda.empty_cache()
 
         ep_loss /= len(data_loader)
         scheduler.step(ep_loss)

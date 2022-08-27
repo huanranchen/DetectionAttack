@@ -34,14 +34,13 @@ class HHYolov2(DetectorBase):
         cls_max_ids = cls_max_ids.view(batch_tensor.size(0), -1)
 
         bbox_array = []
-        print(all_boxes)
         for boxes in all_boxes:
-            print(boxes)
-            if len(boxes) == 0:
-                bbox_array.append(torch.tensor([]).to(self.device))
-                continue
+            # if len(boxes) == 0:
+            #     bbox_array.append(torch.tensor([]).to(self.device))
+            #     continue
             boxes = torch.FloatTensor(boxes).to(self.device)
-            boxes[:, :4] = torch.clamp(boxes[:, :4], min=0, max=1)
+            if len(boxes):
+                boxes[:, :4] = torch.clamp(boxes[:, :4], min=0, max=1)
             bbox_array.append(boxes)
         bbox_array = inter_nms(bbox_array, conf_thres=self.conf_thres, iou_thres=self.iou_thres)
         # print(bbox_array)

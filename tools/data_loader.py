@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import cv2
 import torch
@@ -8,6 +10,8 @@ from torchvision import transforms
 from PIL import Image
 import kornia
 import math
+
+from .convertor import FormatConverter
 
 
 class DataTransformer(torch.nn.Module):
@@ -37,9 +41,8 @@ class DataTransformer(torch.nn.Module):
         # Apply contrast/brightness/noise, clamp
         adv_patch = contrast * adv_patch + brightness + noise
         adv_patch = torch.clamp(adv_patch, 0., 1.)
-        # print(adv_patch.shape)
         # adv_patch = kornia.augmentation.RandomRotation(self.rand_rotate_angle)(adv_patch)
-        # print(adv_patch.shape)
+        # adv_patch = self.rand_affine_matrix(adv_patch)
         return adv_patch
 
     def rand_affine_matrix(self, img_tensor):
@@ -53,7 +56,8 @@ class DataTransformer(torch.nn.Module):
         cos = torch.cos(angle)
 
         # scale
-        scale = torch.FloatTensor(batch_size).uniform_(1-self.rand_zoom_in, 1+self.rand_zoom_in)
+        # scale = torch.FloatTensor(batch_size).uniform_(1-self.rand_zoom_in, 1+self.rand_zoom_in)
+        scale = 1
 
         theta = torch.FloatTensor(batch_size, 2, 3).fill_(0)
         theta[:, 0, 0] = cos / scale
@@ -73,22 +77,27 @@ class DataTransformer(torch.nn.Module):
         img_tensor_t = img_tensor
 
         if jiter:
-            gate = torch.zeros(3).bernoulli_(0.5).item()
-            if gate[0] == 0:
+            gate = torch.zeros(1).bernoulli_(0.5).item()
+            gate = 0
+            if gate == 0:
                 img_tensor_t = kornia.augmentation.RandomGaussianNoise(mean=0., std=.01, p=1)(img_tensor_t)
                 factor = torch.FloatTensor(batch_size).fill_(0).uniform_(0, self.rand_brightness)
                 img_tensor_t = kornia.enhance.adjust_brightness(img_tensor_t, factor, clip_output=True)
-                img_tensor_t = kornia.enhance.adjust_contrast(img_tensor_t, factor, clip_output=True)
+                # img_tensor_t = kornia.enhance.adjust_contrast(img_tensor_t, factor, clip_output=True)
 
-            if gate[2] == 0:
-                img_tensor_t = kornia.filters.motion_blur(img_tensor_t, 5, torch.tensor([90., 180, ]),
-                                                          torch.tensor([1., -1.]))
+            gate = torch.zeros(1).bernoulli_(0.5).item()
+            gate = 0
+            if gate == 0:
+                # img_tensor_t = kornia.filters.motion_blur(img_tensor_t, 5, torch.tensor([90., 180, ]),
+                #                                           torch.tensor([1., -1.]))
                 factor = torch.FloatTensor(batch_size).fill_(0).uniform_(1 - self.rand_saturation, 1 + self.rand_saturation)
                 img_tensor_t = kornia.enhance.adjust_saturation(img_tensor_t, factor)
 
-            if gate[1] == 0:
-                crop_trans = kornia.augmentation.RandomResizedCrop((416, 416), (0.08, 1.0), (0.75, 1.33))
-                img_tensor_t = crop_trans(img_tensor_t)
+            gate = torch.zeros(1).bernoulli_(0.5).item()
+            gate = 0
+            # if gate == 0:
+                # crop_trans = kornia.augmentation.RandomResizedCrop((416, 416), (0.8, 0.8), (1.2, 1.2))
+                # img_tensor_t = crop_trans(img_tensor_t)
             # img_tensor_t = self.rand_affine_matrix(img_tensor_t)
 
         if rotate:

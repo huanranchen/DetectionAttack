@@ -63,7 +63,6 @@ class BaseAttacker(ABC):
                                 # for conf, cls in zip(confs, cls_array)]))
             # bbox_num = torch.FloatTensor([len(pred) for pred in preds])
             # if torch.sum(bbox_num) == 0: break
-
             detector.zero_grad()
             loss = self.attack_loss(confs)
             loss.backward()
