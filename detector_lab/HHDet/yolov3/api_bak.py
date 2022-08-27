@@ -112,7 +112,7 @@ class HHYolov3(DetectorBase):
     # def unnormalize_tensor(self, img_tensor):
     #     return img_tensor
 
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, input_size=416, conf_thres=0.5, nms_thres=0.4):
+    def forward(self, batch_tensor, input_size=416, conf_thres=0.5, nms_thres=0.4):
         # output: box_array: list of np N*6
         self.detector.eval()
         ori_shape = batch_tensor.shape[-2:]

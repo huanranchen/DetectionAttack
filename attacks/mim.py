@@ -1,4 +1,4 @@
-from .base import Base_Attacker
+from .base import BaseAttacker
 
 import torch
 import torch.nn as nn
@@ -9,34 +9,14 @@ import copy
 from tqdm import tqdm
 import cv2
 
-class LinfMIMAttack(Base_Attacker):
-    """
-        MIM attacks
-        epsilon: magnitude of attack
-        k: iterations
-        a: step size
+
+class LinfMIMAttack(BaseAttacker):
+    """MI-FGSM attack (arxiv: https://arxiv.org/pdf/1710.06081.pdf)
     """
 
-    def __init__(self, loss_function, model, norm='L_infty', epsilons=0.05, max_iters=10, step_size=0.01, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), momentum=1, perturbation=None):
-        """this is init function of MI-FGSM attack (arxiv: https://arxiv.org/pdf/1710.06081.pdf)
-
-        Args:
-            loss_function ([torch.nn.Loss]): [a loss function to calculate the loss between the inputs and expeced outputs]
-            model ([torch.nn.model]): [target model to attack].
-            norm (str, optional): [the attack norm and the choices are [L0, L1, L2, L_infty]]. Defaults to 'L_infty'.
-            epsilons (float, optional): [the upper bound of perturbation]. Defaults to 0.05.
-            max_iters (int, optional): [the maximum iteration number]. Defaults to 10.
-            step_size (float, optional): [the step size of attack]. Defaults to 0.01.
-            device ([type], optional): ['cpu' or 'cuda']. Defaults to None.
-            momentum (float, optional): [the momentum of attack]. Defaults to 0.5.
-        """
-        super(LinfMIMAttack, self).__init__(model, norm, epsilons, perturbation)
-        self.max_iters = max_iters
-        self.step_size = step_size
-        self.device = device
+    def __init__(self, loss_func, cfg, device, detector_attacker, norm='L_infty', momentum=1, perturbation=None):
+        super().__init__(loss_func, norm, cfg, device, detector_attacker)
         self.momentum = momentum
-        self.loss_fn = loss_function
-        self.epsilon = epsilons
         self.grad = None
      
     def non_targeted_attack(self, x, y, is_universal = False, x_min=-1, x_max=1, *model_args):

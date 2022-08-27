@@ -40,7 +40,7 @@ if __name__ == '__main__':
         img_tensor_batch = detector.init_img_batch(img_numpy_batch)
 
         # 对clean样本进行检测
-        preds, _ = detector.detect_img_batch_get_bbox_conf(img_tensor_batch)
+        preds, _ = detector(img_tensor_batch)
         all_preds = evaluator.merge_batch_pred(all_preds, preds)
 
         # 保存在clean样本上的检测结果
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         # 获取所有的检测框位置
         evaluator.get_patch_pos_batch(all_preds)
         # Transform patch
-        adv_img_tensor, _ = evaluator.apply_universal_patch(img_numpy_batch)
+        adv_img_tensor, _ = evaluator.uap_apply(img_numpy_batch)
         # 再次检测
-        preds, _ = detector.detect_img_batch_get_bbox_conf(adv_img_tensor)
+        preds, _ = detector(adv_img_tensor)
         save_detections(adv_img_tensor[0], path+'/attacked.png')

@@ -23,8 +23,7 @@ ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
   MAX_ITERS: 100
-  SEQUENTIAL_ITER_STEP: 5
-  PARALLEL_ITER_STEP: 10
+  ITER_STEP: 5
   STEP_SIZE: 0.005
   TARGET_CLASS: 0 # targeted attack
   ATTACK_CLASS: '-1' # String: '-1' attack all classes; appoint a class 'x'; 'a:b' class list a to b - 1

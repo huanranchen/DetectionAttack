@@ -45,11 +45,8 @@ class ClassErrorLoss(nn.Module):
 
 
 class TVLoss(nn.Module):
-
-    def __init__(self):
-        super(TVLoss, self).__init__()
-
-    def forward(self, inputs, t_mask=None):
+    @staticmethod
+    def forward(inputs, t_mask=None):
         logo = inputs.permute(0, 2, 3, 1)
         vert_diff = logo[:, 1:] - logo[:, :-1]
         hor_diff = logo[:, :, 1:] - logo[:, :, :-1]
@@ -63,27 +60,42 @@ class TVLoss(nn.Module):
         tv_loss = tv_final_sum
         return tv_loss
 
+    @staticmethod
+    def compute(adv_patch):
+        # bereken de total variation van de adv_patch
+        tvcomp1 = torch.sum(torch.abs(adv_patch[:, :, 1:] - adv_patch[:, :, :-1] + 0.000001), 0)
+        tvcomp1 = torch.sum(torch.sum(tvcomp1, 0), 0)
+        tvcomp2 = torch.sum(torch.abs(adv_patch[:, 1:, :] - adv_patch[:, :-1, :] + 0.000001), 0)
+        tvcomp2 = torch.sum(torch.sum(tvcomp2, 0), 0)
+        tv = tvcomp1 + tvcomp2
+        return tv / torch.numel(adv_patch)
+
+
+def obj_tv_loss(confs, patch):
+    tv_loss = TVLoss.compute(patch)
+    obj_loss = torch.mean(confs)
+    # print('obj loss: ', obj_loss)
+    # print('tv loss: ', tv_loss)
+    return tv_loss, obj_loss
+
 
 def descend_mse_loss(confs):
     # print(confs.shape)
     target = torch.zeros(confs.shape)
     if confs.is_cuda:
         target = target.cuda()
-    grad_descend = lambda patch, update: patch - update
-    return torch.nn.MSELoss()(confs, target), grad_descend
+    return torch.nn.MSELoss()(confs, target)
 
 
 def temp_attack_loss(confs):
     return ascend_mse_loss(confs)
-
 
 def ascend_mse_loss(confs):
     # print(confs.shape)
     target = torch.ones(confs.shape)
     if confs.is_cuda:
         target = target.cuda()
-    grad_ascend = lambda patch, update: patch + update
-    return torch.nn.MSELoss()(confs, target), grad_ascend
+    return torch.nn.MSELoss()(confs, target)
 
 
 def attack_loss(det_score, det_labels, cls_scores, class_id, patch):

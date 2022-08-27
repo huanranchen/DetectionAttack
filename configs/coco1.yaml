@@ -15,8 +15,7 @@ ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
   MAX_ITERS: 2000
-  SEQUENTIAL_ITER_STEP:
-  PARALLEL_ITER_STEP: 15
+  ITER_STEP:
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
   ATTACK_CLASS: '-1' # -1 attack all classes, or you can select the class id

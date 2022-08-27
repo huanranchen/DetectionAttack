@@ -23,8 +23,7 @@ class PatchTransformer(nn.Module):
         shift = limited_range * torch.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def forward(self, adv_patch_batch, bboxes_batch, patch_ratio,
-                rand_rotate_gate=True, rand_shift_gate=True):
+    def forward(self, adv_patch_batch, bboxes_batch, patch_ratio, rand_rotate_gate=True, rand_shift_gate=False):
         bboxes_shape = (bboxes_batch.size(0), bboxes_batch.size(1))  # batch_size, bbox_num
         bboxes_size = np.prod(bboxes_shape)
         # print(bboxes_batch[0][:4, :])
@@ -119,10 +118,6 @@ class PatchRandomApplier(nn.Module):
                 bboxes_tensor_batch = torch.cat((bboxes_tensor_batch, padded_lab))
         # print('list2tensor :', bboxes_tensor_batch.shape)
         return bboxes_tensor_batch
-
-    # def get_mask(self, bboxes_batch):
-    #     print(bboxes_batch.shape)
-    #     return torch.ones_like(bboxes_batch) + bboxes_batch
 
     def forward(self, img_batch, adv_patch, bboxes_batch_list, rotate_gate=True, shift_gate=True):
         """ This func to process the bboxes list of mini-batch into uniform torch.tensor and

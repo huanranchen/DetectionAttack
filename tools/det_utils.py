@@ -1,4 +1,6 @@
 # utils for detection module
+import sys
+
 import cv2
 import math
 import numpy as np
@@ -136,40 +138,42 @@ def rescale_patches(bboxes, image_height, image_width, scale, aspect_ratio):
     def compute(bwidth, bheight, scale, aspect_ratio):
         # fix aspect area ratio
         if aspect_ratio > 0:
-            target_y = np.sqrt(bwidth * bheight * scale / aspect_ratio)
+            target_y = torch.sqrt(bwidth * bheight * scale / aspect_ratio)
             target_x = aspect_ratio * target_y
         # oiginal' scale
         elif aspect_ratio == -1:
-            target_x = (np.sqrt(scale) * bwidth)
-            target_y = (np.sqrt(scale) * bheight)
+            target_x = (torch.sqrt(scale) * bwidth)
+            target_y = (torch.sqrt(scale) * bheight)
         # natural's scale
         elif aspect_ratio == -2:
-            target_x = np.sqrt((scale * bheight) ** 2 + (scale * bwidth) ** 2)
+            target_x = torch.sqrt((scale * bheight) ** 2 + (scale * bwidth) ** 2)
             # adjust patch height as rectangle
             target_y = target_x * 1.5
         else:
             assert False, 'aspect ratio undefined!'
         return target_x / 2, target_y / 2
-    # print(torch.FloatTensor(bboxes).numpy())
+
+    image_height = torch.FloatTensor([image_height]).to(bboxes.device)
+    image_width = torch.FloatTensor([image_width]).to(bboxes.device)
+    # print(image_width, image_height)
     bboxes = bboxes[:, :4]
-    # print('bbox: ', bboxes)
     bwidth = bboxes[:, 2] - bboxes[:, 0]
     bheight = bboxes[:, 3] - bboxes[:, 1]
     xc = (bboxes[:, 2] + bboxes[:, 0]) / 2
     yc = (bboxes[:, 3] + bboxes[:, 1]) / 2
 
-    # target_y = math.sqrt(bwidth * bheight * scale / aspect_ratio)
-    # target_x = aspect_ratio * target_y
     target_x, target_y = compute(bwidth, bheight, scale, aspect_ratio)
 
-    target = np.c_[-target_x, -target_y, target_x, target_y]
-    # print('target: ', target)
-    len = np.array([image_width, image_height, image_width, image_height])
-    bcenter = np.c_[xc, yc, xc, yc]
+    target = torch.stack((-target_x, -target_y, target_x, target_y)).T
+    # print('target: ', target.size())
+    len = torch.stack((image_width, image_height, image_width, image_height)).T
+    # print('len: ', len.size())
+    bcenter = torch.stack((xc, yc, xc, yc)).T
+    # print('bc', bcenter.size())
 
-    bboxes = (bcenter + target).clip(0, 1) * len
+    bboxes = (bcenter + target).clamp(0, 1) * len
     # print('rescaled bbox: ', bboxes)
-    return bboxes.astype(int)
+    return bboxes.to(torch.int32)
 
 
 def process_shape(x_min, y_min, x_max, y_max, ratio):
@@ -239,34 +243,3 @@ def scale_area_ratio(x1, y1, x2, y2, image_height, image_width,
     #     p_x1, p_y1, p_x2, p_y2 = process_shape(p_x1, p_y1, p_x2, p_y2, ratio=patch_aspect_ratio)
     # print(p_x1, p_y1, p_x2, p_y2)
     return p_x1, p_y1, p_x2, p_y2
-
-
-def transform_patch(preds, adv_batch, scale, angle=torch.FloatTensor([0])):
-    import torch.nn.functional as F
-    preds = torch.FloatTensor(preds)
-    scale = torch.FloatTensor([scale])
-    batch_size = 1
-    target_x = preds[0, 0].view(1)
-    target_y = preds[0, 1].view(1)
-    target_y = target_y - 0.05
-
-    tx = torch.FloatTensor((-target_x + 0.5) * 2)
-    ty = torch.FloatTensor((-target_y + 0.5) * 2)
-    sin = torch.sin(angle)
-    cos = torch.cos(angle)
-
-    print(tx, ty)
-
-    theta = torch.cuda.FloatTensor(1, 2, 3).fill_(0)
-    theta[:, 0, 0] = (cos/scale)
-    theta[:, 0, 1] = sin/scale
-    theta[:, 0, 2] = (tx*cos/scale+ty*sin/scale)
-    theta[:, 1, 0] = -sin/scale
-    theta[:, 1, 1] = (cos/scale)
-    theta[:, 1, 2] = (-tx*sin/scale+ty*cos/scale)
-
-    grid = F.affine_grid(theta, adv_batch.shape)
-    adv_batch_t = F.grid_sample(adv_batch, grid)
-    cv2.imwrite('./adv.png', adv_batch[0].detach().cpu().numpy().transpose(1, 2, 0) * 255.)
-    cv2.imwrite('./adv_t.png', adv_batch_t[0].detach().cpu().numpy().transpose(1, 2, 0) * 255.)
-    return adv_batch_t

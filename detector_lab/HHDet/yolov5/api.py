@@ -24,24 +24,20 @@ class HHYolov5(DetectorBase):
         self.stride = max(int(self.detector.stride.max()), 32)  # model stride
         self.names = self.detector.module.names if hasattr(self.detector, 'module') else self.detector.names  # get class names
 
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5, **kwargs):
-        # print("detect: ", batch_tensor.requires_grad)
-        output = self.detector(batch_tensor, augment=False, visualize=False)[0]
-        # print("output       :", output[0].shape)
-        preds = non_max_suppression(output.detach().cpu(),
-                                    self.conf_thres, self.iou_thres) # [batch, num, 6] e.g., [1, 22743, 1, 4]
+    def __call__(self, batch_tensor, **kwargs):
+        detections_with_grad = self.detector(batch_tensor, augment=False, visualize=False)[0]
+        preds = non_max_suppression(detections_with_grad, self.conf_thres, self.iou_thres) # [batch, num, 6] e.g., [1, 22743, 1, 4]
+
+        cls_max_ids = None
         bbox_array = []
         for pred in preds:
-            # print(pred)
             box = scale_coords(batch_tensor.shape[-2:], pred, self.ori_size)
             box[:, [0,2]] /= self.ori_size[1]
             box[:, [1,3]] /= self.ori_size[0]
             bbox_array.append(box)
 
         # [batch, num, num_classes] e.g.,[1, 22743, 80]
-        confs = output[..., 4]
-        confs = confs[confs > confs_thresh]
-        # print(bbox_array, confs)
-        # print('filtered: ', confs.shape)
-        return bbox_array, confs
+        obj_confs = detections_with_grad[..., 4]
+        output = {'bbox_array': bbox_array, 'obj_confs': obj_confs, "cls_max_ids": cls_max_ids}
+        return output
 

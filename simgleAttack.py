@@ -4,7 +4,7 @@ from detector_lab.utils import init_detectors
 from attacks.bim import LinfBIMAttack
 from attacks.mim import LinfMIMAttack
 from attacks.pgd import LinfPGDAttack
-from attacks.test import attacker
+from attacks.optim import OptimAttacker
 from tools.loss import *
 from tools.det_utils import plot_boxes_cv2, scale_area_ratio
 
@@ -12,13 +12,14 @@ attacker_dict = {
     "bim": LinfBIMAttack,
     "mim": LinfMIMAttack,
     "pgd": LinfPGDAttack,
-    "test": attacker
+    "optim": OptimAttacker
 }
 
 loss_dict = {
     "default": temp_attack_loss,
     "ascend-mse": ascend_mse_loss,
-    "descend-mse": descend_mse_loss
+    "descend-mse": descend_mse_loss,
+    "obj-tv": obj_tv_loss
 }
 
 
@@ -38,20 +39,14 @@ class DetctorAttacker(object):
         loss_func = loss_dict['default']
         if hasattr(cfg, 'LOSS_FUNC') and cfg.LOSS_FUNC is not None:
             loss_func = loss_dict[cfg.LOSS_FUNC]
-        self.attacker = attacker_dict[cfg.METHOD](loss_function=loss_func, model=self.detectors,
-                                                   norm='L_infty',
-                                                   device=self.device,
-                                                   epsilons=cfg.EPSILON,
-                                                   max_iters=cfg.MAX_ITERS,
-                                                   step_size=cfg.STEP_SIZE,
-                                                   class_id=cfg.TARGET_CLASS)
-        # for detector in self.detectors:
-        #     self.attacker.init_epsilon(detector)
+
+        self.attacker = attacker_dict[cfg.METHOD](
+            loss_func=loss_func, norm='L_infty', device=self.device, cfg = cfg, detector_attacker=self)
 
 
     def plot_boxes(self, img, boxes, savename=None):
         # print(img.dtype, isinstance(img, np.ndarray))
-        plot_boxes_cv2(img, np.array(boxes), self.class_names, savename=savename)
+        plot_boxes_cv2(img, boxes.cpu().detach().numpy(), self.class_names, savename=savename)
 
     def patch_pos(self, preds, aspect_ratio=-1):
         height, width = self.cfg.DETECTOR.INPUT_SIZE

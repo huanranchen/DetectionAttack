@@ -1,4 +1,4 @@
-from .base import Base_Attacker
+from .base import BaseAttacker
 
 import torch
 import torch.nn as nn
@@ -9,32 +9,13 @@ import cv2
 import copy
 from tqdm import tqdm
 
-class LinfBIMAttack(Base_Attacker):
-    """
-        BIM attacks
-        epsilon: magnitude of attack
-        k: iterations
-        a: step size
+
+class LinfBIMAttack(BaseAttacker):
+    """BIM attack (arxiv: https://arxiv.org/pdf/1607.02533.pdf)
     """
 
-    def __init__(self, loss_fuction, model, norm='L_infty', epsilons=0.05, max_iters=10, step_size=0.01, perturbation=None, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
-        """this is init function of BIM attack (arxiv: https://arxiv.org/pdf/1607.02533.pdf)
-
-        Args:
-            loss_fuction ([torch.nn.Loss]): [a loss function to calculate the loss between the inputs and expeced outputs]
-            model ([torch.nn.model]): [target model to attack].
-            norm (str, optional): [the attack norm and the choices are [L0, L1, L2, L_infty]]. Defaults to 'L_infty'.
-            epsilons (float, optional): [the upper bound of perturbation]. Defaults to 0.05.
-            max_iters (int, optional): [the maximum iteration number]. Defaults to 10.
-            step_size (float, optional): [the step size of attack]. Defaults to 0.01.
-            device ([type], optional): ['cpu' or 'cuda']. Defaults to None.
-        """
-        super(LinfBIMAttack, self).__init__(model, norm, epsilons, perturbation)
-        self.max_iters = max_iters
-        self.step_size = step_size
-        self.device = device
-        self.loss_fn = loss_fuction
-        self.epsilon = epsilons
+    def __init__(self, loss_func, cfg, device, detector_attacker, norm='L_infty', perturbation=None):
+        super().__init__(loss_func, norm, cfg, device, detector_attacker)
      
     def non_targeted_attack(self, x, y, is_universal = False, x_min=-10, x_max=10, *model_args):
         """the main attack method of BIM

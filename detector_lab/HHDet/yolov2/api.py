@@ -24,23 +24,26 @@ class HHYolov2(DetectorBase):
         detections_with_grad = self.detector(batch_tensor)
         return detections_with_grad
 
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5, **kwargs):
+    def __call__(self, batch_tensor, **kwargs):
         detections_with_grad = self.detector(batch_tensor)  # torch.tensor([1, num, classes_num+4+1])
-        # print(detections_with_grad.shape, detections_with_grad.dim())
-
         # x1, y1, x2, y2, det_conf, cls_max_conf, cls_max_id
-        all_boxes, confs = get_region_boxes(detections_with_grad, self.conf_thres, self.detector.num_classes,
-                         self.detector.anchors, self.detector.num_anchors)
-        confs = confs[confs > confs_thresh]
+        all_boxes, obj_confs, cls_max_ids = get_region_boxes(detections_with_grad, self.conf_thres,
+                                            self.detector.num_classes, self.detector.anchors,
+                                            self.detector.num_anchors)
+        obj_confs = obj_confs.view(batch_tensor.size(0), -1)
+        cls_max_ids = cls_max_ids.view(batch_tensor.size(0), -1)
+
         bbox_array = []
+        print(all_boxes)
         for boxes in all_boxes:
+            print(boxes)
             if len(boxes) == 0:
-                bbox_array.append(np.array([]))
+                bbox_array.append(torch.tensor([]).to(self.device))
                 continue
-            boxes = torch.FloatTensor(boxes)
+            boxes = torch.FloatTensor(boxes).to(self.device)
             boxes[:, :4] = torch.clamp(boxes[:, :4], min=0, max=1)
             bbox_array.append(boxes)
         bbox_array = inter_nms(bbox_array, conf_thres=self.conf_thres, iou_thres=self.iou_thres)
         # print(bbox_array)
-        # sys.exit()
-        return bbox_array, confs
+        output = {'bbox_array': bbox_array, 'obj_confs': obj_confs, "cls_max_ids": cls_max_ids}
+        return output

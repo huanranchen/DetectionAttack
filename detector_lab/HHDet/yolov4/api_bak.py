@@ -181,7 +181,7 @@ class HHYolov4(DetectorBase):
         preds = self.post_processing(input_img, conf_thresh, nms_thresh, output)[0]
         return preds, confs
 
-    def detect_img_batch_get_bbox_conf(self, input_img, conf_thresh=0.5, nms_thresh=0.4):
+    def forward(self, input_img, conf_thresh=0.5, nms_thresh=0.4):
         self.detector.eval()
         output = self.detector(input_img)
         # [batch, num, 1, 4] e.g., [1, 22743, 1, 4]

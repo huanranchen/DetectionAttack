@@ -1,4 +1,7 @@
+import sys
+
 import numpy as np
+import torch
 
 from .Pytorch_YOLOv4.tool.utils import *
 from .Pytorch_YOLOv4.tool.torch_utils import *
@@ -36,22 +39,27 @@ class HHYolov4(DetectorBase):
         self.detector.load_weights(model_weights)
         self.eval()
 
-
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5, clean_model=False):
+    def __call__(self, batch_tensor, clean_model=False):
         if clean_model and hasattr(self, 'clean_model'):
-            output = self.clean_model(batch_tensor)
+            detections_with_grad = self.clean_model(batch_tensor)
         else:
-            output = self.detector(batch_tensor)
-        preds = post_processing(batch_tensor, self.conf_thres, self.iou_thres, output)
-        for i, pred in enumerate(preds):
-            pred = np.array(pred)
+            detections_with_grad = self.detector(batch_tensor)
+
+        bbox_array = post_processing(batch_tensor, self.conf_thres, self.iou_thres, detections_with_grad)
+        print(bbox_array)
+        for i, pred in enumerate(bbox_array):
+            print(pred)
+            if len(pred) == 0:
+                bbox_array.append(torch.tensor([]).to(self.device))
+                continue
+            pred = torch.Tensor(pred).to(self.device)
             if len(pred) != 0:
-                pred[:, :4] = np.clip(pred[:, :4], a_min=0, a_max=1)
-            preds[i] = pred # shape([1, 6])
-        # print('v4 h: ', confs.shape, confs.requires_grad)
+                pred[:, :4] = torch.clamp(pred[:, :4], min=0, max=1)
+            bbox_array[i] = pred # shape([1, 6])
 
         # output: [ [batch, num, 1, 4], [batch, num, num_classes] ]
-        confs = output[1]
-        confs = confs[torch.where(confs > confs_thresh)]
-
-        return preds, confs
+        # v4's confs is the combination of obj conf & cls conf
+        obj_confs = detections_with_grad[1]
+        cls_max_ids = torch.argmax(obj_confs, dim=2)
+        output = {'bbox_array': bbox_array, 'obj_confs': obj_confs, "cls_max_ids": cls_max_ids}
+        return output

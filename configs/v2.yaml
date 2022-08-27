@@ -19,23 +19,25 @@ DETECTOR:
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
+  ATTACK_CONF_THRESH: 0.3
 
-  GRAD_PERTURB: 0
-  GRAD_RESET: 10
-  RESET_FREQ: 1000
+  PERTURB:
+    GATE: null
 
 ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
   MAX_ITERS: 1000
-  SEQUENTIAL_ITER_STEP: 5
-  PARALLEL_ITER_STEP: 15
+  ITER_STEP: 5
+
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
+  LOSS_FUNC: "descend-mse"
 
   PATCH_ATTACK:
     WIDTH: 128
     HEIGHT: 128
     SCALE: 0.2
-    ASPECT_RATIO: -1
+    INIT: "random"
+    ASPECT_RATIO: 1

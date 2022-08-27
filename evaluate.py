@@ -59,37 +59,16 @@ class UniversalPatchEvaluator(UniversalDetectorAttacker):
         self.cfg = cfg
         self.device = device
         if patch_path is not None:
-            self.read_patch(patch_path)
+            self.patch_obj.read(patch_path)
 
     def read_patch_from_memory(self, patch):
-        self.universal_patch = patch
-
-
-    def transform_patch(self):
-        from torchvision import transforms
-        trans = transforms.RandomResizedCrop(64, scale=(0.7, 1.0))
-        self.universal_patch = trans(self.universal_patch)
-
-    # def read_patch(self):
-    #     patch_file = self.args.patch
-    #     print('reading patch ' + patch_file)
-    #     if patch_file.endswith('.pth'):
-    #         universal_patch = torch.load(patch_file, map_location='cuda').unsqueeze(0)
-    #         # universal_patch.new_tensor(universal_patch)
-    #         print(universal_patch.shape, universal_patch.requires_grad, universal_patch.is_leaf)
-    #     else:
-    #         universal_patch = cv2.imread(patch_file)
-    #         universal_patch = cv2.cvtColor(universal_patch, cv2.COLOR_BGR2RGB)
-    #         universal_patch = np.expand_dims(np.transpose(universal_patch, (2, 0, 1)), 0)
-    #         universal_patch = torch.from_numpy(np.array(universal_patch, dtype='float32') / 255.)
-    #     self.universal_patch = universal_patch.to(self.device)
+        self.patch_obj.update_(patch)
 
 
 def handle_input():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--patch', type=str, default=None)
     parser.add_argument('-cfg', '--cfg', type=str, default=None)
-    parser.add_argument('-t', '--transform', action='store_true')
     parser.add_argument('-d', '--detectors', nargs='+', default=None)
     parser.add_argument('-s', '--save', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/inria/')
     parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/labels')
@@ -147,7 +126,6 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     dir_check(args.save, cfg.DETECTOR.NAME, rebuild=False)
     utils = Utils(cfg)
     batch_size = 1
-    print('data root     :', args.data_root)
     img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
 
     data_loader = dataLoader(args.data_root, input_size=cfg.DETECTOR.INPUT_SIZE,
@@ -158,26 +136,23 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     for detector in evaluator.detectors:
         accs_total[detector.name] = []
     # print(evaluator.detectors)
-    for index, img_tensor_batch in tqdm(enumerate(data_loader)):
+    for index, img_tensor_batch in enumerate(tqdm(data_loader, total=len(data_loader))):
+        evaluator.patch_obj.patch_clone()
         img_tensor_batch = img_tensor_batch.to(evaluator.device)
         names = img_names[index:index + batch_size]
         img_name = names[0].split('/')[-1]
         # print(img_name)
         for detector in evaluator.detectors:
             tmp_path = os.path.join(save_path, detector.name)
-            # print('----------------', detector.name)
-            all_preds = None
-            # get object bbox: preds bbox list; detections_with_grad: confs tensor
-            preds, _ = detector.detect_img_batch_get_bbox_conf(img_tensor_batch)
-            all_preds = evaluator.merge_batch_pred(all_preds, preds)
+            all_preds = evaluator.detect_bbox(img_tensor_batch)
             if save_label:
                 # for saving the original detection info
                 fp = os.path.join(tmp_path, paths['det-lab'])
-                utils.save_label(preds[0], fp, img_name, save_conf=False, rescale=True)
+                utils.save_label(all_preds[0], fp, img_name, save_conf=False, rescale=True)
 
             if hasattr(args, 'test_origin') and args.test_origin:
                 fp = os.path.join(tmp_path, paths['det-res'])
-                utils.save_label(preds[0], fp, img_name, save_conf=True, rescale=True)
+                utils.save_label(all_preds[0], fp, img_name, save_conf=True, rescale=True)
 
             target_nums_clean = evaluator.get_patch_pos_batch(all_preds, aspect_ratio=aspect_ratio)[0]
             # print(detector.name, '\nclean: ', target_nums_clean)
@@ -187,18 +162,22 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 ipath = os.path.join(tmp_path, 'imgs')
                 evaluator.adv_detect_save(img_tensor_batch, ipath, img_name, detectors=[detector])
 
-            adv_img_tensor, _ = evaluator.apply_universal_patch(img_tensor_batch)
+            adv_img_tensor, _ = evaluator.uap_apply(img_tensor_batch)
             if hasattr(args, 'stimulate_uint8_loss') and args.stimulate_uint8_loss:
                 adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)
-            preds, _ = detector.detect_img_batch_get_bbox_conf(adv_img_tensor)
+
+            preds = detector(adv_img_tensor)['bbox_array']
+            # print(preds)
             # for saving the attacked detection info
             lpath = os.path.join(tmp_path, paths['attack-lab'])
             # print(lpath)
             utils.save_label(preds[0], lpath, img_name, rescale=True)
 
             if target_nums_clean:
-                target_adv = evaluator.filter_bbox(preds[0])
-                target_nums_adv = len(target_adv)
+                target_nums_adv = 0
+                if preds[0].numel():
+                    target_adv = evaluator.filter_bbox(preds[0])
+                    target_nums_adv = len(target_adv)
                 # print('--------adv: ', target_adv, target_nums_adv)
                 acc = target_nums_clean - target_nums_adv
                 acc = 0 if acc < 0 else acc / target_nums_clean
@@ -216,8 +195,6 @@ def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() el
     args = get_save(args)
     args = ignore_class(args, cfg)
     evaluator = UniversalPatchEvaluator(cfg, args.patch, device)
-    if hasattr(args, 'transform') and args.transform:
-        evaluator.transform_patch()
 
     cfg = cfg_save_modify(cfg)
     return args, cfg, evaluator
@@ -232,10 +209,10 @@ def cfg_save_modify(cfg):
 def eva(args, cfg):
     args, cfg, evaluator = init(args, cfg)
     print('------------------ Evaluating ------------------')
-    print("cfg file             : ", args.cfg)
-    print("data root            : ", args.data_root)
-    print("label root           : ", args.label_path)
-    print("save root            : ", args.save)
+    print("              cfg file : ", args.cfg)
+    print("             data root : ", args.data_root)
+    print("            label root : ", args.label_path)
+    print("             save root : ", args.save)
     # set the eva classes to be the ones to attack
     evaluator.attack_list = cfg.show_class_index(args.eva_class_list)
 
@@ -300,11 +277,8 @@ if __name__ == '__main__':
 
     args, cfg = handle_input()
     order = ['yolov3', 'yolov3-tiny', 'yolov4', 'yolov4-tiny', 'yolov5', 'faster_rcnn', 'ssd']
-
     # args, evaluator = init(args, cfg)
     det_mAPs, gt_mAPs, ori_mAPs, accs_dict = eva(args, cfg)
-
-
 
     det_mAP_file = os.path.join(args.save, 'det-mAP.txt')
     if not os.path.exists(det_mAP_file):

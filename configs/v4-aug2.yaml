@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: 1
+  AUGMENT: 2
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -11,13 +11,12 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["YOLOV2"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
-
   ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
@@ -33,8 +32,11 @@ ATTACKER:
   TARGET_CLASS: 0
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
 
+  LOSS_FUNC: "descend-mse" # [null, descend-mse, ascend-mse]
+
   PATCH_ATTACK:
     WIDTH: 128
     HEIGHT: 128
     SCALE: 0.2
+    INIT: "random" # ['random', 'gray']
     ASPECT_RATIO: 1

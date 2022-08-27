@@ -40,7 +40,7 @@ def draw_cam(img_tensor_batch, plot, save_dir, save_name):
 
 def detect(attacker, img_tensor_batch, model):
     all_preds = None
-    preds, _ = model.detect_img_batch_get_bbox_conf(img_tensor_batch)
+    preds, _ = model(img_tensor_batch)
     all_preds = attacker.merge_batch_pred(all_preds, preds)
     attacker.get_patch_pos_batch(all_preds)
     return preds
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         draw_cam(img_tensor_batch, plot, save_dir, f'./{cur}-clean-cam.png')
 
         # ----------------adv-----------------
-        img_adv_tensor, _ = attacker.apply_universal_patch(img_tensor_batch)
+        img_adv_tensor, _ = attacker.uap_apply(img_tensor_batch)
         # plot = draw_detection(attacker, img_adv_tensor, model, save_dir, f'{cur}-adv-detect.png')
         plot = draw_detection(attacker, img_adv_tensor, model, save_dir)
         draw_cam(img_adv_tensor, plot, save_dir, f'./{cur}-adv-cam.png')

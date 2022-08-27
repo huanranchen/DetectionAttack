@@ -45,7 +45,7 @@ class GetLoss():
                 # img_tensor_batch = detector.init_img_batch(img_numpy_batch)
 
                 # 在干净样本上得到所有的目标检测框，定位patch覆盖的位置
-                preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(img_tensor_batch)
+                preds, detections_with_grad = detector(img_tensor_batch)
                 all_preds = self.evaluator.merge_batch_pred(all_preds, preds)
 
                 # 可以拿到loss的时机1：在干净样本上的loss
@@ -57,9 +57,9 @@ class GetLoss():
                     continue
 
                 # 添加patch，生成对抗样本
-                adv_tensor_batch, patch_tmp = self.evaluator.apply_universal_patch(img_tensor_batch)
+                adv_tensor_batch, patch_tmp = self.evaluator.uap_apply(img_tensor_batch)
                 # 对对抗样本进行目标检测
-                preds, detections_with_grad = detector.detect_img_batch_get_bbox_conf(adv_tensor_batch)
+                preds, detections_with_grad = detector(adv_tensor_batch)
 
                 self.evaluator.get_patch_pos_batch(preds)
                 self.evaluator.adv_detect_save(img_tensor_batch, save_path='./Draws/out', save_name=f'WTF{index}.jpg')

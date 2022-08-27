@@ -28,10 +28,11 @@ class Faster_RCNN(DetectorBase):
         self.detector = self.detector.to(self.device)
         self.eval()
 
-    def detect_img_batch_get_bbox_conf(self, batch_tensor, confs_thresh=0.5, **kwargs):
+    def __call__(self, batch_tensor, **kwargs):
         shape = batch_tensor.shape[-2]
         preds, confs = self.detector(batch_tensor)
 
+        cls_max_ids = None
         confs_array = None
         bbox_array = []
         for ind, (pred, conf) in enumerate(zip(preds, confs)):
@@ -41,12 +42,9 @@ class Faster_RCNN(DetectorBase):
                 pred['scores'].view(nums, 1),
                 (pred['labels'] - 1).view(nums, 1)
             ), 1).detach().cpu() if nums else torch.FloatTensor([])
-
-            ctmp = conf[conf > confs_thresh]
-            confs_array = ctmp if confs_array is None else torch.cat((confs_array, ctmp), -1)
-
+            confs_array = conf if confs_array is None else torch.cat((confs_array, conf), -1)
             bbox_array.append(array)
 
         bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
-
-        return bbox_array, confs_array
+        output = {'bbox_array': bbox_array, 'obj_confs': confs_array, "cls_max_ids": cls_max_ids}
+        return output

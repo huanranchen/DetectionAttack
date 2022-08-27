@@ -97,10 +97,10 @@ def inter_nms(all_predictions, conf_thres=0.25, iou_thres=0.45):
     out = []
     for predictions in all_predictions:
         # for each img in batch
-        # print('pred', predictions.shape)
-        if not predictions.shape[0]:
+        if predictions.numel() == 0:
             out.append(predictions)
             continue
+
         if type(predictions) is np.ndarray:
             predictions = torch.from_numpy(predictions)
 
@@ -155,6 +155,7 @@ def convert2cpu_long(gpu_matrix):
 
 def get_region_boxes(output, conf_thresh, num_classes, anchors, num_anchors, only_objectness=1, validation=False):
     # anchor_step = len(anchors)/num_anchors
+    # print(conf_thresh)
     anchor_step = len(anchors) // num_anchors
     if output.dim() == 3:
         output = output.unsqueeze(0)
@@ -197,15 +198,16 @@ def get_region_boxes(output, conf_thresh, num_classes, anchors, num_anchors, onl
 
     sz_hw = h * w
     sz_hwa = sz_hw * num_anchors
-    det_confs = convert2cpu(det_confs)
-    cls_max_confs = convert2cpu(cls_max_confs)
-    cls_max_ids = convert2cpu_long(cls_max_ids)
-    xs = convert2cpu(xs)
-    ys = convert2cpu(ys)
-    ws = convert2cpu(ws)
-    hs = convert2cpu(hs)
+    # det_confs = convert2cpu(det_confs)
+    # cls_max_confs = convert2cpu(cls_max_confs)
+    # cls_max_ids = convert2cpu_long(cls_max_ids)
+    # xs = convert2cpu(xs)
+    # ys = convert2cpu(ys)
+    # ws = convert2cpu(ws)
+    # hs = convert2cpu(hs)
     if validation:
-        cls_confs = convert2cpu(cls_confs.view(-1, num_classes))
+        cls_confs = cls_confs.view(-1, num_classes)
+        # cls_confs = convert2cpu(cls_confs)
     t2 = time.time()
     for b in range(batch):
         boxes = []
@@ -233,6 +235,7 @@ def get_region_boxes(output, conf_thresh, num_classes, anchors, num_anchors, onl
                         x1 = bcx / w - tw / 2
                         y1 = bcy / h - th / 2
                         box = [x1, y1, x1+tw, y1+th, det_conf*cls_max_conf, cls_max_id]
+
                         if (not only_objectness) and validation:
                             for c in range(num_classes):
                                 tmp_conf = cls_confs[ind][c]
@@ -248,7 +251,7 @@ def get_region_boxes(output, conf_thresh, num_classes, anchors, num_anchors, onl
         print('        gpu to cpu : %f' % (t2 - t1))
         print('      boxes filter : %f' % (t3 - t2))
         print('---------------------------------')
-    return all_boxes, det_confs
+    return all_boxes, det_confs, cls_max_ids
 
 
 def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):

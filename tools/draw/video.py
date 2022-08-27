@@ -20,9 +20,10 @@ def p2v(path, fps=16, size=(400, 400), postfix='.png', save_path='./', save_name
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--name', default='video.avi')
-    parser.add_argument('-p', '--path', default='/home/chenziyan/work/BaseDetectionAttack/results/inria/gap/aug/patch',
+    parser.add_argument('-s', '--save_name', default='video.avi')
+    parser.add_argument('-p', '--path',
+                        default='/home/chenziyan/work/BaseDetectionAttack/results/exp2/aug2/v3-300-300/patch',
                         type=str)
     parser.add_argument('-r', '--rule', type=str, default='.png')
     args = parser.parse_args()
-    p2v(args.path, postfix=args.rule, save_name=args.name)
+    p2v(args.path, postfix=args.rule, save_name=args.save_name)

@@ -59,7 +59,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         pass
     
     # 根据已获取的规范化检测框，在图像中加入通用的攻击patch
-    def apply_universal_patch(self, numpy_batch, attacking=False):
+    def uap_apply(self, numpy_batch, attacking=False):
         # 同时对universal_patch进行该检测器规定的预处理 detector.normalize_tensor()
         pass
     
@@ -90,7 +90,7 @@ class FRCNN(object):
         pass
     
     # 对img batch进行目标检测，返回检测框及置信度
-    def detect_img_batch_get_bbox_conf(self, batch_tensor):
+    def forward(self, batch_tensor):
         # 功能为batch版本的detect_img_tensor_get_bbox_conf()
         pass
         return preds, confs
@@ -119,7 +119,7 @@ read_img_np_batch()
 ```python
 # 调用所有检测器对 img_numpy_batch 进行目标检测
 for detector in detectors:
-    detector.detect_img_batch_get_bbox_conf()
+    detector()
 # 检测器间NMS
 inter_nms()
 # 获取所有的target初始目标locations
@@ -136,14 +136,14 @@ if not has_target:
 for i in range(cfg.MAX_ITER):
     for detector in detectors:
         # 获取攻击后的img_tensor
-        adv_img_tensor = apply_universal_patch()
+        adv_img_tensor = uap_apply()
         # 进行迭代攻击，（串/并行）更新universal_patch
         non_targeted_attack_batch(adv_img_tensor, detector)
 ```
 目前攻击只写了第一种串行更新的方法
 在条件
 MAX_ITER=100，
-SEQUENTIAL_ITER_STEP=2，
+ITER_STEP=2，
 BATCH_SIZE=2下，
 攻击一整轮所需时间:
 
