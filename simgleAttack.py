@@ -46,7 +46,8 @@ class DetctorAttacker(object):
 
     def plot_boxes(self, img, boxes, savename=None):
         # print(img.dtype, isinstance(img, np.ndarray))
-        plot_boxes_cv2(img, boxes.cpu().detach().numpy(), self.class_names, savename=savename)
+        plot_box = plot_boxes_cv2(img, boxes.cpu().detach().numpy(), self.class_names, savename=savename)
+        return plot_box
 
     def patch_pos(self, preds, aspect_ratio=-1):
         height, width = self.cfg.DETECTOR.INPUT_SIZE

@@ -33,25 +33,6 @@ class BaseAttacker(ABC):
         self.class_id = cfg.TARGET_CLASS
         self.attack_class = cfg.ATTACK_CLASS
 
-
-    @property
-    def update_func(self):
-        def grad_ascend(patch, update):
-            return patch + update
-
-        def grad_descend(patch, update):
-            return patch - update
-
-        return grad_descend if "descend" in self.cfg.LOSS_FUNC else grad_ascend
-
-    @abstractmethod
-    def patch_update(self, detector, patch_tmp):
-        pass
-
-    @abstractmethod
-    def attack_loss(self, confs):
-        pass
-
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
         adv_tensor_batch, patch_tmp = self.detector_attacker.uap_apply(ori_tensor_batch)
@@ -68,9 +49,27 @@ class BaseAttacker(ABC):
             loss.backward()
 
             patch_clamp_ = self.detector_attacker.patch_obj.clamp_
-            self.patch_update(patch_tmp, patch_clamp_)
+            self.patch_update(patch_clamp_)
 
             losses.append(float(loss))
             adv_tensor_batch, _ = self.detector_attacker.uap_apply(ori_tensor_batch, universal_patch=patch_tmp)
 
         return patch_tmp, torch.tensor(losses).mean()
+
+    @property
+    def update_func(self):
+        def grad_ascend(patch, update):
+            return patch + update
+
+        def grad_descend(patch, update):
+            return patch - update
+
+        return grad_descend if "descend" in self.cfg.LOSS_FUNC else grad_ascend
+
+    @abstractmethod
+    def patch_update(self, patch_clamp_, **kwargs):
+        pass
+
+    @abstractmethod
+    def attack_loss(self, confs):
+        pass

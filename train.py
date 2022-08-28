@@ -74,7 +74,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
             now_step = index + epoch * len(data_loader)
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
-            detector_attacker.patch_obj.patch_clone()
             all_preds = detector_attacker.detect_bbox(img_tensor_batch)
             # get position of adversarial patches
             target_nums = detector_attacker.get_patch_pos_batch(all_preds)

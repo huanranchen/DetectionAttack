@@ -1,3 +1,8 @@
+"""
+
+This is not used since tons of tensors takes huge GPU memory
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

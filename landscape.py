@@ -81,6 +81,6 @@ class GetLoss():
 
 
 if __name__ == '__main__':
-    from Draws.Landscape import train_valid_2dlandscape
+    from BaseDetectionAttack.tools.draw.Landscape import train_valid_2dlandscape
 
     train_valid_2dlandscape()

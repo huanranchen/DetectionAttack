@@ -32,10 +32,12 @@ ATTACKER:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse]
   tv_eta: 2.5
+  obj_eta: 1
+  START_LEARNING_RATE: 0.3
 
   PATCH_ATTACK:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.15
+    SCALE: 0.2
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

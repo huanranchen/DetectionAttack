@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore")
 class UniversalDetectorAttacker(DetctorAttacker):
     def __init__(self, cfg, device):
         super().__init__(cfg, device)
-
+        self.vlogger = None
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH_ATTACK, device)
         if cfg.DATA.AUGMENT > 1:
             self.data_transformer = DataTransformer(device)
@@ -109,13 +109,15 @@ class UniversalDetectorAttacker(DetctorAttacker):
             tmp, _ = self.uap_apply(img_tensor[0].unsqueeze(0))
             preds = detector(tmp)['bbox_array']
             img_numpy_int8 = FormatConverter.tensor2numpy_cv2(tmp[0].cpu().detach())
-            self.plot_boxes(img_numpy_int8, preds[0], savename=os.path.join(save_path, save_name))
+            plotted = self.plot_boxes(img_numpy_int8, preds[0], savename=os.path.join(save_path, save_name))
+            if self.vlogger:
+                self.vlogger.write_cv2(plotted, 'adv sample')
 
     def save_patch(self, save_path, save_patch_name):
         save_path = save_path + '/patch/'
         # save_patch_name = os.path.join(save_path, save_patch_name)
         save_tensor(self.universal_patch, save_patch_name, save_path)
-        print(self.universal_patch.is_leaf)
+        # print(self.universal_patch.is_leaf)
         print('Saving patch to ', os.path.join(save_path, save_patch_name))
 
     def detect_bbox(self, img_batch, detectors=None):

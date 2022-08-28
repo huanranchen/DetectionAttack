@@ -139,7 +139,6 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     # print(evaluator.detectors)
     for index, img_tensor_batch in enumerate(tqdm(data_loader, total=len(data_loader))):
         img_tensor_batch = img_tensor_batch.to(evaluator.device)
-        evaluator.patch_obj.patch_clone()
         names = img_names[index:index + batch_size]
         img_name = names[0].split('/')[-1]
         # print(img_name)

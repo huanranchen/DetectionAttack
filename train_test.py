@@ -3,12 +3,15 @@ import os
 import numpy as np
 from tqdm import tqdm
 from detector_lab.utils import inter_nms
-
+from tools.draw import VisualBoard
 from tools.data_loader import dataLoader
 from train import logger
 
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
+    def get_iter():
+        return (epoch - 1) * len(data_loader) + index
+
     logger(cfg, args)
     save_plot = True
     data_sampler = None
@@ -18,7 +21,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
     p_obj = detector_attacker.patch_obj.patch
     p_obj.requires_grad = True
-    optimizer = torch.optim.Adam([p_obj], lr=0.03, amsgrad=True)
+    optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
 
     from torch import optim
     scheduler_factory = lambda x: optim.lr_scheduler.ReduceLROnPlateau(x, 'min', patience=50)
@@ -28,11 +31,14 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     start_index = int(args.patch.split('/')[-1].split('_')[0]) if args.patch is not None else 1
     loss_array = []
     detector_attacker.save_patch(args.save_path, f'{start_index-1}_{save_name}')
+    vlogger = VisualBoard(optimizer, start_iter=start_index)
+    detector_attacker.vlogger = vlogger
     for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS+1):
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
-            img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
+            vlogger(get_iter())
 
+            img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
             all_preds = detector_attacker.detect_bbox(img_tensor_batch)
             # get position of adversarial patches
             target_nums = detector_attacker.get_patch_pos_batch(all_preds)
@@ -42,6 +48,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             # print('                 loss : ', loss)
             ep_loss += loss
             if save_plot and index % 5 == 0:
+                vlogger.write_tensor(detector_attacker.universal_patch[0], 'adv patch')
                 # for detector-specific dir name
                 for detector in detector_attacker.detectors:
                     detector_attacker.adv_detect_save(img_tensor_batch,
@@ -52,10 +59,12 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         if epoch % 10 == 0:
             patch_name = f'{epoch}_{save_name}'
             detector_attacker.save_patch(args.save_path, patch_name)
+
         torch.cuda.empty_cache()
 
         ep_loss /= len(data_loader)
         scheduler.step(ep_loss)
+        vlogger.write_ep_loss(ep_loss)
         print('           ep loss : ', ep_loss)
         loss_array.append(float(ep_loss))
     np.save(os.path.join(args.save_path, 'loss.npy'), loss_array)

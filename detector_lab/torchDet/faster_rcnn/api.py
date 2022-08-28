@@ -46,5 +46,7 @@ class Faster_RCNN(DetectorBase):
             bbox_array.append(array)
 
         bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
+        # print(conf.shape)
+
         output = {'bbox_array': bbox_array, 'obj_confs': confs_array, "cls_max_ids": cls_max_ids}
         return output
