@@ -4,7 +4,7 @@ import os
 import torch.cuda
 import yaml
 
-from tools.data_loader import read_img_np_batch
+from tools.loader import read_img_np_batch
 from tools.utils import obj
 from evaluate import UniversalPatchEvaluator
 

@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import torch
 
-
+import torch.nn.functional as F
 from . import faster_rcnn, fasterrcnn_resnet50_fpn
 from ...DetectorBase import DetectorBase
 from ..utils import inter_nms
@@ -42,11 +42,9 @@ class Faster_RCNN(DetectorBase):
                 pred['scores'].view(nums, 1),
                 (pred['labels'] - 1).view(nums, 1)
             ), 1).detach().cpu() if nums else torch.FloatTensor([])
-            confs_array = conf if confs_array is None else torch.cat((confs_array, conf), -1)
+            confs_array = conf if confs_array is None else torch.vstack((confs_array, conf))
             bbox_array.append(array)
 
         bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
-        # print(conf.shape)
-
         output = {'bbox_array': bbox_array, 'obj_confs': confs_array, "cls_max_ids": cls_max_ids}
         return output

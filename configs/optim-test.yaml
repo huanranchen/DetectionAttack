@@ -4,7 +4,7 @@ DATA:
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
-    LAB_DIR: 'data/INRIAPerson/Train/labels'
+    LAB_DIR: 'data/INRIAPerson/Train/labels/ground-truth'
 
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
@@ -28,16 +28,16 @@ ATTACKER:
   MAX_ITERS: 500
   ITER_STEP: 1
   STEP_SIZE: 0.005
-  TARGET_CLASS: 0
+  TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse]
   tv_eta: 2.5
   obj_eta: 1
-  START_LEARNING_RATE: 0.3
+  START_LEARNING_RATE: 0.03
 
   PATCH_ATTACK:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.2
+    SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

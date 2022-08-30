@@ -10,7 +10,7 @@ class OptimAttacker(BaseAttacker):
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
 
-    def patch_update(self, patch_clamp_, **kwargs):
+    def patch_update(self, patch_clamp_):
         self.optimizer.step()
         patch_clamp_(p_min=self.min_epsilon, p_max=self.max_epsilon)
 
@@ -20,7 +20,8 @@ class OptimAttacker(BaseAttacker):
             eta = self.cfg.tv_eta
         self.optimizer.zero_grad()
 
-        loss = self.loss_fn(confs, self.detector_attacker.universal_patch[0])
+        loss = self.loss_fn(confs=confs, patch=self.detector_attacker.universal_patch[0])
+
         if self.cfg.LOSS_FUNC == 'obj-tv':
             tv_loss, obj_loss = loss.values()
             tv_loss = torch.max(eta * tv_loss, torch.tensor(0.1).to(self.device))
@@ -28,8 +29,10 @@ class OptimAttacker(BaseAttacker):
             loss = tv_loss + obj_loss
             if self.detector_attacker.vlogger:
                 self.detector_attacker.vlogger.write_loss(loss, obj_loss, tv_loss)
-            print('tv loss: ', tv_loss, 'obj loss:', obj_loss)
-        else:
+            # print('tv loss: ', tv_loss, 'obj loss:', obj_loss)
+
+        elif self.cfg.LOSS_FUNC == 'obj':
+            loss = loss['obj_loss'] * self.cfg.obj_eta
             if self.detector_attacker.vlogger:
-                self.detector_attacker.vlogger.write_loss(loss, 'loss/det_loss')
+                self.detector_attacker.vlogger.write_scalar(loss, 'loss/det_loss')
         return loss

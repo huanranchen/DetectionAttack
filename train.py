@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from detector_lab.utils import inter_nms
 
-from tools.data_loader import dataLoader
+from tools.loader import dataLoader
 
 
 def modelDDP(detector_attacker, args):
@@ -51,7 +51,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler)
     logger(cfg, args, attack_confs_thresh)
     save_step = 5000
-    save_plot=True
     # detector_attacker.ddp = False
 
     epoch_save_mode = False if len(data_loader) > save_step else True
@@ -82,14 +81,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                 continue
 
             detector_attacker.attack(img_tensor_batch, args.attack_method, confs_thresh=attack_confs_thresh)
-
-            if save_plot and index % 10 == 0:
-                # for detector-specific dir name
-                for detector in detector_attacker.detectors:
-                    detector_attacker.adv_detect_save(img_tensor_batch,
-                                                      os.path.join(args.save_path, detector.name),
-                                                      save_name,
-                                                      detectors=[detector])
 
             # the patch will be saved in every 5000 images
             if (epoch_save_mode and index == 1 and epoch % 10 == 0) \

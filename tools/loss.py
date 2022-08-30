@@ -38,31 +38,32 @@ class TVLoss(nn.Module):
         return tv / torch.numel(adv_patch)
 
 
-def obj_tv_loss(confs, patch):
+def obj_tv_loss(**kwargs):
+    confs = kwargs['confs']; patch = kwargs['patch']
     tv_loss = TVLoss.compute(patch)
     obj_loss = torch.mean(confs)
     loss = {'tv_loss': tv_loss, 'obj_loss': obj_loss}
     return loss
 
 
-def obj_loss(confs):
+def obj_loss(**kwargs):
+    confs = kwargs['confs']
     obj_loss = torch.mean(confs)
-    return obj_loss
+    loss = {'obj_loss': obj_loss}
+    return loss
 
 
-def descend_mse_loss(confs):
+def descend_mse_loss(**kwargs):
     # print(confs.shape)
+    confs = kwargs['confs']
     target = torch.zeros(confs.shape)
     if confs.is_cuda:
         target = target.cuda()
     return torch.nn.MSELoss()(confs, target)
 
-
-def temp_attack_loss(confs):
-    return ascend_mse_loss(confs)
-
-def ascend_mse_loss(confs):
+def ascend_mse_loss(**kwargs):
     # print(confs.shape)
+    confs = kwargs['confs']
     target = torch.ones(confs.shape)
     if confs.is_cuda:
         target = target.cuda()

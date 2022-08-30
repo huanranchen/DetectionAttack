@@ -5,7 +5,7 @@ from tools.parser import ConfigParser
 from tools.loss import temp_attack_loss
 from evaluate import UniversalPatchEvaluator
 
-from tools.data_loader import detDataSet
+from tools.loader import detDataSet
 from torch.utils.data import DataLoader
 
 

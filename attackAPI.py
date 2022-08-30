@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from simgleAttack import DetctorAttacker
 from tools.det_utils import rescale_patches
 from tools import FormatConverter, DataTransformer, save_tensor
-from tools.adv import PatchManager
+from tools.adv import PatchManager, PatchRandomApplier
 from detector_lab.utils import inter_nms
 
 import warnings
@@ -21,6 +21,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         super().__init__(cfg, device)
         self.vlogger = None
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH_ATTACK, device)
+        self.patch_apply = PatchRandomApplier(device)
         if cfg.DATA.AUGMENT > 1:
             self.data_transformer = DataTransformer(device)
 
@@ -43,6 +44,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         # get all bboxs of setted target. If none target bbox is got, return has_target=False
         height, width = self.cfg.DETECTOR.INPUT_SIZE
         scale = self.cfg.ATTACKER.PATCH_ATTACK.SCALE
+        self.all_preds = all_preds
         self.batch_patch_boxes = []
 
         target_nums = []
@@ -51,44 +53,44 @@ class UniversalDetectorAttacker(DetctorAttacker):
 
         for i_batch, preds in enumerate(all_preds):
             if len(preds):
+                # print(preds)
                 preds = self.filter_bbox(preds)
                 patch_boxs = rescale_patches(preds, height, width, scale, aspect_ratio)
+                # print(patch_boxs)
             else:
                 patch_boxs = torch.Tensor([]).to(preds.device)
             self.batch_patch_boxes.append(patch_boxs)
             target_nums.append(len(patch_boxs))
         return np.array(target_nums)
 
-    def uap_apply(self, img_tensor, universal_patch=None):
+    def uap_apply(self, img_tensor, universal_patch=None, eval=False):
         if universal_patch is None:
             universal_patch = self.universal_patch
-        # print(universal_patch)
-        # FormatConverter.tensor2PIL(universal_patch[0]).save('universal_patch.png')
-        # make sure the original img tensor keep clean, the cloned tensor will be an adversarial sample
-        img_tensor = img_tensor.clone()
-        # del img_batch
-        for i in range(img_tensor.size(0)):
-            for j, bbox in enumerate(self.batch_patch_boxes[i]):
-                # for jth bbox in ith-img's bboxes
-                p_x1, p_y1, p_x2, p_y2 = bbox[:4]
-                height = p_y2 - p_y1
-                width = p_x2 - p_x1
-                if height <= 0 or width <= 0:
-                    continue
-                if self.cfg.DATA.AUGMENT == 3:
-                    adv = self.data_transformer.jitter(universal_patch)
-                else:
-                    adv = universal_patch
-                # print('universal patch: ', torch.sum(universal_patch), torch.sum(adv))
-                # if i == 0 and j == 2:
-                #     FormatConverter.tensor2PIL(adv[0]).save('adv_patch.png')
-                adv = F.interpolate(adv, size=(height, width), mode='bilinear')[0]
-                img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = adv
-        # FormatConverter.tensor2PIL(img_tensor[0]).save('img_tensor.png')
-        if self.cfg.DATA.AUGMENT > 1:
-            img_tensor = self.data_transformer(img_tensor, True, True)
 
-        return img_tensor, universal_patch
+        if eval:
+            for i in range(img_tensor.size(0)):
+                for j, bbox in enumerate(self.batch_patch_boxes[i]):
+                    # for jth bbox in ith-img's bboxes
+                    p_x1, p_y1, p_x2, p_y2 = bbox[:4]
+                    height = p_y2 - p_y1
+                    width = p_x2 - p_x1
+                    if height <= 0 or width <= 0:
+                        continue
+                    if self.cfg.DATA.AUGMENT == 3:
+                        adv = self.data_transformer.jitter(universal_patch)
+                    else:
+                        adv = universal_patch
+                    adv = F.interpolate(adv, size=(height, width), mode='bilinear')[0]
+                    img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = adv
+        else:
+            img_tensor = self.patch_apply(img_tensor, universal_patch, self.all_preds)
+
+        if self.cfg.DATA.AUGMENT == 2:
+            img_tensor = self.data_transformer(img_tensor, True, True)
+        # if self.cfg.DATA.AUGMENT == 3:
+        #     img_tensor = self.data_transformer(img_tensor, False, True)
+
+        return img_tensor
 
     def merge_batch_pred(self, all_preds, preds):
         if all_preds is None:
@@ -101,17 +103,11 @@ class UniversalDetectorAttacker(DetctorAttacker):
 
         return all_preds
 
-    def adv_detect_save(self, img_tensor, save_path, save_name, detectors=None):
-        if detectors is None:
-            detectors = self.detectors
+    def adv_detect_save(self, img_tensor, save_path, save_name, detector):
         os.makedirs(save_path, exist_ok=True)
-        for detector in detectors:
-            tmp, _ = self.uap_apply(img_tensor[0].unsqueeze(0))
-            preds = detector(tmp)['bbox_array']
-            img_numpy_int8 = FormatConverter.tensor2numpy_cv2(tmp[0].cpu().detach())
-            plotted = self.plot_boxes(img_numpy_int8, preds[0], savename=os.path.join(save_path, save_name))
-            if self.vlogger:
-                self.vlogger.write_cv2(plotted, 'adv sample')
+        tmp = self.uap_apply(img_tensor, eval=True)
+        preds = detector(tmp)['bbox_array']
+        self.plot_boxes(tmp[0], preds[0], savename=os.path.join(save_path, save_name))
 
     def save_patch(self, save_path, save_patch_name):
         save_path = save_path + '/patch/'
@@ -138,7 +134,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
     def attack(self, img_tensor_batch, mode='sequential'):
         if mode == 'optim':
             for detector in self.detectors:
-                _, loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
+                loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
         else:
             if mode == 'sequential':
                 loss = self.sequential_attack(img_tensor_batch)

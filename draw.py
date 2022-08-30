@@ -1,4 +1,4 @@
-from tools.data_loader import dataLoader
+from tools.loader import dataLoader
 from tqdm import tqdm
 from tools.det_utils import FormatConverter
 import cv2

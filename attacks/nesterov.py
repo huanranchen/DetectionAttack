@@ -7,14 +7,14 @@ class LinfNesterovAttack:
         pass
 
     def sequential_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector, confs_thresh=None):
-        adv_tensor_batch, patch_tmp = detector_attacker.uap_apply(ori_tensor_batch)
+
         print('conf thresh: ', confs_thresh)
         # interative attack
         # self.optim.zero_grad()
         losses = []
         for iter in range(detector_attacker.cfg.ATTACKER.ITER_STEP):
             # num_iter += 1
-
+            adv_tensor_batch, patch_tmp = detector_attacker.uap_apply(ori_tensor_batch)
             # detect adv img batch to get bbox and obj confs
             preds, detections_with_grad = detector(adv_tensor_batch, confs_thresh=confs_thresh)
             bbox_num = torch.FloatTensor([len(pred) for pred in preds])
@@ -43,8 +43,6 @@ class LinfNesterovAttack:
             losses.append(float(disappear_loss))
             # min_max epsilon clamp of different channels
             patch_tmp = torch.clamp(patch_tmp, min=0, max=1)
-            adv_tensor_batch, _ = detector_attacker.uap_apply(
-                ori_tensor_batch, attacking=False, universal_patch=patch_tmp)
 
         # patch_tmp = detector.unnormalize_tensor(patch_tmp.detach())
 

@@ -39,17 +39,14 @@ def dir_check(save_path, child_paths, rebuild=False):
     def check(path, rebuild):
         if rebuild:
             path_remove(path)
-        try:
-            os.makedirs(path, exist_ok=True)
-        except:
-            pass
+        os.makedirs(path, exist_ok=True)
     check(save_path, rebuild=rebuild)
     for child_path in child_paths:
         child_path = child_path.lower()
         tmp_path = os.path.join(save_path, child_path)
         for path in paths.values():
             ipath = os.path.join(tmp_path, path)
-            check(ipath, rebuild)
+            check(ipath, True)
 
 
 class UniversalPatchEvaluator(UniversalDetectorAttacker):
@@ -122,7 +119,7 @@ def ignore_class(args, cfg):
 
 
 def generate_labels(evaluator, cfg, args, save_label=False):
-    from tools.data_loader import dataLoader
+    from tools.loader import dataLoader
 
     dir_check(args.save, cfg.DETECTOR.NAME, rebuild=False)
     utils = Utils(cfg)
@@ -158,17 +155,16 @@ def generate_labels(evaluator, cfg, args, save_label=False):
             target_nums_clean = evaluator.get_patch_pos_batch(all_preds, aspect_ratio=aspect_ratio)[0]
             # print(detector.name, '\nclean: ', target_nums_clean)
 
-            if hasattr(args, 'save_imgs') and args.save_imgs:
-                # for saving the attacked imgs
-                ipath = os.path.join(tmp_path, 'imgs')
-                evaluator.adv_detect_save(img_tensor_batch, ipath, img_name, detectors=[detector])
-
-            adv_img_tensor, _ = evaluator.uap_apply(img_tensor_batch)
+            adv_img_tensor = evaluator.uap_apply(img_tensor_batch, eval=True)
             if hasattr(args, 'stimulate_uint8_loss') and args.stimulate_uint8_loss:
                 adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)
 
             preds = detector(adv_img_tensor)['bbox_array']
-            # print(preds)
+            if hasattr(args, 'save_imgs') and args.save_imgs:
+                # for saving the attacked imgs
+                ipath = os.path.join(tmp_path, 'imgs')
+                evaluator.plot_boxes(adv_img_tensor[0], preds[0], ipath, savename=img_name)
+
             # for saving the attacked detection info
             lpath = os.path.join(tmp_path, paths['attack-lab'])
             # print(lpath)

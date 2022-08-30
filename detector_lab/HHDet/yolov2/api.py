@@ -1,6 +1,7 @@
 import sys
 import torch
 import numpy as np
+import torch.nn.functional as F
 
 from .yolov2.darknet import Darknet
 from .yolov2.utils import get_region_boxes, inter_nms
@@ -35,13 +36,15 @@ class HHYolov2(DetectorBase):
 
         bbox_array = []
         for boxes in all_boxes:
-            # if len(boxes) == 0:
-            #     bbox_array.append(torch.tensor([]).to(self.device))
-            #     continue
             boxes = torch.FloatTensor(boxes).to(self.device)
+            # pad_size = self.max_n_labels - len(boxes)
+            # boxes = F.pad(boxes, (0, 0, 0, pad_size), value=0).unsqueeze(0)
             if len(boxes):
-                boxes[:, :4] = torch.clamp(boxes[:, :4], min=0, max=1)
+                boxes[:, :4] = torch.clamp(boxes[:, :4], min=0., max=1.)
+            # print(boxes.shape)
             bbox_array.append(boxes)
+            # bbox_array = torch.vstack((bbox_array, boxes)) if bbox_array is not None else boxes
+
         bbox_array = inter_nms(bbox_array, conf_thres=self.conf_thres, iou_thres=self.iou_thres)
         # print(bbox_array)
         output = {'bbox_array': bbox_array, 'obj_confs': obj_confs, "cls_max_ids": cls_max_ids}

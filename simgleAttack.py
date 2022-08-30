@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from detector_lab.utils import init_detectors
@@ -7,6 +9,7 @@ from attacks.pgd import LinfPGDAttack
 from attacks.optim import OptimAttacker
 from tools.loss import *
 from tools.det_utils import plot_boxes_cv2, scale_area_ratio
+from tools import FormatConverter
 
 attacker_dict = {
     "bim": LinfBIMAttack,
@@ -16,10 +19,11 @@ attacker_dict = {
 }
 
 loss_dict = {
-    "default": temp_attack_loss,
+    "default": obj_loss,
     "ascend-mse": ascend_mse_loss,
     "descend-mse": descend_mse_loss,
-    "obj-tv": obj_tv_loss
+    "obj-tv": obj_tv_loss,
+    "obj": obj_loss
 }
 
 
@@ -43,9 +47,10 @@ class DetctorAttacker(object):
         self.attacker = attacker_dict[cfg.METHOD](
             loss_func=loss_func, norm='L_infty', device=self.device, cfg = cfg, detector_attacker=self)
 
-
-    def plot_boxes(self, img, boxes, savename=None):
+    def plot_boxes(self, img_tensor, boxes, save_path, savename=None):
         # print(img.dtype, isinstance(img, np.ndarray))
+        os.makedirs(save_path, exist_ok=True)
+        img = FormatConverter.tensor2numpy_cv2(img_tensor.cpu().detach())
         plot_box = plot_boxes_cv2(img, boxes.cpu().detach().numpy(), self.class_names, savename=savename)
         return plot_box
 

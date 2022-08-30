@@ -23,7 +23,8 @@ class LinfPGDAttack(BaseAttacker):
     def __init__(self, loss_func, cfg, device, detector_attacker, norm='L_infty'):
         super().__init__(loss_func, norm, cfg, device, detector_attacker)
 
-    def patch_update(self, patch_tmp, patch_clamp_):
+    def patch_update(self, patch_clamp_):
+        patch_tmp = self.detector_attacker.patch_obj.patch
         grad = patch_tmp.grad
         update = self.step_size * grad.sign()
         patch_tmp = self.update_func(patch_tmp, update)

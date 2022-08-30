@@ -22,19 +22,20 @@ ATTACKER:
   METHOD: "optim"
   EPSILON: 255 # 0-255
   MAX_ITERS: 1000
-  ITER_STEP: 1
+  ITER_STEP: 5
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id (corresponds to the namefile)
 
   LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'optim']
   tv_eta: 2.5
-
-  START_LEARNING_RATE: 0.7
+  obj_eta: 1
+  START_LEARNING_RATE: 0.03
+  class_specify:
 
   PATCH_ATTACK:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.15
+    SCALE: 0.2
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

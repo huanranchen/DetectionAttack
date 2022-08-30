@@ -5,11 +5,11 @@ from tqdm import tqdm
 import torch
 
 from detector_lab.utils import init_detector
-from tools.data_loader import read_img_np_batch
+from tools.loader import read_img_np_batch
 from tools.det_utils import plot_boxes_cv2
 from tools.parser import load_class_names
 from tools.parser import ConfigParser
-from tools.data_loader import dataLoader
+from tools.loader import dataLoader
 from evaluate import UniversalPatchEvaluator
 
 from pytorch_grad_cam import EigenCAM, GradCAM
