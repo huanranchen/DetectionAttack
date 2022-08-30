@@ -13,9 +13,8 @@ class DetDatasetLab(Dataset):
     def __init__(self, images_path, lab_path, input_size):
         self.im_path = images_path
         self.lab_path = lab_path
-        self.imgs = natsorted(filter(lambda p: p.endswith('.png'), os.listdir(images_path)))
+        self.labs = natsorted(filter(lambda p: p.endswith('.txt'), os.listdir(lab_path)))
         self.input_size = input_size
-        self.n_samples = len(self.imgs)
         self.max_n_labels = 10
         self.ToTensor = transforms.Compose([
             transforms.Resize(self.input_size),
@@ -29,7 +28,8 @@ class DetDatasetLab(Dataset):
 
         pad_size = int((w - h) / 2)
         if pad_size < 0:
-            pad = (abs(pad_size), 0)
+            pad_size = abs(pad_size)
+            pad = (pad_size, 0)
             side_len = h
             lab[:, [1, 3]] = (lab[:, [1, 3]] * w + pad_size) / h
         else:
@@ -39,7 +39,7 @@ class DetDatasetLab(Dataset):
 
         padded_img = Image.new('RGB', (side_len, side_len), color=(127, 127, 127))
         padded_img.paste(img, pad)
-        print('loader pad & scale: ', lab)
+
         return padded_img, lab
 
     def pad_lab(self, lab):
@@ -57,8 +57,8 @@ class DetDatasetLab(Dataset):
         return padded_lab
 
     def __getitem__(self, index):
-        lab_path = os.path.join(self.lab_path, self.imgs[index].replace('png', 'txt'))
-        im_path = os.path.join(self.im_path, self.imgs[index])
+        lab_path = os.path.join(self.lab_path, self.labs[index])
+        im_path = os.path.join(self.im_path, self.labs[index].replace('txt', 'png'))
 
         lab = np.loadtxt(lab_path) if os.path.getsize(lab_path) else np.zeros(5)
         lab = torch.from_numpy(lab).float()
@@ -67,12 +67,12 @@ class DetDatasetLab(Dataset):
         lab = lab[:self.max_n_labels]
 
         image = Image.open(im_path).convert('RGB')
-        # image, lab = self.pad_im(image, lab)
+        image, lab = self.pad_im(image, lab)
 
         return self.ToTensor(image), self.pad_lab(lab)
 
     def __len__(self):
-        return self.n_samples
+        return len(self.labs)
 
 
 class DetDataset(Dataset):

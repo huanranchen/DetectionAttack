@@ -88,6 +88,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
             t_time0 = time.time()
             img_tensor = self.patch_apply(img_tensor, universal_patch, self.all_preds)
             t_time1 = time.time()
+            FormatConverter.tensor2PIL(img_tensor[0]).save('img_tensor.png')
             print('t_time: ', t_time1-t_time0)
 
         if self.cfg.DATA.AUGMENT == 2:

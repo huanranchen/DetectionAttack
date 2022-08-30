@@ -2,6 +2,7 @@
 
 This is not used since tons of tensors takes huge GPU memory
 """
+import sys
 
 import torch
 import torch.nn as nn
@@ -116,9 +117,6 @@ class PatchRandomApplier(nn.Module):
         :param scale_rate: patch size / bbox size
         """
         super().__init__()
-        self.rotate_angle = rotate_angle
-        self.rand_loc_rate = rand_loc_rate
-        self.scale_rate = scale_rate
         self.patch_transformer = PatchTransformer(device, rotate_angle, rand_loc_rate, scale_rate)
         self.patch_applier = PatchApplier()
         self.device = device
@@ -135,6 +133,7 @@ class PatchRandomApplier(nn.Module):
             # print(f'batch {i}', len(bboxes_list))
             if type(bboxes_list) is np.ndarray or type(bboxes_list) is list:
                 bboxes_list = torch.FloatTensor(bboxes_list)
+            print(bboxes_list.size(0))
             if bboxes_list.size(0) == 0:
                 padded_lab = torch.zeros((max_len, 6)).unsqueeze(0).to(self.device)
             else:

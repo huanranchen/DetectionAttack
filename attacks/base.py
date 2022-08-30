@@ -58,7 +58,6 @@ class BaseAttacker(ABC):
             self.patch_update(patch_clamp_=patch_clamp_)
 
             losses.append(float(loss))
-
         if self.detector_attacker.vlogger and self.detector_attacker.vlogger.iter % 5:
             self.detector_attacker.vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
             plotted = self.detector_attacker.plot_boxes(adv_tensor_batch[0], bboxes[0])

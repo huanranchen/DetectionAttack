@@ -4,7 +4,8 @@ DATA:
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
-    LAB_DIR: 'data/INRIAPerson/Train/labels/yolo-label'
+    LAB_DIR: 'data/INRIAPerson/Train/labels/yolo-labels'
+
 
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
