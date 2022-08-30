@@ -47,11 +47,14 @@ class DetctorAttacker(object):
         self.attacker = attacker_dict[cfg.METHOD](
             loss_func=loss_func, norm='L_infty', device=self.device, cfg = cfg, detector_attacker=self)
 
-    def plot_boxes(self, img_tensor, boxes, save_path, savename=None):
+    def plot_boxes(self, img_tensor, boxes, save_path=None, save_name=None):
         # print(img.dtype, isinstance(img, np.ndarray))
-        os.makedirs(save_path, exist_ok=True)
+        if save_path:
+            os.makedirs(save_path, exist_ok=True)
+            save_name = os.path.join(save_path, save_name)
         img = FormatConverter.tensor2numpy_cv2(img_tensor.cpu().detach())
-        plot_box = plot_boxes_cv2(img, boxes.cpu().detach().numpy(), self.class_names, savename=savename)
+        plot_box = plot_boxes_cv2(img, boxes.cpu().detach().numpy(), self.class_names,
+                                  savename=save_name)
         return plot_box
 
     def patch_pos(self, preds, aspect_ratio=-1):

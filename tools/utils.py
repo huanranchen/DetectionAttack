@@ -4,7 +4,7 @@ import os
 from .convertor import FormatConverter
 
 
-def save_tensor(target_tensor, save_name, save_path):
+def save_tensor(target_tensor, save_name, save_path='./'):
     os.makedirs(save_path, exist_ok=True)
     save_target = os.path.join(save_path, save_name)
 

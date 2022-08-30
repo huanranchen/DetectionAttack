@@ -21,7 +21,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         super().__init__(cfg, device)
         self.vlogger = None
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH_ATTACK, device)
-        self.patch_apply = PatchRandomApplier(device)
+        self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH_ATTACK.SCALE)
         if cfg.DATA.AUGMENT > 1:
             self.data_transformer = DataTransformer(device)
 
@@ -68,7 +68,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
             universal_patch = self.universal_patch
 
         if eval:
-            for i in range(img_tensor.size(0)):
+            for i in range(img_tensor.shape[0]):
                 for j, bbox in enumerate(self.batch_patch_boxes[i]):
                     # for jth bbox in ith-img's bboxes
                     p_x1, p_y1, p_x2, p_y2 = bbox[:4]
@@ -81,9 +81,14 @@ class UniversalDetectorAttacker(DetctorAttacker):
                     else:
                         adv = universal_patch
                     adv = F.interpolate(adv, size=(height, width), mode='bilinear')[0]
+                    # Warning: This is an inplace operation, it changes the value of the outer variable
                     img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = adv
         else:
+            import time
+            t_time0 = time.time()
             img_tensor = self.patch_apply(img_tensor, universal_patch, self.all_preds)
+            t_time1 = time.time()
+            print('t_time: ', t_time1-t_time0)
 
         if self.cfg.DATA.AUGMENT == 2:
             img_tensor = self.data_transformer(img_tensor, True, True)
@@ -104,17 +109,9 @@ class UniversalDetectorAttacker(DetctorAttacker):
         return all_preds
 
     def adv_detect_save(self, img_tensor, save_path, save_name, detector):
-        os.makedirs(save_path, exist_ok=True)
         tmp = self.uap_apply(img_tensor, eval=True)
         preds = detector(tmp)['bbox_array']
-        self.plot_boxes(tmp[0], preds[0], savename=os.path.join(save_path, save_name))
-
-    def save_patch(self, save_path, save_patch_name):
-        save_path = save_path + '/patch/'
-        # save_patch_name = os.path.join(save_path, save_patch_name)
-        save_tensor(self.universal_patch, save_patch_name, save_path)
-        # print(self.universal_patch.is_leaf)
-        print('Saving patch to ', os.path.join(save_path, save_patch_name))
+        self.plot_boxes(tmp[0], preds[0], save_path, savename=save_name)
 
     def detect_bbox(self, img_batch, detectors=None):
         if detectors is None:

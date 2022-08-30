@@ -1,5 +1,7 @@
 import argparse
 import os
+import sys
+
 import cv2
 import numpy as np
 import torch
@@ -11,6 +13,7 @@ from data.gen_det_labels import Utils
 from tools.parser import ConfigParser
 from detector_lab.utils import inter_nms
 from tools.eva.main import compute_mAP
+from tools import save_tensor
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -30,9 +33,6 @@ def path_remove(path):
             shutil.rmtree(path) # a dir
         except:
             os.remove(path) # a symbolic link
-    cmd = f'rm {path}'
-    os.system(cmd)
-
 
 def dir_check(save_path, child_paths, rebuild=False):
     # if the target path exists, it will be deleted (for empty dirt) and rebuild-up
@@ -46,7 +46,7 @@ def dir_check(save_path, child_paths, rebuild=False):
         tmp_path = os.path.join(save_path, child_path)
         for path in paths.values():
             ipath = os.path.join(tmp_path, path)
-            check(ipath, True)
+            check(ipath, rebuild)
 
 
 class UniversalPatchEvaluator(UniversalDetectorAttacker):
@@ -134,15 +134,17 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     for detector in evaluator.detectors:
         accs_total[detector.name] = []
     # print(evaluator.detectors)
-    for index, img_tensor_batch in enumerate(tqdm(data_loader, total=len(data_loader))):
-        img_tensor_batch = img_tensor_batch.to(evaluator.device)
+    for index, img_batch in enumerate(tqdm(data_loader, total=len(data_loader))):
+
         names = img_names[index:index + batch_size]
         img_name = names[0].split('/')[-1]
         # print(img_name)
         for detector in evaluator.detectors:
-            # make sure every detector detect in a new batch of img tensors
+            # print(detector.name)
+            # make sure every detector detect in a new batch of img tensors (avoid of the inplace)
+            img_tensor_batch = img_batch.to(evaluator.device)
             tmp_path = os.path.join(save_path, detector.name)
-            all_preds = evaluator.detect_bbox(img_tensor_batch, detectors=[detector])
+            all_preds = detector(img_tensor_batch)['bbox_array']
             if save_label:
                 # for saving the original detection info
                 fp = os.path.join(tmp_path, paths['det-lab'])
@@ -153,9 +155,8 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 utils.save_label(all_preds[0], fp, img_name, save_conf=True, rescale=True)
 
             target_nums_clean = evaluator.get_patch_pos_batch(all_preds, aspect_ratio=aspect_ratio)[0]
-            # print(detector.name, '\nclean: ', target_nums_clean)
-
             adv_img_tensor = evaluator.uap_apply(img_tensor_batch, eval=True)
+
             if hasattr(args, 'stimulate_uint8_loss') and args.stimulate_uint8_loss:
                 adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)
 
@@ -167,7 +168,6 @@ def generate_labels(evaluator, cfg, args, save_label=False):
 
             # for saving the attacked detection info
             lpath = os.path.join(tmp_path, paths['attack-lab'])
-            # print(lpath)
             utils.save_label(preds[0], lpath, img_name, rescale=True)
 
             if target_nums_clean:

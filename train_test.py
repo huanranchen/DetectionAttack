@@ -3,7 +3,9 @@ import os
 import time
 import numpy as np
 from tqdm import tqdm
+
 from detector_lab.utils import inter_nms
+from tools import save_tensor
 from tools.draw import VisualBoard
 from tools.loader import dataLoader
 from train import logger
@@ -14,8 +16,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         return (epoch - 1) * len(data_loader) + index
 
     logger(cfg, args)
-    save_plot = True
-    # save_plot = False
     data_sampler = None
     detector_attacker.init_universal_patch(args.patch)
     data_loader = dataLoader(data_root, lab_root=cfg.DATA.TRAIN.LAB_DIR,
@@ -33,7 +33,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
     start_index = int(args.patch.split('/')[-1].split('_')[0]) if args.patch is not None else 1
     loss_array = []
-    detector_attacker.save_patch(args.save_path, f'{start_index-1}_{save_name}')
+    save_tensor(detector_attacker.universal_patch, f'{start_index-1}_{save_name}', args.save_path+'/patch/')
 
     vlogger = None
     if not args.debugging:
@@ -58,12 +58,10 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             # print('                 loss : ', loss)
             ep_loss += loss
 
-            torch.cuda.empty_cache()
-
         if epoch % 10 == 0:
             patch_name = f'{epoch}_{save_name}'
-            detector_attacker.save_patch(args.save_path, patch_name)
-
+            save_tensor(detector_attacker.universal_patch, patch_name, args.save_path + '/patch/')
+            print('Saving patch to ', os.path.join(args.save_path + '/patch/', save_patch_name))
 
         et1 = time.time()
         ep_loss /= len(data_loader)
