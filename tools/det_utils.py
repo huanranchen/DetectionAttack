@@ -153,8 +153,8 @@ def rescale_patches(bboxes, image_height, image_width, scale, aspect_ratio):
             assert False, 'aspect ratio undefined!'
         return target_x / 2, target_y / 2
 
-    image_height = torch.FloatTensor([image_height]).to(bboxes.device)
-    image_width = torch.FloatTensor([image_width]).to(bboxes.device)
+    image_height = torch.cuda.FloatTensor([image_height])
+    image_width = torch.cuda.FloatTensor([image_width])
     # print(image_width, image_height)
     bboxes = bboxes[:, :4]
     bwidth = bboxes[:, 2] - bboxes[:, 0]

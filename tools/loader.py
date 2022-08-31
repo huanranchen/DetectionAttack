@@ -9,6 +9,7 @@ from PIL import Image
 import torch.nn.functional as F
 from natsort import natsorted
 
+
 class DetDatasetLab(Dataset):
     def __init__(self, images_path, lab_path, input_size):
         self.im_path = images_path

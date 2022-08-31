@@ -38,7 +38,7 @@ class TorchSSD(DetectorBase):
                 pred['boxes']/shape,
                 pred['scores'].view(len, 1),
                 (pred['labels']-1).view(len, 1)
-            ), 1).detach().cpu() if len else torch.FloatTensor([])
+            ), 1).detach().cpu() if len else torch.cuda.FloatTensor([])
 
             conf = pred['scores']
             confs_array = conf if confs_array is None else torch.cat((confs_array, conf), -1)

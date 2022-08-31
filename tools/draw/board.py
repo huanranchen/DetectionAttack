@@ -6,7 +6,7 @@ from .. import FormatConverter
 
 class VisualBoard:
     def __init__(self, optimizer=None, name=None, start_iter=0):
-        subprocess.Popen(['tensorboard', '--logdir=runs'])
+        # subprocess.Popen(['tensorboard', '--logdir=runs'])
         time_str = time.strftime("%m-%d-%H%M%S")
         if name is not None:
             self.writer = SummaryWriter(f'runs/{time_str}_{name}')

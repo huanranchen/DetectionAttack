@@ -3,6 +3,7 @@
 This is not used since tons of tensors takes huge GPU memory
 """
 import sys
+import time
 
 import torch
 import torch.nn as nn
@@ -30,25 +31,25 @@ class PatchTransformer(nn.Module):
         # self.max_n_labels = 10
 
     def random_shift(self, x, limited_range):
-        shift = limited_range * torch.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
+        shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
     def random_jitter(self, x, min_contrast=0.8, max_contrast=1.2, min_brightness=-0.1, max_brightness=0.1, noise_factor = 0.10):
         bboxes_shape = torch.Size((x.size(0), x.size(1)))
-        contrast = torch.FloatTensor(bboxes_shape).uniform_(min_contrast, max_contrast)
+        contrast = torch.cuda.FloatTensor(bboxes_shape).uniform_(min_contrast, max_contrast)
         contrast = contrast.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-        contrast = contrast.expand(-1, -1, x.size(-3), x.size(-2), x.size(-1)).to(self.device)
+        contrast = contrast.expand(-1, -1, x.size(-3), x.size(-2), x.size(-1))
 
         # Create random brightness tensor
-        brightness = torch.FloatTensor(bboxes_shape).uniform_(min_brightness, max_brightness)
+        brightness = torch.cuda.FloatTensor(bboxes_shape).uniform_(min_brightness, max_brightness)
         brightness = brightness.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-        brightness = brightness.expand(-1, -1, x.size(-3), x.size(-2), x.size(-1)).to(self.device)
+        brightness = brightness.expand(-1, -1, x.size(-3), x.size(-2), x.size(-1))
 
         # Create random noise tensor
-        noise = torch.FloatTensor(x.size()).uniform_(-1, 1) * noise_factor
+        noise = torch.cuda.FloatTensor(x.size()).uniform_(-1, 1) * noise_factor
 
         # Apply contrast/brightness/noise, clamp
-        x = contrast * x + brightness + noise.to(self.device)
+        x = contrast * x + brightness + noise
         x = torch.clamp(x, 0.000001, 0.99999)
         return x
 
@@ -60,18 +61,15 @@ class PatchTransformer(nn.Module):
 
         # -------------Shift & Random relocate--------------
         # bbox format is [x1, y1, x2, y2, conf, cls_id]
-        bw = torch.clamp(bboxes_batch[:, :, 2] - bboxes_batch[:, :, 0], min=0, max=1)
-        bh = torch.clamp(bboxes_batch[:, :, 3] - bboxes_batch[:, :, 1], min=0, max=1)
+        bw = bboxes_batch[:, :, 2] - bboxes_batch[:, :, 0]
+        bh = bboxes_batch[:, :, 3] - bboxes_batch[:, :, 1]
         target_cx = (bboxes_batch[:, :, 0] + bboxes_batch[:, :, 2]).view(bboxes_size) / 2
         target_cy = (bboxes_batch[:, :, 1] + bboxes_batch[:, :, 3]).view(bboxes_size) / 2
-        # print('bw: ', bw)
-        # print('bh: ', bh)
+
         if rand_shift_gate:
             target_cx = self.random_shift(target_cx, bw / 2)
             target_cy = self.random_shift(target_cy, bh / 2)
-        # print('target_cx: ', target_cx[0])
-        # print('target_cy: ', target_cy[0])
-        # target_y = target_y - 0.05
+
         tx = (0.5 - target_cx) * 2
         ty = (0.5 - target_cy) * 2
         # print("tx, ty: ", tx, ty)
@@ -82,7 +80,7 @@ class PatchTransformer(nn.Module):
         # print('scale shape: ', scale)
 
         # ----------------Random Rotate-------------------------
-        angle = torch.zeros(bboxes_size).to(self.device)
+        angle = torch.cuda.FloatTensor(bboxes_size).fill_(0).to(self.device)
         if rand_rotate_gate:
             angle = angle.uniform_(self.min_rotate_angle, self.max_rotate_angle)
         # print('angle shape:', angle.shape)
@@ -90,7 +88,7 @@ class PatchTransformer(nn.Module):
         cos = torch.cos(angle)
 
         # Ready for the affine matrix
-        theta = torch.FloatTensor(bboxes_size, 2, 3).fill_(0)
+        theta = torch.cuda.FloatTensor(bboxes_size, 2, 3).fill_(0)
         # print(cos, scale)
         theta[:, 0, 0] = cos / scale
         theta[:, 0, 1] = sin / scale
@@ -102,7 +100,7 @@ class PatchTransformer(nn.Module):
         s = adv_patch_batch.size()
         adv_patch_batch = adv_patch_batch.view(bboxes_size, s[2], s[3], s[4])
         # print('adv batch view', adv_patch_batch.shape)
-        grid = F.affine_grid(theta.cuda(), adv_patch_batch.shape)
+        grid = F.affine_grid(theta, adv_patch_batch.shape)
         adv_patch_batch_t = F.grid_sample(adv_patch_batch, grid)
 
         return adv_patch_batch_t.view(batch_size, lab_len, s[2], s[3], s[4])
@@ -117,8 +115,8 @@ class PatchRandomApplier(nn.Module):
         :param scale_rate: patch size / bbox size
         """
         super().__init__()
-        self.patch_transformer = PatchTransformer(device, rotate_angle, rand_loc_rate, scale_rate)
-        self.patch_applier = PatchApplier()
+        self.patch_transformer = PatchTransformer(device, rotate_angle, rand_loc_rate, scale_rate).to(device)
+        self.patch_applier = PatchApplier().to(device)
         self.device = device
 
     def list2tensor(self, list_batch, max_len=10):
@@ -132,7 +130,7 @@ class PatchRandomApplier(nn.Module):
         for i, bboxes_list in enumerate(list_batch):
             # print(f'batch {i}', len(bboxes_list))
             if type(bboxes_list) is np.ndarray or type(bboxes_list) is list:
-                bboxes_list = torch.FloatTensor(bboxes_list)
+                bboxes_list = torch.cuda.FloatTensor(bboxes_list)
             print(bboxes_list.size(0))
             if bboxes_list.size(0) == 0:
                 padded_lab = torch.zeros((max_len, 6)).unsqueeze(0).to(self.device)
@@ -165,8 +163,8 @@ class PatchRandomApplier(nn.Module):
         pad_size = (img_batch.size(-1) - adv_patch.size(-1)) / 2
         padding = nn.ConstantPad2d((int(pad_size + 0.5), int(pad_size), int(pad_size + 0.5), int(pad_size)), 0)  # (LRTB)
 
-        if isinstance(bboxes_batch, list):
-            bboxes_batch = self.list2tensor(bboxes_batch)
+        # if isinstance(bboxes_batch, list):
+        #     bboxes_batch = self.list2tensor(bboxes_batch)
         lab_len = bboxes_batch.size(1)
         # --------------Median pool blur & Random jitter---------------------
         adv_patch = self.patch_transformer.median_pooler(adv_patch).unsqueeze(0)  # [1, 1, 3, N, N]

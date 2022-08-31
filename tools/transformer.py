@@ -21,16 +21,15 @@ class DataTransformer(torch.nn.Module):
                   min_brightness=-0.1, max_brightness=0.1, noise_factor = 0.10):
         adv_patch = self.median_pooler(patch)
         # Create random contrast tensor
-        contrast = torch.FloatTensor(1).uniform_(min_contrast, max_contrast).to(self.device)
+        contrast = torch.cuda.FloatTensor(1).uniform_(min_contrast, max_contrast)
         contrast = contrast.expand(1, adv_patch.size(-3), adv_patch.size(-2), adv_patch.size(-1))
 
         # Create random brightness tensor
-        brightness = torch.FloatTensor(1).uniform_(min_brightness, max_brightness).to(self.device)
+        brightness = torch.cuda.FloatTensor(1).uniform_(min_brightness, max_brightness)
         brightness = brightness.expand(1, adv_patch.size(-3), adv_patch.size(-2), adv_patch.size(-1))
 
         # Create random noise tensor
-        noise = torch.FloatTensor(adv_patch.size()).uniform_(-1, 1) * noise_factor
-        noise = noise.to(self.device)
+        noise = torch.cuda.FloatTensor(adv_patch.size()).uniform_(-1, 1) * noise_factor
 
         # Apply contrast/brightness/noise, clamp
         adv_patch = contrast * adv_patch + brightness + noise
@@ -53,7 +52,7 @@ class DataTransformer(torch.nn.Module):
         # scale = torch.FloatTensor(batch_size).uniform_(1-self.rand_zoom_in, 1+self.rand_zoom_in)
         scale = 1
 
-        theta = torch.FloatTensor(batch_size, 2, 3).fill_(0)
+        theta = torch.cuda.FloatTensor(batch_size, 2, 3).fill_(0)
         theta[:, 0, 0] = cos / scale
         theta[:, 0, 1] = sin / scale
         theta[:, 0, 2] = tx * cos / scale + ty * sin / scale
@@ -75,7 +74,7 @@ class DataTransformer(torch.nn.Module):
             gate = 0
             if gate == 0:
                 img_tensor_t = kornia.augmentation.RandomGaussianNoise(mean=0., std=.01, p=1)(img_tensor_t)
-                factor = torch.FloatTensor(batch_size).fill_(0).uniform_(0, self.rand_brightness)
+                factor = torch.cuda.FloatTensor(batch_size).fill_(0).uniform_(0, self.rand_brightness)
                 img_tensor_t = kornia.enhance.adjust_brightness(img_tensor_t, factor, clip_output=True)
                 # img_tensor_t = kornia.enhance.adjust_contrast(img_tensor_t, factor, clip_output=True)
 

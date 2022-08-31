@@ -164,7 +164,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
             if hasattr(args, 'save_imgs') and args.save_imgs:
                 # for saving the attacked imgs
                 ipath = os.path.join(tmp_path, 'imgs')
-                evaluator.plot_boxes(adv_img_tensor[0], preds[0], ipath, savename=img_name)
+                evaluator.plot_boxes(adv_img_tensor[0], preds[0], save_path=ipath, save_name=img_name)
 
             # for saving the attacked detection info
             lpath = os.path.join(tmp_path, paths['attack-lab'])

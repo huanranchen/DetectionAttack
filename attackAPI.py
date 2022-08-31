@@ -21,7 +21,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         super().__init__(cfg, device)
         self.vlogger = None
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH_ATTACK, device)
-        self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH_ATTACK.SCALE)
+        self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH_ATTACK.SCALE).to(self.device)
         if cfg.DATA.AUGMENT > 1:
             self.data_transformer = DataTransformer(device)
 
@@ -84,12 +84,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
                     # Warning: This is an inplace operation, it changes the value of the outer variable
                     img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = adv
         else:
-            import time
-            t_time0 = time.time()
-            img_tensor = self.patch_apply(img_tensor, universal_patch, self.all_preds)
-            t_time1 = time.time()
-            FormatConverter.tensor2PIL(img_tensor[0]).save('img_tensor.png')
-            print('t_time: ', t_time1-t_time0)
+            img_tensor = self.patch_apply(img_tensor, universal_patch, self.all_preds, True, True)
 
         if self.cfg.DATA.AUGMENT == 2:
             img_tensor = self.data_transformer(img_tensor, True, True)
