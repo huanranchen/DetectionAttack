@@ -44,9 +44,9 @@ def saveAPs():
         y_test['yolov3'].append(readAP(os.path.join(*[fp, edir, 'test/yolov3/det-results/results.txt'])))
         y_train['yolov3'].append(readAP(os.path.join(*[fp, edir, 'yolov3/det-results/results.txt'])))
 
-    np.save('./data/inria/gap/aug/x.npy', x)
-    np.save('./data/inria/gap/aug/y_test.npy', y_test)
-    np.save('./data/inria/gap/aug/y_train.npy', y_train)
+    np.save('../data/inria/gap/aug/x.npy', x)
+    np.save('../data/inria/gap/aug/y_test.npy', y_test)
+    np.save('../data/inria/gap/aug/y_train.npy', y_train)
     print(x, y_test['yolov3'], y_train['yolov3'])
 
 
