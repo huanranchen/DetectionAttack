@@ -156,7 +156,7 @@ def rescale_patches(bboxes, image_height, image_width, scale, aspect_ratio):
     image_height = torch.cuda.FloatTensor([image_height])
     image_width = torch.cuda.FloatTensor([image_width])
     # print(image_width, image_height)
-    bboxes = bboxes[:, :4]
+    bboxes = bboxes[:, :4].cuda()
     bwidth = bboxes[:, 2] - bboxes[:, 0]
     bheight = bboxes[:, 3] - bboxes[:, 1]
     xc = (bboxes[:, 2] + bboxes[:, 0]) / 2
