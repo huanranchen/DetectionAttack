@@ -1,19 +1,20 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: 2
+  AUGMENT: 3
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
-    LAB_DIR: 'data/INRIAPerson/Train/labels'
+    LAB_DIR: 'data/INRIAPerson/Train/labels/yolo-labels'
 
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV4-tiny"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
+  MODEL_CONFIG: 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4-tiny.cfg'
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
@@ -31,12 +32,11 @@ ATTACKER:
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
-
   LOSS_FUNC: "descend-mse" # [null, descend-mse, ascend-mse]
 
   PATCH_ATTACK:
-    WIDTH: 128
-    HEIGHT: 128
-    SCALE: 0.2
+    WIDTH: 300
+    HEIGHT: 300
+    SCALE: 0.15
     INIT: "random" # ['random', 'gray']
     ASPECT_RATIO: 1

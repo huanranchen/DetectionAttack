@@ -51,46 +51,43 @@ def init_detector(detector_name, cfg):
     if detector_name == "yolov2":
         detector = HHYolov2(name=detector_name, cfg=cfg)
         detector.load(
-            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov2/yolov2/weights/yolo.weights'),
-            detector_config_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov2/yolov2/config/yolo.cfg'),
+            detector_config_file=os.path.join(PROJECT_DIR, cfg.MODEL_CONFIG),
+            model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov2/yolov2/weights/yolo.weights')
         )
 
     elif detector_name == "yolov3":
         detector = HHYolov3(name=detector_name, cfg=cfg)
-        model_cfg = 'yolov3.cfg'
         detector.load(
-            detector_config_file=os.path.join(PROJECT_DIR, f'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/{model_cfg}'),
+            detector_config_file=os.path.join(PROJECT_DIR, cfg.MODEL_CONFIG),
             model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/weights/yolov3.weights'),
         )
 
     elif detector_name == "yolov3-tiny":
         detector = HHYolov3(name=detector_name, cfg=cfg)
         detector.load(
-            detector_config_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-tiny.cfg'),
+            detector_config_file=os.path.join(PROJECT_DIR, cfg.MODEL_CONFIG),
             model_weights=os.path.join(PROJECT_DIR, 'detector_lab/weights/yolov3-tiny.weights'))
 
     elif detector_name == "yolov4-tiny":
         detector = HHYolov4(name=detector_name, cfg=cfg)
         detector.load(
-            detector_config_file=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4-tiny.cfg'),
+            detector_config_file=os.path.join(PROJECT_DIR, cfg.MODEL_CONFIG),
             model_weights=os.path.join(PROJECT_DIR, 'detector_lab/weights/yolov4-tiny.weights'))
 
     elif detector_name == "yolov4":
         detector = HHYolov4(name=detector_name, cfg=cfg)
-        model_cfg = 'yolov4.cfg'
+        model_cfg = ''
         detector.load(
-            detector_config_file=os.path.join(PROJECT_DIR, f'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/cfg/{model_cfg}'),
+            detector_config_file=os.path.join(PROJECT_DIR, cfg.MODEL_CONFIG),
             model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov4/Pytorch_YOLOv4/weight/yolov4.weights')
         )
 
     elif detector_name == "yolov5":
-        # model = HHYolov5
         detector = HHYolov5(name=detector_name, cfg=cfg)
         detector.load(
             model_weights=os.path.join(PROJECT_DIR, 'detector_lab/HHDet/yolov5/yolov5/weight/yolov5s.pt'))
 
     elif detector_name == "ssd":
-        # pass
         detector = TorchSSD(name=detector_name, cfg=cfg)
         detector.load()
         # detector.load('./checkpoints/ssd300_coco_20210803_015428-d231a06e.pth')

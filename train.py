@@ -39,7 +39,7 @@ def logger(cfg, args, attack_confs_thresh=""):
     print('------------------------------------------------------------')
 
 
-def attack(cfg, data_root, detector_attacker, save_name, args=None):
+def attack(cfg, detector_attacker, save_name, args=None):
     from tools.lr_decay import cosine_decay
     def get_iter():
         return (epoch - 1) * len(data_loader) + index
@@ -49,9 +49,11 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         attack_confs_thresh = cfg.DETECTOR.ATTACK_CONF_THRESH
 
     data_sampler = None
-    data_loader = dataLoader(data_root, lab_root=cfg.DATA.TRAIN.LAB_DIR,
+
+    data_loader = dataLoader(cfg.DATA.TRAIN.IMG_DIR, lab_root=cfg.DATA.TRAIN.LAB_DIR,
                              input_size=cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT == 1,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
+    print(len(data_loader))
     logger(cfg, args, attack_confs_thresh)
     save_step = 5000
     # detector_attacker.ddp = False
@@ -60,7 +62,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     start_index = int(args.patch.split('/')[-1].split('_')[0]) if args.patch is not None else 1
     detector_attacker.init_universal_patch(args.patch)
     # if detector_attacker.ddp:
-    #
     #     import torch.distributed as dist
     #     torch.cuda.set_device(args.local_rank)
     #     dist.init_process_group(backend='nccl')
@@ -123,11 +124,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--patch', type=str, help='fine-tune from a pre-trained patch', default=None)
     parser.add_argument('-m', '--attack_method', type=str, default='sequential')
-    parser.add_argument('-n', '--nesterov', action='store_true')
     parser.add_argument('-cfg', '--cfg', type=str, default='test.yaml')
     parser.add_argument('-s', '--save_path', type=str, default='./results/inria')
     parser.add_argument('-d', '--confs_thresh_decay', action='store_true')
-    parser.add_argument('-rk', '--local_rank', default=os.getenv('LOCAL_RANK', -1), type=int)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -141,6 +140,4 @@ if __name__ == '__main__':
     cfg = ConfigParser(args.cfg)
     detector_attacker = UniversalDetectorAttacker(cfg, device)
     cfg.show_class_label(cfg.attack_list)
-    data_root = cfg.DATA.TRAIN.IMG_DIR
-    img_names = [os.path.join(data_root, i) for i in os.listdir(data_root)]
-    attack(cfg, data_root, detector_attacker, save_patch_name, args)
+    attack(cfg, detector_attacker, save_patch_name, args)
