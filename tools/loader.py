@@ -133,6 +133,18 @@ def check_valid(name):
     return name.endswith(('.bmp', '.dib', '.png', '.jpg', '.jpeg', '.pbm', '.pgm', '.ppm', '.tif', '.tiff'))
 
 
+def dataLoader(data_root, lab_root=None, input_size=None, batch_size=1, is_augment=False,
+               shuffle=False, pin_memory=False, num_workers=16, sampler=None):
+    if input_size is None:
+        input_size = [416, 416]
+    if lab_root is None:
+        data_set = DetDataset(data_root, input_size, is_augment=is_augment)
+    else:
+        data_set = DetDatasetLab(data_root, lab_root, input_size)
+    data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=shuffle,
+                             num_workers=num_workers, pin_memory=pin_memory, sampler=sampler)
+    return data_loader
+
 
 def read_img_np_batch(names, input_size):
     # read (RGB unit8) numpy img batch from names list and rescale into input_size
@@ -155,16 +167,3 @@ def read_img_np_batch(names, input_size):
         else:
             img_numpy_batch = np.concatenate((img_numpy_batch, img_numpy), axis=0)
     return img_numpy_batch
-
-
-def dataLoader(data_root, lab_root=None, input_size=None, batch_size=1, is_augment=False,
-               shuffle=False, pin_memory=False, num_workers=16, sampler=None):
-    if input_size is None:
-        input_size = [416, 416]
-    if lab_root is None:
-        data_set = DetDataset(data_root, input_size, is_augment=is_augment)
-    else:
-        data_set = DetDatasetLab(data_root, lab_root, input_size)
-    data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=shuffle,
-                             num_workers=num_workers, pin_memory=pin_memory, sampler=sampler)
-    return data_loader

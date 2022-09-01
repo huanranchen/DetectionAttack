@@ -42,9 +42,9 @@ class BaseAttacker(ABC):
             bboxes, confs, cls_array = detector(adv_tensor_batch).values()
 
             if hasattr(self.cfg, 'class_specify'):
-                print(confs, cls_array)
+                #     print(confs, cls_array)
                 confs = torch.cat(([self.detector_attacker.filter_bbox(conf, cls).max(dim=-1, keepdim=True)[0]
-                                    for conf, cls in zip(confs, cls_array)]))
+                                for conf, cls in zip(confs, cls_array)]))
             else:
                 confs = confs.max(dim=-1, keepdim=True)[0]
 
@@ -52,6 +52,7 @@ class BaseAttacker(ABC):
             # if torch.sum(bbox_num) == 0: break
             detector.zero_grad()
             loss = self.attack_loss(confs)
+            # print(loss)
             loss.backward()
 
             patch_clamp_ = self.detector_attacker.patch_obj.clamp_
@@ -64,16 +65,6 @@ class BaseAttacker(ABC):
             self.detector_attacker.vlogger.write_cv2(plotted, f'{detector.name}')
 
         return torch.tensor(losses).mean()
-
-    @property
-    def update_func(self):
-        def grad_ascend(patch, update):
-            return patch + update
-
-        def grad_descend(patch, update):
-            return patch - update
-
-        return grad_descend if "descend" in self.cfg.LOSS_FUNC else grad_ascend
 
     @abstractmethod
     def patch_update(self, patch_clamp_):

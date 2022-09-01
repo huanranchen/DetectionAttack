@@ -61,6 +61,7 @@ def descend_mse_loss(**kwargs):
         target = target.cuda()
     return torch.nn.MSELoss()(confs, target)
 
+
 def ascend_mse_loss(**kwargs):
     # print(confs.shape)
     confs = kwargs['confs']

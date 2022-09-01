@@ -18,16 +18,7 @@ class PatchManager:
             self.generate(init_mode)
         else:
             self.read(patch_file)
-
-    def total_variation(self):
-        pass
-
-    def update_(self, patch_new):
-        del self.patch
-        self.patch = patch_new
-
-    def clamp_(self, p_min=0, p_max=1):
-        torch.clamp_(self.patch.data, min=p_min, max=p_max)
+        self.patch.requires_grad = True
 
     def read(self, patch_file):
         print('Reading patch from file: ' + patch_file)
@@ -52,3 +43,14 @@ class PatchManager:
             print('Gray initializing a universal patch')
             patch = torch.full((1, 3, height, width), 0.5)
         self.patch = patch.to(self.device)
+
+    def total_variation(self):
+        pass
+
+    def update_(self, patch_new):
+        del self.patch
+        self.patch = patch_new
+        self.patch.requires_grad = True
+
+    def clamp_(self, p_min=0, p_max=1):
+        torch.clamp_(self.patch.data, min=p_min, max=p_max)

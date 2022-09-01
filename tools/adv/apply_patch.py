@@ -53,7 +53,7 @@ class PatchTransformer(nn.Module):
         x = torch.clamp(x, 0.000001, 0.99999)
         return x
 
-    def forward(self, adv_patch_batch, bboxes_batch, patch_ratio, rand_rotate_gate=True, rand_shift_gate=False):
+    def forward(self, adv_patch_batch, bboxes_batch, patch_ori_size, rand_rotate_gate=True, rand_shift_gate=False, p9_scale=True):
         batch_size = bboxes_batch.size(0)
         lab_len = bboxes_batch.size(1)
         bboxes_size = np.prod([batch_size, lab_len])
@@ -75,8 +75,15 @@ class PatchTransformer(nn.Module):
         # print("tx, ty: ", tx, ty)
 
         # -----------------------Scale--------------------------
-        scale = torch.sqrt(bw * bh * self.scale_rate).view(bboxes_size) # [0, 1]
-        scale = scale * patch_ratio
+        bw *= adv_patch_batch.size(-1)
+        bh *= adv_patch_batch.size(-2)
+        # p9_scale = False
+        if p9_scale:
+            target_size = torch.sqrt(((bw.mul(0.2)) ** 2) + ((bh.mul(0.2)) ** 2)).view(bboxes_size)
+            ty -= 0.05
+        else:
+            target_size = torch.sqrt(bw * bh * self.scale_rate).view(bboxes_size)  # [0, 1]
+        scale = target_size / patch_ori_size
         # print('scale shape: ', scale)
 
         # ----------------Random Rotate-------------------------
@@ -159,6 +166,7 @@ class PatchRandomApplier(nn.Module):
         """
 
         # print(img_batch.size, adv_patch.size)
+        patch_ori_size = adv_patch.size(-1)
         batch_size = img_batch.size(0)
         pad_size = (img_batch.size(-1) - adv_patch.size(-1)) / 2
         padding = nn.ConstantPad2d((int(pad_size + 0.5), int(pad_size), int(pad_size + 0.5), int(pad_size)), 0)  # (LRTB)
@@ -167,15 +175,12 @@ class PatchRandomApplier(nn.Module):
         #     bboxes_batch = self.list2tensor(bboxes_batch)
         lab_len = bboxes_batch.size(1)
         # --------------Median pool blur & Random jitter---------------------
-        adv_patch = self.patch_transformer.median_pooler(adv_patch).unsqueeze(0)  # [1, 1, 3, N, N]
-        adv_patch_batch = adv_patch.expand(batch_size, lab_len, -1, -1, -1)
+        adv_batch = self.patch_transformer.median_pooler(adv_patch).unsqueeze(0)  # [1, 1, 3, N, N]
+        adv_patch_batch = adv_batch.expand(batch_size, lab_len, -1, -1, -1)
         if jitter_gate:
             adv_patch_batch = self.patch_transformer.random_jitter(adv_patch_batch)
         adv_patch_batch = padding(adv_patch_batch)
-
-        # print('adv batch padded: ', adv_batch.shape)
-        patch_ratio = img_batch.size(-1)/adv_patch.size(-1)
-        adv_batch_t = self.patch_transformer(adv_patch_batch, bboxes_batch, patch_ratio,
+        adv_batch_t = self.patch_transformer(adv_patch_batch, bboxes_batch, patch_ori_size,
                                              rand_rotate_gate=rotate_gate, rand_shift_gate=shift_gate)
 
         adv_img_batch = self.patch_applier(img_batch, adv_batch_t)

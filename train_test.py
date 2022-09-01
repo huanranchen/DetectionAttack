@@ -27,7 +27,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
 
     from torch import optim
-    scheduler_factory = lambda x: optim.lr_scheduler.ReduceLROnPlateau(x, 'min', patience=50)
+    scheduler_factory = lambda x: optim.lr_scheduler.ReduceLROnPlateau(x, 'min', patience=100)
     scheduler = scheduler_factory(optimizer)
     detector_attacker.attacker.set_optimizer(optimizer)
 

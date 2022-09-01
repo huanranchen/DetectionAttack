@@ -225,14 +225,6 @@ def eva(args, cfg):
         # tmp_path = os.path.join(cfg.ATTACK_SAVE_PATH, detector.name)
         path = os.path.join(save_path, detector.name)
 
-        # link the path of the GT labels
-        gt_target = os.path.join(path, 'ground-truth')
-        gt_source = os.path.join(args.label_path, paths['ground-truth']+label_postfix)
-        path_remove(gt_target)
-        cmd = ' '.join(['ln -s ', gt_source, gt_target])
-        print(cmd)
-        os.system(cmd)
-
         # link the path of the detection labels
         det_path = os.path.join(path, paths['det-lab'])
         path_remove(det_path)
@@ -248,9 +240,16 @@ def eva(args, cfg):
         det_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
                                 gt_path=paths['det-lab'], res_prefix='det', quiet=quiet)
         det_mAPs[detector.name] = round(det_mAP*100, 2)
-
+        os.system('rm -r '+os.path.join(path, paths['attack-lab']))
 
         if hasattr(args, 'test_gt') and args.test_gt:
+            # link the path of the GT labels
+            gt_target = os.path.join(path, 'ground-truth')
+            gt_source = os.path.join(args.label_path, paths['ground-truth'] + label_postfix)
+            path_remove(gt_target)
+            cmd = ' '.join(['ln -s ', gt_source, gt_target])
+            print(cmd)
+            os.system(cmd)
             # (gt-results)take original labels as GT label(default): attack results as detections
             # print('ground truth     :', paths['ground-truth'])
             gt_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],

@@ -5,7 +5,7 @@ from tqdm import tqdm
 from detector_lab.utils import inter_nms
 
 from tools.loader import dataLoader
-
+from tools import save_tensor
 
 def modelDDP(detector_attacker, args):
     for ind, detector in enumerate(detector_attacker.detectors):
@@ -41,14 +41,17 @@ def logger(cfg, args, attack_confs_thresh=""):
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
     from tools.lr_decay import cosine_decay
+    def get_iter():
+        return (epoch - 1) * len(data_loader) + index
 
     attack_confs_thresh = cfg.DETECTOR.CONF_THRESH - 0.2
     if hasattr(cfg.DETECTOR, 'ATTACK_CONF_THRESH'):
         attack_confs_thresh = cfg.DETECTOR.ATTACK_CONF_THRESH
 
     data_sampler = None
-    data_loader = dataLoader(data_root, cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT==1,
-                             batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler)
+    data_loader = dataLoader(data_root, lab_root=cfg.DATA.TRAIN.LAB_DIR,
+                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT == 1,
+                             batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
     logger(cfg, args, attack_confs_thresh)
     save_step = 5000
     # detector_attacker.ddp = False
@@ -56,7 +59,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     epoch_save_mode = False if len(data_loader) > save_step else True
     start_index = int(args.patch.split('/')[-1].split('_')[0]) if args.patch is not None else 1
     detector_attacker.init_universal_patch(args.patch)
-    detector_attacker.save_patch(args.save_path, f'{str(start_index)}_{save_name}')
     # if detector_attacker.ddp:
     #
     #     import torch.distributed as dist
@@ -66,28 +68,34 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     #     modelDDP(detector_attacker, args)
 
     losses = []
+    save_tensor(detector_attacker.universal_patch, f'{start_index - 1}_{save_name}', args.save_path + '/patch/')
+    vlogger = None
     for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS+1):
         if args.confs_thresh_decay:
             attack_confs_thresh = cosine_decay(epoch-1, lr_max=cfg.DETECTOR.CONF_THRESH, lr_min=0.05)
         print('confs threshold: ', attack_confs_thresh)
-        for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
-            now_step = index + epoch * len(data_loader)
+        for index, (img_tensor_batch, lab) in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
+            now_step = get_iter()
+            if vlogger:
+                vlogger(epoch, now_step)
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
-            all_preds = detector_attacker.detect_bbox(img_tensor_batch)
+            # all_preds = detector_attacker.detect_bbox(img_tensor_batch)
             # get position of adversarial patches
-            target_nums = detector_attacker.get_patch_pos_batch(all_preds)
-            if sum(target_nums) == 0:
-                print('no target detected.')
-                continue
+            detector_attacker.all_preds = lab.to(detector_attacker.device)
+            # target_nums = detector_attacker.get_patch_pos_batch(all_preds)
+            # if sum(target_nums) == 0:
+            #     print('no target detected.')
+            #     continue
 
-            detector_attacker.attack(img_tensor_batch, args.attack_method, confs_thresh=attack_confs_thresh)
+            loss = detector_attacker.attack(img_tensor_batch, args.attack_method)
+            print('iter loss: ', loss)
 
             # the patch will be saved in every 5000 images
             if (epoch_save_mode and index == 1 and epoch % 10 == 0) \
                     or (not epoch_save_mode and now_step % save_step == 0):
                 prefix = epoch if epoch_save_mode else int(now_step / 5000)
                 patch_name = f'{prefix}_{save_name}'
-                detector_attacker.save_patch(args.save_path, patch_name)
+                save_tensor(detector_attacker.universal_patch, patch_name, args.save_path + '/patch/')
 
             if cfg.DETECTOR.PERTURB.GATE == 'grad_descend':
                 try:

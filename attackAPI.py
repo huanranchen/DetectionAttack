@@ -131,7 +131,6 @@ class UniversalDetectorAttacker(DetctorAttacker):
         else:
             if mode == 'sequential':
                 loss = self.sequential_attack(img_tensor_batch)
-                print("sequential attack loss ", loss)
             elif mode == 'parallel':
                 loss = self.parallel_attack(img_tensor_batch)
         return loss
@@ -139,8 +138,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
     def sequential_attack(self, img_tensor_batch):
         detectors_loss = []
         for detector in self.detectors:
-            patch, loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
-            self.patch_obj.update_(patch.detach_())
+            loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
             # print('sequential attack: ', self.universal_patch.is_leaf)
             detectors_loss.append(loss)
         return torch.tensor(detectors_loss).mean()
