@@ -55,7 +55,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
     # 根据攻击类别过滤预测框，并规范化检测框格式
     def get_patch_pos_batch(self, all_preds):
         # input all_preds: [N*6]的检测框list，其长度等于batch大小，bbox坐标为0~1
-        # results save to self.batch_patch_boxes
+        # results save to self.batch_boxes
         pass
     
     # 根据已获取的规范化检测框，在图像中加入通用的攻击patch

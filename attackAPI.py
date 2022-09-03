@@ -1,5 +1,4 @@
 import sys
-
 import cv2
 import torch
 import os
@@ -7,8 +6,7 @@ import numpy as np
 import torch.nn.functional as F
 
 from simgleAttack import DetctorAttacker
-from tools.det_utils import rescale_patches
-from tools import FormatConverter, DataTransformer, save_tensor
+from tools import FormatConverter, DataTransformer, save_tensor, attach_patch
 from tools.adv import PatchManager, PatchRandomApplier
 from detector_lab.utils import inter_nms
 
@@ -21,7 +19,8 @@ class UniversalDetectorAttacker(DetctorAttacker):
         super().__init__(cfg, device)
         self.vlogger = None
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH_ATTACK, device)
-        self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH_ATTACK.SCALE).to(self.device)
+        self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH_ATTACK.SCALE)
+        self.max_boxes = 15
         if cfg.DATA.AUGMENT > 1:
             self.data_transformer = DataTransformer(device)
 
@@ -34,62 +33,41 @@ class UniversalDetectorAttacker(DetctorAttacker):
         # self.universal_patch = self.patch_obj.patch
 
     def filter_bbox(self, preds, cls_array=None):
-        if cls_array is None:
-            cls_array = preds[:, -1]
+        # print(preds)
+        if cls_array is None: cls_array = preds[:, -1]
         filt = [cls in self.cfg.attack_list for cls in cls_array]
         preds = preds[filt]
         return preds
 
     def get_patch_pos_batch(self, all_preds, aspect_ratio=None):
         # get all bboxs of setted target. If none target bbox is got, return has_target=False
-        height, width = self.cfg.DETECTOR.INPUT_SIZE
-        scale = self.cfg.ATTACKER.PATCH_ATTACK.SCALE
         self.all_preds = all_preds
-        self.batch_patch_boxes = []
-
+        batch_boxes = None
         target_nums = []
-        if aspect_ratio is None:
-            aspect_ratio = self.cfg.ATTACKER.PATCH_ATTACK.ASPECT_RATIO
-
         for i_batch, preds in enumerate(all_preds):
-            if len(preds):
-                # print(preds)
-                preds = self.filter_bbox(preds)
-                patch_boxs = rescale_patches(preds, height, width, scale, aspect_ratio)
-                # print(patch_boxs)
-            else:
-                patch_boxs = torch.Tensor([]).to(preds.device)
-            self.batch_patch_boxes.append(patch_boxs)
-            target_nums.append(len(patch_boxs))
+            if len(preds) == 0:
+                preds = torch.cuda.FloatTensor([[0, 0, 0, 0, 0, 0]])
+            preds = self.filter_bbox(preds)[:self.max_boxes]
+            pad_size = self.max_boxes - len(preds)
+            padded_boxs = F.pad(preds, (0, 0, 0, pad_size), value=0).unsqueeze(0)
+            batch_boxes = padded_boxs if batch_boxes is None else torch.vstack((batch_boxes, padded_boxs))
+            target_nums.append(len(preds))
+        self.all_preds = batch_boxes
         return np.array(target_nums)
 
-    def uap_apply(self, img_tensor, universal_patch=None, eval=False):
-        if universal_patch is None:
-            universal_patch = self.universal_patch
+    def uap_apply(self, img_tensor, adv_patch=None, mode='transform'):
+        if adv_patch is None:
+            adv_patch = self.universal_patch
 
-        if eval:
-            for i in range(img_tensor.shape[0]):
-                for j, bbox in enumerate(self.batch_patch_boxes[i]):
-                    # for jth bbox in ith-img's bboxes
-                    p_x1, p_y1, p_x2, p_y2 = bbox[:4]
-                    height = p_y2 - p_y1
-                    width = p_x2 - p_x1
-                    if height <= 0 or width <= 0:
-                        continue
-                    if self.cfg.DATA.AUGMENT == 3:
-                        adv = self.data_transformer.jitter(universal_patch)
-                    else:
-                        adv = universal_patch
-                    adv = F.interpolate(adv, size=(height, width), mode='bilinear')[0]
-                    # Warning: This is an inplace operation, it changes the value of the outer variable
-                    img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = adv
-        else:
-            img_tensor = self.patch_apply(img_tensor, universal_patch, self.all_preds, True, True)
+        if mode == 'eval' or mode == 'pgd':
+            img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, False, False, False, False)
+        elif mode == 'pgd':
+            img_tensor = attach_patch(img_tensor, adv_patch, self.all_preds, self.cfg)
+        elif mode == 'optim':
+            img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds)
 
         if self.cfg.DATA.AUGMENT == 2:
             img_tensor = self.data_transformer(img_tensor, True, True)
-        # if self.cfg.DATA.AUGMENT == 3:
-        #     img_tensor = self.data_transformer(img_tensor, False, True)
 
         return img_tensor
 

@@ -8,7 +8,7 @@ def parser_input():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-cfg', '--config_file', type=str)
+    parser.add_argument('-cfg', '--cfg', type=str)
     parser.add_argument('-p', '--patch_dir', type=str)
     parser.add_argument('-r', '--rule', type=str, default=None)
     parser.add_argument('-s', '--save', type=str)
@@ -18,13 +18,14 @@ def parser_input():
 
     args.patch_dir = os.path.join(ROOT, args.patch_dir)
     if args.rule is None:
-        args.rule = args.config_file
-    args.save = os.path.join(args.save, args.config_file)
-    os.makedirs(args.save, exist_ok=True)
-    args.config_file = './configs/' + args.config_file + '.yaml'
-    cfg = ConfigParser(args.config_file)
+        args.rule = '.'
+    # args.save = os.path.join(args.save, args.cfg)
+
+    args.cfg = './configs/' + args.cfg + '.yaml'
+    cfg = ConfigParser(args.cfg)
     args.label_path = os.path.join(ROOT, cfg.DATA.TRAIN.LAB_DIR)
     args.save = os.path.join(ROOT, args.save)
+    os.makedirs(args.save, exist_ok=True)
     args.data_root = os.path.join(ROOT, cfg.DATA.TRAIN.IMG_DIR)
     args.test_origin = False
     args.gen_labels = not args.gen_no_label
@@ -43,27 +44,24 @@ def batch_mAP(cfg, key_dir):
     for detector_name in cfg.DETECTOR.NAME:
         y[detector_name.lower()] = []
     x = []
-    try:
-        for patch_file in patch_files:
-            x.append(int(re.findall(r"\d+", patch_file)[0]))
+    for patch_file in patch_files:
+        x.append(int(re.findall(r"\d+", patch_file)[0]))
 
-            args = copy.deepcopy(args_train)
-            args.save += key_dir
-            args.patch = os.path.join(args.patch_dir, patch_file)
-            args, evaluator = init(args, cfg)
-            det_mAPs, _, _ = eva(evaluator, args, cfg)
+        args = copy.deepcopy(args_train)
+        args.save += key_dir
+        args.patch = os.path.join(args.patch_dir, patch_file)
+        args_, cfg, _ = init(args, cfg)
+        det_mAPs, _, _, _ = eva(args, cfg)
 
-            for k, v in det_mAPs.items():
-                y[k].append(float(v))
+        for k, v in det_mAPs.items():
+            y[k].append(float(v))
 
-            args.save += '/test'
-            args.data_root = os.path.join(ROOT, cfg.DATA.TEST.IMG_DIR)
-            args.label_path = os.path.join(ROOT, cfg.DATA.TEST.LAB_DIR)
-            det_mAPs, _, _ = eva(evaluator, args, cfg)
-            for k, v in det_mAPs.items():
-                y_test[k].append(float(v))
-    except Exception as e:
-        print(e)
+        args_.save += '/test'
+        args_.data_root = os.path.join(ROOT, cfg.DATA.TEST.IMG_DIR)
+        args_.label_path = os.path.join(ROOT, cfg.DATA.TEST.LAB_DIR)
+        det_mAPs, _, _, _ = eva(args, cfg)
+        for k, v in det_mAPs.items():
+            y_test[k].append(float(v))
 
 
 def readAP(p):
@@ -81,14 +79,15 @@ if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
     from evaluate import eva
-    from evaluate import init
+    from evaluate import get_save
 
     args_train, cfg = parser_input()
+    print('save dir: ', args_train.save)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     patch_files = os.listdir(args_train.patch_dir)
     patch_files = list(filter(lambda file: args_train.rule in file, patch_files))
-    print(len(patch_files))
+    print('patch num: ', len(patch_files))
 
     y_train = {}
     for detector_name in cfg.DETECTOR.NAME:
@@ -96,8 +95,6 @@ if __name__ == '__main__':
     y_test = copy.deepcopy(y_train)
 
     x = []
-    # cur = 0
-    args = copy.deepcopy(args_train)
     try:
         for patch_file in patch_files:
             args = copy.deepcopy(args_train)
@@ -119,18 +116,16 @@ if __name__ == '__main__':
 
             args.save += '/all_data'
             args.patch = os.path.join(args.patch_dir, patch_file)
-            args, evaluator = init(args, cfg)
-            det_mAPs, _, _ = eva(evaluator, args, cfg)
+            args = get_save(args)
+            det_mAPs, _, _, _ = eva(args, cfg)
 
             for k, v in det_mAPs.items():
                 y_train[k].append(float(v))
 
             args.save += '/test'
-            print(os.path.exists(args.save))
-            print(args.save)
             args.data_root = os.path.join(ROOT, cfg.DATA.TEST.IMG_DIR)
             args.label_path = os.path.join(ROOT, cfg.DATA.TEST.LAB_DIR)
-            det_mAPs, _, _ = eva(evaluator, args, cfg)
+            det_mAPs, _, _, _ = eva(args, cfg)
             for k, v in det_mAPs.items():
                 y_test[k].append(float(v))
             # cur += 1
@@ -139,10 +134,9 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
 
-    args.save = args.save.split('all_data')[0]
-    np.save(args.save+'/x.npy', x)
-    np.save(args.save+'/y_train.npy', y_train)
-    np.save(args.save + '/y_test.npy', y_test)
+    np.save(args_train.save+'/x.npy', x)
+    np.save(args_train.save+'/y_train.npy', y_train)
+    np.save(args_train.save + '/y_test.npy', y_test)
 
     plt.figure()
     for train_y, test_y in zip(y_train.values(), y_test.values()):

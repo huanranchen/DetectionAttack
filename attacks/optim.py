@@ -10,7 +10,8 @@ class OptimAttacker(BaseAttacker):
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
 
-    def patch_update(self, patch_clamp_):
+    def patch_update(self, **kwargs):
+        patch_clamp_ = kwargs['patch_clamp_']
         self.optimizer.step()
         patch_clamp_(p_min=self.min_epsilon, p_max=self.max_epsilon)
 

@@ -36,17 +36,20 @@ def path_remove(path):
 
 def dir_check(save_path, child_paths, rebuild=False):
     # if the target path exists, it will be deleted (for empty dirt) and rebuild-up
-    def check(path, rebuild):
+    def buid(path, rebuild):
         if rebuild:
             path_remove(path)
-        os.makedirs(path, exist_ok=True)
-    check(save_path, rebuild=rebuild)
+        try:
+            os.makedirs(path, exist_ok=True)
+        except:
+            pass
+    buid(save_path, rebuild=rebuild)
     for child_path in child_paths:
         child_path = child_path.lower()
         tmp_path = os.path.join(save_path, child_path)
         for path in paths.values():
             ipath = os.path.join(tmp_path, path)
-            check(ipath, rebuild)
+            buid(ipath, rebuild)
 
 
 class UniversalPatchEvaluator(UniversalDetectorAttacker):
@@ -144,7 +147,9 @@ def generate_labels(evaluator, cfg, args, save_label=False):
             # make sure every detector detect in a new batch of img tensors (avoid of the inplace)
             img_tensor_batch = img_batch.to(evaluator.device)
             tmp_path = os.path.join(save_path, detector.name)
-            all_preds = detector(img_tensor_batch)['bbox_array']
+            # all_preds = detector(img_tensor_batch)['bbox_array']
+            all_preds = evaluator.detect_bbox(img_tensor_batch, detectors=[detector])
+            evaluator.get_patch_pos_batch(all_preds)
             if save_label:
                 # for saving the original detection info
                 fp = os.path.join(tmp_path, paths['det-lab'])
@@ -155,7 +160,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 utils.save_label(all_preds[0], fp, img_name, save_conf=True, rescale=True)
 
             target_nums_clean = evaluator.get_patch_pos_batch(all_preds, aspect_ratio=aspect_ratio)[0]
-            adv_img_tensor = evaluator.uap_apply(img_tensor_batch, eval=True)
+            adv_img_tensor = evaluator.uap_apply(img_tensor_batch, mode='eval')
 
             if hasattr(args, 'stimulate_uint8_loss') and args.stimulate_uint8_loss:
                 adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)
@@ -189,7 +194,6 @@ def generate_labels(evaluator, cfg, args, save_label=False):
 
 def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
     # preprocessing the cfg
-    args = get_save(args)
     args = ignore_class(args, cfg)
     evaluator = UniversalPatchEvaluator(cfg, args.patch, device)
 
@@ -240,7 +244,7 @@ def eva(args, cfg):
         det_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
                                 gt_path=paths['det-lab'], res_prefix='det', quiet=quiet)
         det_mAPs[detector.name] = round(det_mAP*100, 2)
-        os.system('rm -r '+os.path.join(path, paths['attack-lab']))
+        shutil.rmtree(os.path.join(path, paths['attack-lab']))
 
         if hasattr(args, 'test_gt') and args.test_gt:
             # link the path of the GT labels
@@ -272,6 +276,7 @@ if __name__ == '__main__':
     from tools.parser import dict2txt, merge_dict_by_key
 
     args, cfg = handle_input()
+    args = get_save(args)
     order = ['yolov3', 'yolov3-tiny', 'yolov4', 'yolov4-tiny', 'yolov5', 'faster_rcnn', 'ssd']
     # args, evaluator = init(args, cfg)
     det_mAPs, gt_mAPs, ori_mAPs, accs_dict = eva(args, cfg)

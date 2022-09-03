@@ -1,4 +1,7 @@
+import shutil
+
 from . import draw_mAP
+import os
 
 class Args:
     def __init__(self, path='./', lab_path='det-results', gt_path='ground-truth', res_prefix='',

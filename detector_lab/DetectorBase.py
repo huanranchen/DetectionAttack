@@ -26,7 +26,7 @@ class DetectorBase(ABC):
         self.iou_thres = cfg.IOU_THRESH
         self.ori_size = cfg.INPUT_SIZE
 
-        self.max_n_labels = 100
+        self.max_labels = 20
 
     @abstractmethod
     def load(self, model_weights: str, **args):

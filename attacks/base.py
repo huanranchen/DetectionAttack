@@ -33,16 +33,21 @@ class BaseAttacker(ABC):
         self.class_id = cfg.TARGET_CLASS
         self.attack_class = cfg.ATTACK_CLASS
 
+    def logger(self, detector, adv_tensor_batch, bboxes):
+        if self.detector_attacker.vlogger and self.detector_attacker.vlogger.iter % 5:
+            self.detector_attacker.vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
+            plotted = self.detector_attacker.plot_boxes(adv_tensor_batch[0], bboxes[0])
+            self.detector_attacker.vlogger.write_cv2(plotted, f'{detector.name}')
+
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
 
         for iter in range(self.iter_step):
-            adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch)
-            # detect adv img batch to get bbox and obj confs
-            bboxes, confs, cls_array = detector(adv_tensor_batch).values()
+            if iter > 0: ori_tensor_batch = ori_tensor_batch.clone()
+            adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch, mode=self.cfg.METHOD)
+            bboxes, confs, cls_array = detector(adv_tensor_batch).values() # detect adv img batch to get bbox and obj confs
 
             if hasattr(self.cfg, 'class_specify'):
-                #     print(confs, cls_array)
                 confs = torch.cat(([self.detector_attacker.filter_bbox(conf, cls).max(dim=-1, keepdim=True)[0]
                                 for conf, cls in zip(confs, cls_array)]))
             else:
@@ -52,22 +57,19 @@ class BaseAttacker(ABC):
             # if torch.sum(bbox_num) == 0: break
             detector.zero_grad()
             loss = self.attack_loss(confs)
-            # print(loss)
+            print(loss)
             loss.backward()
 
             patch_clamp_ = self.detector_attacker.patch_obj.clamp_
             self.patch_update(patch_clamp_=patch_clamp_)
-
             losses.append(float(loss))
-        if self.detector_attacker.vlogger and self.detector_attacker.vlogger.iter % 5:
-            self.detector_attacker.vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
-            plotted = self.detector_attacker.plot_boxes(adv_tensor_batch[0], bboxes[0])
-            self.detector_attacker.vlogger.write_cv2(plotted, f'{detector.name}')
+
+        self.logger(detector, adv_tensor_batch, bboxes)
 
         return torch.tensor(losses).mean()
 
     @abstractmethod
-    def patch_update(self, patch_clamp_):
+    def patch_update(self, **kwargs):
         pass
 
     @abstractmethod

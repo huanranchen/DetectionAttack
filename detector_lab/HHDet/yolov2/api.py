@@ -36,7 +36,7 @@ class HHYolov2(DetectorBase):
 
         bbox_array = []
         for boxes in all_boxes:
-            boxes = torch.FloatTensor(boxes).to(self.device)
+            boxes = torch.cuda.FloatTensor(boxes)
             # pad_size = self.max_n_labels - len(boxes)
             # boxes = F.pad(boxes, (0, 0, 0, pad_size), value=0).unsqueeze(0)
             if len(boxes):

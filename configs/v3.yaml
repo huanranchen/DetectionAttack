@@ -22,7 +22,7 @@ DETECTOR:
     GATE: null
 
 ATTACKER:
-  METHOD: "pgd"
+  METHOD: "optim"
   EPSILON: 255 # 0-255
   MAX_ITERS: 500
   ITER_STEP: 1
@@ -30,14 +30,14 @@ ATTACKER:
   STEP_SIZE: 0.005
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
-  LOSS_FUNC: "descend-mse" # [null, 'descend-mse', 'ascend-mse', 'optim']
+  LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv]
   tv_eta: 2.5
   obj_eta: 1
-  START_LEARNING_RATE: 0.3
+  START_LEARNING_RATE: 0.03
 
   PATCH_ATTACK:
-    WIDTH: 128
-    HEIGHT: 128
-    SCALE: 0.15
+    WIDTH: 300
+    HEIGHT: 300
+    SCALE: 0.13
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

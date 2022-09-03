@@ -49,7 +49,7 @@ class PatchManager:
 
     def update_(self, patch_new):
         del self.patch
-        self.patch = patch_new
+        self.patch = patch_new.detach_()
         self.patch.requires_grad = True
 
     def clamp_(self, p_min=0, p_max=1):

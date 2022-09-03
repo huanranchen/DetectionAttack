@@ -19,7 +19,8 @@ class VisualBoard:
     def __call__(self, epoch, iter):
         self.iter = iter
         self.writer.add_scalar('misc/epoch', epoch, self.iter)
-        self.writer.add_scalar('misc/learning_rate', self.optimizer.param_groups[0]["lr"], self.iter)
+        if self.optimizer:
+            self.writer.add_scalar('misc/learning_rate', self.optimizer.param_groups[0]["lr"], self.iter)
 
     def write_scalar(self, scalar, name):
         try:

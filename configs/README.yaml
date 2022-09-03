@@ -30,8 +30,14 @@ ATTACKER:
   TARGET_CLASS: 0 # targeted attack
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id (corresponds to the namefile)
 
+  LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv]
+  tv_eta: 2.5
+  obj_eta: 1
+  START_LEARNING_RATE: 0.03
+
   PATCH_ATTACK:
     WIDTH: 128 # Patch width
     HEIGHT: 128 # Patch height
     SCALE: 0.2 # patch scale when attaching patch on bbox
-    AREA_RATIO: 1 # 1: scale denotes bbox area ratio(Ours). 0: scale denotes the past baseline definitions
+    INIT: "gray" # ['random', 'gray']
+    AREA_RATIO: 1 # 1: square

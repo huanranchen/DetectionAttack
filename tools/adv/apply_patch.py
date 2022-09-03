@@ -69,7 +69,8 @@ class PatchTransformer(nn.Module):
         if rand_shift_gate:
             target_cx = self.random_shift(target_cx, bw / 2)
             target_cy = self.random_shift(target_cy, bh / 2)
-
+        if p9_scale:
+            target_cy -= 0.05
         tx = (0.5 - target_cx) * 2
         ty = (0.5 - target_cy) * 2
         # print("tx, ty: ", tx, ty)
@@ -80,7 +81,6 @@ class PatchTransformer(nn.Module):
         # p9_scale = False
         if p9_scale:
             target_size = torch.sqrt(((bw.mul(0.2)) ** 2) + ((bh.mul(0.2)) ** 2)).view(bboxes_size)
-            ty -= 0.05
         else:
             target_size = torch.sqrt(bw * bh * self.scale_rate).view(bboxes_size)  # [0, 1]
         scale = target_size / patch_ori_size
@@ -154,7 +154,8 @@ class PatchRandomApplier(nn.Module):
         # print('list2tensor :', bboxes_tensor_batch.shape)
         return bboxes_tensor_batch
 
-    def forward(self, img_batch, adv_patch, bboxes_batch, jitter_gate=True, rotate_gate=True, shift_gate=False):
+    def forward(self, img_batch, adv_patch, bboxes_batch, jitter_gate=True, rotate_gate=True,
+                shift_gate=False, p9_scale=True):
         """ This func to process the bboxes list of mini-batch into uniform torch.tensor and
         apply the patch into the img batch. Every patch stickers will be randomly transformed
         by given transform range before being attached.
@@ -175,13 +176,14 @@ class PatchRandomApplier(nn.Module):
         #     bboxes_batch = self.list2tensor(bboxes_batch)
         lab_len = bboxes_batch.size(1)
         # --------------Median pool blur & Random jitter---------------------
-        adv_batch = self.patch_transformer.median_pooler(adv_patch).unsqueeze(0)  # [1, 1, 3, N, N]
-        adv_patch_batch = adv_batch.expand(batch_size, lab_len, -1, -1, -1)
+        if jitter_gate:
+            adv_patch = self.patch_transformer.median_pooler(adv_patch)
+        adv_patch_batch = adv_patch.unsqueeze(0).expand(batch_size, lab_len, -1, -1, -1) # [batch_size, lab_len, 3, N, N]
         if jitter_gate:
             adv_patch_batch = self.patch_transformer.random_jitter(adv_patch_batch)
         adv_patch_batch = padding(adv_patch_batch)
-        adv_batch_t = self.patch_transformer(adv_patch_batch, bboxes_batch, patch_ori_size,
-                                             rand_rotate_gate=rotate_gate, rand_shift_gate=shift_gate)
+        adv_batch_t = self.patch_transformer(adv_patch_batch, bboxes_batch, patch_ori_size, rand_rotate_gate=rotate_gate,
+                                             rand_shift_gate=shift_gate, p9_scale=p9_scale)
 
         adv_img_batch = self.patch_applier(img_batch, adv_batch_t)
         # print('Patch apply out: ', adv_img_batch.shape)

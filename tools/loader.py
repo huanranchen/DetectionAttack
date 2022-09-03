@@ -84,21 +84,39 @@ class DetDataset(Dataset):
         # is_augment = False
         self.transform = transforms.Compose([])
         if is_augment:
-            subpolicy1 = [
-                transforms.CenterCrop(256),
-                transforms.RandomResizedCrop(416, scale=(0.8, 1)),
-                transforms.RandomRotation(20),
-                transforms.ColorJitter(brightness=0.4, contrast=0.2, saturation=0.3),
-            ]
-            self.transform = transforms.Compose([
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomEqualize(p=0.3),
-                transforms.RandomChoice(subpolicy1)
-            ])
+            self.transform = self.transform_fn
         self.ToTensor = transforms.Compose([
             transforms.Resize(self.input_size),
             transforms.ToTensor()
         ])
+
+    def transform_fn(self, im):
+        p_drop = 0.5
+        gate = torch.cuda.FloatTensor([0]).bernoulli_(1 - p_drop)
+        if gate.item() == 0:
+            return im
+        gate = torch.cuda.FloatTensor([0]).bernoulli_(1 - p_drop)
+        if gate.item() == 0:
+            subpolicy = [
+                transforms.CenterCrop(int(self.input_size / 1.5)),  # zoom in
+                transforms.RandomResizedCrop(self.input_size, scale=(0.8, 0.8)),  # zoom out
+            ]
+        else:
+            subpolicy = [
+                transforms.RandomRotation(20),
+                transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+            ]
+
+        im_t = transforms.Compose([
+            transforms.RandomHorizontalFlip(p=0.5),
+            # transforms.RandomEqualize(p=0.3),
+            transforms.RandomChoice(subpolicy)
+        ])(im)
+
+        if gate.item() == 0:
+            pad_size = torch.cuda.IntTensor(4).uniform_(0, int(self.input_size / 10))
+            im_t = F.pad(im_t, (pad_size[0], pad_size[1], pad_size[2], pad_size[3]), value=127)
+        return im_t
 
     def pad_scale(self, img):
         w, h = img.size

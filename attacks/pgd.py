@@ -23,19 +23,34 @@ class LinfPGDAttack(BaseAttacker):
     def __init__(self, loss_func, cfg, device, detector_attacker, norm='L_infty'):
         super().__init__(loss_func, norm, cfg, device, detector_attacker)
 
-    def patch_update(self, patch_clamp_):
+    def patch_update(self, **kwargs):
         # print('before: ', self.detector_attacker.patch_obj.patch.sum())
         patch_tmp = self.detector_attacker.patch_obj.patch
-        grad = patch_tmp.grad
-        update = self.step_size * grad.sign()
+        update = self.step_size * patch_tmp.grad.sign()
         if "descend" in self.cfg.LOSS_FUNC:
-            patch_tmp = patch_tmp - update
-        else:
-            patch_tmp = patch_tmp + update
-        self.detector_attacker.patch_obj.update_(patch_tmp.detach_())
+            update *= -1
+        patch_tmp = patch_tmp + update
+        patch_tmp = torch.clamp(patch_tmp, min=self.min_epsilon, max=self.max_epsilon)
+        self.detector_attacker.patch_obj.update_(patch_tmp)
         # print(self.detector_attacker.patch_obj.patch.sum())
-        patch_clamp_(p_min=self.min_epsilon, p_max=self.max_epsilon)
+        # patch_clamp_(p_min=self.min_epsilon, p_max=self.max_epsilon)
         return patch_tmp
+
+    def non_targeted_attack(self, ori_tensor_batch, detector):
+        losses = []
+        for iter in range(self.iter_step):
+            adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch.clone(), mode=self.cfg.METHOD)
+            bboxes, confs, cls_array = detector(adv_tensor_batch).values() # detect adv img batch to get bbox and obj confs
+            confs = confs.max(dim=-1, keepdim=True)[0]
+            # bbox_num = torch.FloatTensor([len(pred) for pred in preds])
+            # if torch.sum(bbox_num) == 0: break
+            detector.zero_grad()
+            loss = self.attack_loss(confs)
+            loss.backward()
+            self.patch_update()
+            losses.append(float(loss))
+        self.logger(detector, adv_tensor_batch, bboxes)
+        return torch.cuda.FloatTensor(losses).mean()
 
     def attack_loss(self, confs):
         return self.loss_fn(confs=confs)

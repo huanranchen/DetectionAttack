@@ -41,7 +41,7 @@ class Faster_RCNN(DetectorBase):
                 pred['boxes'] / shape,
                 pred['scores'].view(nums, 1),
                 (pred['labels'] - 1).view(nums, 1)
-            ), 1).detach().cpu() if nums else torch.FloatTensor([])
+            ), 1) if nums else torch.cuda.FloatTensor([])
             confs_array = conf if confs_array is None else torch.vstack((confs_array, conf))
             bbox_array.append(array)
 
