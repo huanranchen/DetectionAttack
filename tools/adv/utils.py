@@ -17,7 +17,7 @@ def attach_patch(img_tensor, adv_patch, all_preds, cfg):
             adv = F.interpolate(adv_patch, size=(height, width), mode='bilinear')[0]
             # Warning: This is an inplace operation, it changes the value of the outer variable
             img_tensor[i][:, p_y1:p_y2, p_x1:p_x2] = adv
-
+    return img_tensor
 
 def rescale_patches(bboxes, image_height, image_width, scale, aspect_ratio):
     def compute(bwidth, bheight, scale, aspect_ratio):

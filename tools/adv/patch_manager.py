@@ -45,7 +45,14 @@ class PatchManager:
         self.patch = patch.to(self.device)
 
     def total_variation(self):
-        pass
+        adv_patch = self.patch[0]
+        # bereken de total variation van de adv_patch
+        tvcomp1 = torch.sum(torch.abs(adv_patch[:, :, 1:] - adv_patch[:, :, :-1] + 0.000001), 0)
+        tvcomp1 = torch.sum(torch.sum(tvcomp1, 0), 0)
+        tvcomp2 = torch.sum(torch.abs(adv_patch[:, 1:, :] - adv_patch[:, :-1, :] + 0.000001), 0)
+        tvcomp2 = torch.sum(torch.sum(tvcomp2, 0), 0)
+        tv = tvcomp1 + tvcomp2
+        return tv / torch.numel(adv_patch)
 
     def update_(self, patch_new):
         del self.patch

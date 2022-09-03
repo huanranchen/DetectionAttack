@@ -44,29 +44,28 @@ class BaseAttacker(ABC):
 
         for iter in range(self.iter_step):
             if iter > 0: ori_tensor_batch = ori_tensor_batch.clone()
-            adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch, mode=self.cfg.METHOD)
-            bboxes, confs, cls_array = detector(adv_tensor_batch).values() # detect adv img batch to get bbox and obj confs
+            adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch)
+            # detect adv img batch to get bbox and obj confs
+            bboxes, confs, cls_array = detector(adv_tensor_batch).values()
 
             if hasattr(self.cfg, 'class_specify'):
-                confs = torch.cat(([self.detector_attacker.filter_bbox(conf, cls).max(dim=-1, keepdim=True)[0]
+                filter_box = self.detector_attacker.filter_bbox
+                confs = torch.cat(([filter_box(conf, cls).max(dim=-1, keepdim=True)[0]
                                 for conf, cls in zip(confs, cls_array)]))
-            else:
-                confs = confs.max(dim=-1, keepdim=True)[0]
+            else: confs = confs.max(dim=-1, keepdim=True)[0]
 
-            # bbox_num = torch.FloatTensor([len(pred) for pred in preds])
-            # if torch.sum(bbox_num) == 0: break
             detector.zero_grad()
             loss = self.attack_loss(confs)
-            print(loss)
             loss.backward()
-
-            patch_clamp_ = self.detector_attacker.patch_obj.clamp_
-            self.patch_update(patch_clamp_=patch_clamp_)
             losses.append(float(loss))
 
-        self.logger(detector, adv_tensor_batch, bboxes)
+            self.patch_update(patch_clamp_=self.detector_attacker.patch_obj.clamp_)
 
+        self.logger(detector, adv_tensor_batch, bboxes)
         return torch.tensor(losses).mean()
+
+    def total_loss(self, det_loss):
+        pass
 
     @abstractmethod
     def patch_update(self, **kwargs):

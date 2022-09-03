@@ -131,23 +131,19 @@ def generate_labels(evaluator, cfg, args, save_label=False):
 
     data_loader = dataLoader(args.data_root, input_size=cfg.DETECTOR.INPUT_SIZE,
                              batch_size=batch_size, is_augment=False, pin_memory=True)
+    gates = {'jitter': False, 'median_pool': False, 'rotate': False, 'shift': False, 'p9_scale': False}
     save_path = args.save
     aspect_ratio = args.aspect_ratio if hasattr(args, 'aspect_ratio') else None
     accs_total = {}
-    for detector in evaluator.detectors:
-        accs_total[detector.name] = []
+    for detector in evaluator.detectors: accs_total[detector.name] = []
     # print(evaluator.detectors)
     for index, img_batch in enumerate(tqdm(data_loader, total=len(data_loader))):
-
         names = img_names[index:index + batch_size]
         img_name = names[0].split('/')[-1]
-        # print(img_name)
         for detector in evaluator.detectors:
-            # print(detector.name)
             # make sure every detector detect in a new batch of img tensors (avoid of the inplace)
             img_tensor_batch = img_batch.to(evaluator.device)
             tmp_path = os.path.join(save_path, detector.name)
-            # all_preds = detector(img_tensor_batch)['bbox_array']
             all_preds = evaluator.detect_bbox(img_tensor_batch, detectors=[detector])
             evaluator.get_patch_pos_batch(all_preds)
             if save_label:
@@ -160,7 +156,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 utils.save_label(all_preds[0], fp, img_name, save_conf=True, rescale=True)
 
             target_nums_clean = evaluator.get_patch_pos_batch(all_preds, aspect_ratio=aspect_ratio)[0]
-            adv_img_tensor = evaluator.uap_apply(img_tensor_batch, mode='eval')
+            adv_img_tensor = evaluator.uap_apply(img_tensor_batch, gates)
 
             if hasattr(args, 'stimulate_uint8_loss') and args.stimulate_uint8_loss:
                 adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)

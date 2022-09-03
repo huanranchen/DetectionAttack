@@ -31,13 +31,13 @@ ATTACKER:
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "descend-mse" # [null, descend-mse, ascend-mse]
-  tv_eta: 2.5
+  tv_eta: 0
   obj_eta: 1
   START_LEARNING_RATE: 0.03
 
   PATCH_ATTACK:
-    WIDTH: 128
-    HEIGHT: 128
+    WIDTH: 300
+    HEIGHT: 300
     SCALE: 0.15
-    INIT: "random" # ['random', 'gray']
+    INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

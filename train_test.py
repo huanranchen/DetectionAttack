@@ -21,7 +21,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     data_loader = dataLoader(data_root,
                              input_size=cfg.DETECTOR.INPUT_SIZE, is_augment=args.augment_data,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
-
+    detector_attacker.gates = {'jitter': True, 'median_pool': True, 'rotate': True, 'shift': False, 'p9_scale': True}
     p_obj = detector_attacker.patch_obj.patch
     p_obj.requires_grad = True
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)

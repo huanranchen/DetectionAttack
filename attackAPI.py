@@ -18,6 +18,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
     def __init__(self, cfg, device):
         super().__init__(cfg, device)
         self.vlogger = None
+        self.gates = {'jitter': False, 'median_pool': False, 'rotate': True, 'shift': False, 'p9_scale': False}
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH_ATTACK, device)
         self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH_ATTACK.SCALE)
         self.max_boxes = 15
@@ -55,20 +56,11 @@ class UniversalDetectorAttacker(DetctorAttacker):
         self.all_preds = batch_boxes
         return np.array(target_nums)
 
-    def uap_apply(self, img_tensor, adv_patch=None, mode='transform'):
-        if adv_patch is None:
-            adv_patch = self.universal_patch
+    def uap_apply(self, img_tensor, adv_patch=None):
+        if adv_patch is None: adv_patch = self.universal_patch
 
-        if mode == 'eval' or mode == 'pgd':
-            img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, False, False, False, False)
-        elif mode == 'pgd':
-            img_tensor = attach_patch(img_tensor, adv_patch, self.all_preds, self.cfg)
-        elif mode == 'optim':
-            img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds)
-
-        if self.cfg.DATA.AUGMENT == 2:
-            img_tensor = self.data_transformer(img_tensor, True, True)
-
+        img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=self.gates)
+        if self.cfg.DATA.AUGMENT == 2: img_tensor = self.data_transformer(img_tensor, True, True)
         return img_tensor
 
     def merge_batch_pred(self, all_preds, preds):
@@ -79,7 +71,6 @@ class UniversalDetectorAttacker(DetctorAttacker):
                 all_preds[i] = torch.cat((all_pred, pred), dim=0)
                 continue
             all_preds[i] = all_pred if all_pred.shape[0] else pred
-
         return all_preds
 
     def adv_detect_save(self, img_tensor, save_path, save_name, detector):
