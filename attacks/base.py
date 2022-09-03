@@ -33,11 +33,14 @@ class BaseAttacker(ABC):
         self.class_id = cfg.TARGET_CLASS
         self.attack_class = cfg.ATTACK_CLASS
 
-    def logger(self, detector, adv_tensor_batch, bboxes):
-        if self.detector_attacker.vlogger and self.detector_attacker.vlogger.iter % 5:
-            self.detector_attacker.vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
+    def logger(self, detector, adv_tensor_batch, bboxes, loss_dict):
+        vlogger = self.detector_attacker.vlogger
+        if vlogger:
+            if vlogger.iter % 70:
+                vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
+                vlogger.write_loss(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
             plotted = self.detector_attacker.plot_boxes(adv_tensor_batch[0], bboxes[0])
-            self.detector_attacker.vlogger.write_cv2(plotted, f'{detector.name}')
+            vlogger.write_cv2(plotted, f'{detector.name}')
 
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
@@ -52,20 +55,19 @@ class BaseAttacker(ABC):
                 filter_box = self.detector_attacker.filter_bbox
                 confs = torch.cat(([filter_box(conf, cls).max(dim=-1, keepdim=True)[0]
                                 for conf, cls in zip(confs, cls_array)]))
-            else: confs = confs.max(dim=-1, keepdim=True)[0]
+            else:
+                confs = confs.max(dim=-1, keepdim=True)[0]
 
             detector.zero_grad()
-            loss = self.attack_loss(confs)
+            loss_dict = self.attack_loss(confs)
+            loss = loss_dict['loss']
             loss.backward()
             losses.append(float(loss))
 
             self.patch_update(patch_clamp_=self.detector_attacker.patch_obj.clamp_)
 
-        self.logger(detector, adv_tensor_batch, bboxes)
+        self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
         return torch.tensor(losses).mean()
-
-    def total_loss(self, det_loss):
-        pass
 
     @abstractmethod
     def patch_update(self, **kwargs):

@@ -22,7 +22,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH_ATTACK, device)
         self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH_ATTACK.SCALE)
         self.max_boxes = 15
-        if cfg.DATA.AUGMENT > 1:
+        if '3' in cfg.DATA.AUGMENT:
             self.data_transformer = DataTransformer(device)
 
     @property
@@ -56,11 +56,13 @@ class UniversalDetectorAttacker(DetctorAttacker):
         self.all_preds = batch_boxes
         return np.array(target_nums)
 
-    def uap_apply(self, img_tensor, adv_patch=None):
+    def uap_apply(self, img_tensor, adv_patch=None, gates=None):
         if adv_patch is None: adv_patch = self.universal_patch
+        if gates is None: gates = self.gates
 
-        img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=self.gates)
-        if self.cfg.DATA.AUGMENT == 2: img_tensor = self.data_transformer(img_tensor, True, True)
+        img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=gates)
+
+        if '2' in self.cfg.DATA.AUGMENT: img_tensor = self.data_transformer(img_tensor, True, True)
         return img_tensor
 
     def merge_batch_pred(self, all_preds, preds):

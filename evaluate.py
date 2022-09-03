@@ -156,7 +156,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 utils.save_label(all_preds[0], fp, img_name, save_conf=True, rescale=True)
 
             target_nums_clean = evaluator.get_patch_pos_batch(all_preds, aspect_ratio=aspect_ratio)[0]
-            adv_img_tensor = evaluator.uap_apply(img_tensor_batch, gates)
+            adv_img_tensor = evaluator.uap_apply(img_tensor_batch, gates=gates)
 
             if hasattr(args, 'stimulate_uint8_loss') and args.stimulate_uint8_loss:
                 adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)

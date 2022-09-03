@@ -8,7 +8,7 @@ from detector_lab.utils import inter_nms
 from tools import save_tensor
 from tools.draw import VisualBoard
 from tools.loader import dataLoader
-from train import logger
+from train_pgd import logger
 
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
@@ -21,7 +21,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     data_loader = dataLoader(data_root,
                              input_size=cfg.DETECTOR.INPUT_SIZE, is_augment=args.augment_data,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
-    detector_attacker.gates = {'jitter': True, 'median_pool': True, 'rotate': True, 'shift': False, 'p9_scale': True}
+    detector_attacker.gates = {'jitter': True, 'median_pool': False, 'rotate': True, 'shift': False, 'p9_scale': True}
     p_obj = detector_attacker.patch_obj.patch
     p_obj.requires_grad = True
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
@@ -45,9 +45,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         lab = None
         # for index, (img_tensor_batch, lab) in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
-            if vlogger:
-                vlogger(epoch, get_iter())
-
+            if vlogger: vlogger(epoch, get_iter())
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
             if lab:
                 detector_attacker.all_preds = lab.to(detector_attacker.device)
@@ -86,6 +84,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--patch', type=str, help='fine-tune from a pre-trained patch', default=None)
     parser.add_argument('-m', '--attack_method', type=str, default='optim')
+    parser.add_argument('-a', '--augment_data', action='store_true', default=False)
     parser.add_argument('-cfg', '--cfg', type=str, default='optim.yaml')
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')

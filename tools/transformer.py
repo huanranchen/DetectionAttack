@@ -71,7 +71,6 @@ class DataTransformer(torch.nn.Module):
 
         if jiter:
             gate = torch.zeros(1).bernoulli_(0.5).item()
-            gate = 0
             if gate == 0:
                 img_tensor_t = kornia.augmentation.RandomGaussianNoise(mean=0., std=.01, p=1)(img_tensor_t)
                 factor = torch.cuda.FloatTensor(batch_size).fill_(0).uniform_(0, self.rand_brightness)
@@ -79,19 +78,9 @@ class DataTransformer(torch.nn.Module):
                 # img_tensor_t = kornia.enhance.adjust_contrast(img_tensor_t, factor, clip_output=True)
 
             gate = torch.zeros(1).bernoulli_(0.5).item()
-            gate = 0
             if gate == 0:
-                # img_tensor_t = kornia.filters.motion_blur(img_tensor_t, 5, torch.tensor([90., 180, ]),
-                #                                           torch.tensor([1., -1.]))
                 factor = torch.FloatTensor(batch_size).fill_(0).uniform_(1 - self.rand_saturation, 1 + self.rand_saturation)
                 img_tensor_t = kornia.enhance.adjust_saturation(img_tensor_t, factor)
-
-            gate = torch.zeros(1).bernoulli_(0.5).item()
-            gate = 0
-            # if gate == 0:
-                # crop_trans = kornia.augmentation.RandomResizedCrop((416, 416), (0.8, 0.8), (1.2, 1.2))
-                # img_tensor_t = crop_trans(img_tensor_t)
-            # img_tensor_t = self.rand_affine_matrix(img_tensor_t)
 
         if rotate:
             img_tensor_t = kornia.augmentation.RandomRotation(self.rand_rotate_angle)(img_tensor_t)

@@ -37,11 +37,11 @@ class LinfPGDAttack(BaseAttacker):
     def attack_loss(self, confs):
         obj_loss = self.loss_fn(confs=confs)
         tv_loss = self.detector_attacker.patch_obj.total_variation()
-        tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.cuda.FloatTensor([0.1]))
+        # tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.cuda.FloatTensor([0.1]))
+        tv_loss = self.cfg.tv_eta * tv_loss
         loss = obj_loss * self.cfg.obj_eta + tv_loss
-        if self.detector_attacker.vlogger:
-            self.detector_attacker.vlogger.write_loss(loss, obj_loss, tv_loss)
-        return loss
+        out = {'loss': loss, 'det_loss': obj_loss, 'tv_loss': tv_loss}
+        return out
 
     def parallel_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector):
         adv_tensor_batch, patch_tmp = detector_attacker.uap_apply(ori_tensor_batch)
