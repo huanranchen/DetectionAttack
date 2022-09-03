@@ -18,7 +18,7 @@ DETECTOR:
   PERTURB:
     GATE: 'shake_drop' # ['shake_drop', 'grad_descend', 'random', null]
     SHAKE_DROP:
-      MODEL_CONFIG: 'yolov4-shakedrop.cfg' # rewrite model cfg when shake drop
+      MODEL_CONFIG: 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/yolov4-shakedrop.cfg' # rewrite model cfg when shake drop
 
     GRAD_DESCEND:
       GRAD_RESET: 10

@@ -24,27 +24,17 @@ class HHYolov4(DetectorBase):
     def load(self, model_weights, detector_config_file=None):
         if self.cfg.PERTURB.GATE == 'shake_drop':
             from .Pytorch_YOLOv4.tool.darknet_shakedrop import DarknetShakedrop
-            tmp = detector_config_file.split('/')
-            detector_cfg = self.cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
+            detector_config_file = self.cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
             print('Self ensemble! Shake drop model cfg :', detector_config_file)
-            tmp[-1] = detector_cfg
-            self.detector = DarknetShakedrop('/'.join(tmp)).to(self.device)
-
-            self.clean_model = Darknet(detector_config_file).to(self.device)
-            self.clean_model.load_weights(model_weights)
-            self.clean_model.eval()
-            self.clean_model.models.requires_grad_(False)
+            self.detector = DarknetShakedrop(detector_config_file).to(self.device)
         else:
             self.detector = Darknet(detector_config_file).to(self.device)
 
         self.detector.load_weights(model_weights)
         self.eval()
 
-    def __call__(self, batch_tensor, clean_model=False):
-        if clean_model and hasattr(self, 'clean_model'):
-            detections_with_grad = self.clean_model(batch_tensor)
-        else:
-            detections_with_grad = self.detector(batch_tensor)
+    def __call__(self, batch_tensor, **kwargs):
+        detections_with_grad = self.detector(batch_tensor)
 
         bbox_array = post_processing(batch_tensor, self.conf_thres, self.iou_thres, detections_with_grad)
         for i, pred in enumerate(bbox_array):

@@ -14,13 +14,14 @@ DETECTOR:
   NAME: ["YOLOV3"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
-  MODEL_CONFIG: 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-chr.cfg'
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
   ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
-    GATE: null
+    GATE: 'shake_drop' # ['shake_drop', 'grad_descend', 'random', null]
+    SHAKE_DROP:
+      MODEL_CONFIG: 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-chr.cfg' # rewrite model cfg when shake drop
 
 ATTACKER:
   METHOD: "pgd"
