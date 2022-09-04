@@ -7,6 +7,9 @@ from PIL.Image import Image
 
 
 class FormatConverter:
+    '''This is an image format util for easy format conversion among PIL.Image, torch.tensor & cv2(numpy).
+
+    '''
     @staticmethod
     def PIL2tensor(PIL_image: Image):
         """

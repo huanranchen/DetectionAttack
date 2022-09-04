@@ -22,6 +22,9 @@ def load_class_names(namesfile, trim=True):
 
 
 class ConfigParser:
+    '''The ConfigParser is to parse the config .yaml file, and process the attacking class list.
+
+    '''
     def __init__(self, config_file):
         self.config_file = config_file
         # self.all_class_names = []

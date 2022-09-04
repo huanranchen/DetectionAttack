@@ -19,9 +19,9 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     data_sampler = None
     detector_attacker.init_universal_patch(args.patch)
     data_loader = dataLoader(data_root,
-                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment=args.augment_data,
+                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
-    detector_attacker.gates = {'jitter': True, 'median_pool': False, 'rotate': True, 'shift': False, 'p9_scale': True}
+    detector_attacker.gates = {'jitter': True, 'median_pool': True, 'rotate': True, 'shift': False, 'p9_scale': True}
     p_obj = detector_attacker.patch_obj.patch
     p_obj.requires_grad = True
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
@@ -84,7 +84,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--patch', type=str, help='fine-tune from a pre-trained patch', default=None)
     parser.add_argument('-m', '--attack_method', type=str, default='optim')
-    parser.add_argument('-a', '--augment_data', action='store_true', default=False)
     parser.add_argument('-cfg', '--cfg', type=str, default='optim.yaml')
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')

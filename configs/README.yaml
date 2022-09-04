@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names' # a relative path
-  AUGMENT: 1
+  AUGMENT: '13' # '1' contained: augment image when loading; '2' contained: augment the adv image in the second detection inference; '3' contained: augment adv patch
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
