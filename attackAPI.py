@@ -15,6 +15,11 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
+'''
+Construct attacker conveniently. Packaging the codes in module "attacks"
+'''
+
+
 class UniversalDetectorAttacker(DetctorAttacker):
     def __init__(self, cfg, device):
         super().__init__(cfg, device)
@@ -35,6 +40,7 @@ class UniversalDetectorAttacker(DetctorAttacker):
         # self.universal_patch = self.patch_obj.patch
 
     def filter_bbox(self, preds, cls_array=None):
+        # TODO: filter the classes which we need to attack
         # print(preds)
         if cls_array is None: cls_array = preds[:, -1]
         filt = [cls in self.cfg.attack_list for cls in cls_array]
@@ -58,6 +64,9 @@ class UniversalDetectorAttacker(DetctorAttacker):
         return np.array(target_nums)
 
     def uap_apply(self, img_tensor, adv_patch=None, gates=None):
+        '''
+        UAP: universal adversarial patch
+        '''
         if adv_patch is None: adv_patch = self.universal_patch
         if gates is None: gates = self.gates
 

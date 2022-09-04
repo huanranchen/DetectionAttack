@@ -12,6 +12,7 @@ class BaseAttacker(ABC):
         :param loss_func:
         :param norm: str, [L0, L1, L2, L_infty]
         :param cfg:
+        :param detector_attacker: this attacker should have attributes vlogger
 
         Args:
             loss_func ([torch.nn.Loss]): [a loss function to calculate the loss between the inputs and expeced outputs]
@@ -52,7 +53,9 @@ class BaseAttacker(ABC):
             # detect adv img batch to get bbox and obj confs
             bboxes, confs, cls_array = detector(adv_tensor_batch).values()
 
+            # now, only attack the max confidence
             if hasattr(self.cfg, 'class_specify'):
+                # attack only some classes, instead of attack all classes
                 filter_box = self.detector_attacker.filter_bbox
                 confs = torch.cat(([filter_box(conf, cls).max(dim=-1, keepdim=True)[0]
                                     for conf, cls in zip(confs, cls_array)]))
@@ -65,8 +68,10 @@ class BaseAttacker(ABC):
             loss.backward()
             losses.append(float(loss))
 
+            # TODO: update patch. for optimizer, using optimizer.step(). for PGD or others, using clamp and SGD.
             self.patch_update(patch_clamp_=self.detector_attacker.patch_obj.clamp_)
 
+        # TODO: update training statistics on tensorboard
         self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
         return torch.tensor(losses).mean()
 
