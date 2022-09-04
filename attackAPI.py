@@ -11,6 +11,7 @@ from tools.adv import PatchManager, PatchRandomApplier
 from detector_lab.utils import inter_nms
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 
@@ -124,5 +125,3 @@ class UniversalDetectorAttacker(DetctorAttacker):
             detectors_loss.append(loss)
         self.patch_obj.update_((self.universal_patch + patch_updates / len(self.detectors)).detach_())
         return torch.tensor(detectors_loss).mean()
-
-

@@ -9,12 +9,13 @@ from tools.draw import VisualBoard
 from tools.loader import dataLoader
 from tools import save_tensor
 
+
 def modelDDP(detector_attacker, args):
     for ind, detector in enumerate(detector_attacker.detectors):
         detector_attacker.detectors[ind] = torch.nn.parallel.DistributedDataParallel(detector,
-                                                          device_ids=[args.local_rank],
-                                                          output_device=args.local_rank,
-                                                          find_unused_parameters=True)
+                                                                                     device_ids=[args.local_rank],
+                                                                                     output_device=args.local_rank,
+                                                                                     find_unused_parameters=True)
 
 
 def logger(cfg, args, attack_confs_thresh=""):
@@ -34,7 +35,7 @@ def logger(cfg, args, attack_confs_thresh=""):
     print('                   Loss func : ', cfg.ATTACKER.LOSS_FUNC)
     print("         Attack confs thresh : ", attack_confs_thresh)
     print("                  Patch size : ",
-          '['+str(cfg.ATTACKER.PATCH_ATTACK.HEIGHT)+', '+str(cfg.ATTACKER.PATCH_ATTACK.WIDTH)+']')
+          '[' + str(cfg.ATTACKER.PATCH_ATTACK.HEIGHT) + ', ' + str(cfg.ATTACKER.PATCH_ATTACK.WIDTH) + ']')
     print('               Attack method : ', cfg.ATTACKER.METHOD)
     print('             To Augment data : ', cfg.DATA.AUGMENT)
     print('                   Step size : ', cfg.ATTACKER.STEP_SIZE)
@@ -58,11 +59,12 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
     if not args.debugging:
         vlogger = VisualBoard(name=args.board_name, start_iter=start_index)
         detector_attacker.vlogger = vlogger
-    for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS+1):
+    for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS + 1):
         et0 = time.time()
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
             now_step = get_iter(epoch, index)
-            if vlogger: vlogger(epoch, now_step)
+            if vlogger:
+                vlogger(epoch, now_step)
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
             all_preds = detector_attacker.detect_bbox(img_tensor_batch)
             # get position of adversarial patches
@@ -72,14 +74,15 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
             loss = detector_attacker.attack(img_tensor_batch, args.attack_method)
             if vlogger: vlogger.write_scalar(loss, 'loss/iter loss')
             # the patch will be saved in every 5000 images
-            if (epoch_save_mode and index == 1 and epoch % 10 == 0) or (not epoch_save_mode and now_step % save_step == 0):
+            if (epoch_save_mode and index == 1 and epoch % 10 == 0) or (
+                    not epoch_save_mode and now_step % save_step == 0):
                 prefix = epoch if epoch_save_mode else int(now_step / 5000)
                 patch_name = f'{prefix}_{save_name}'
                 save_tensor(detector_attacker.universal_patch, patch_name, args.save_path + '/patch/')
 
         et1 = time.time()
-        if vlogger: vlogger.write_scalar(et1-et0, 'misc/ep time')
-    np.save(args.save_path+'/losses.npy', np.array(losses))
+        if vlogger: vlogger.write_scalar(et1 - et0, 'misc/ep time')
+    np.save(args.save_path + '/losses.npy', np.array(losses))
 
 
 if __name__ == '__main__':

@@ -5,7 +5,8 @@ from abc import ABC, abstractmethod
 
 class BaseAttacker(ABC):
     """An Attack Base Class"""
-    def __init__(self, loss_func, norm:str, cfg, device: torch.device, detector_attacker):
+
+    def __init__(self, loss_func, norm: str, cfg, device: torch.device, detector_attacker):
         """
 
         :param loss_func:
@@ -54,7 +55,7 @@ class BaseAttacker(ABC):
             if hasattr(self.cfg, 'class_specify'):
                 filter_box = self.detector_attacker.filter_bbox
                 confs = torch.cat(([filter_box(conf, cls).max(dim=-1, keepdim=True)[0]
-                                for conf, cls in zip(confs, cls_array)]))
+                                    for conf, cls in zip(confs, cls_array)]))
             else:
                 confs = confs.max(dim=-1, keepdim=True)[0]
 
