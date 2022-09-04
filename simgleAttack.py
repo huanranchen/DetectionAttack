@@ -11,6 +11,11 @@ from tools.loss import *
 from tools.det_utils import plot_boxes_cv2, scale_area_ratio
 from tools import FormatConverter
 
+
+'''
+the base class of attackers. But most of the functions in this file is useless.
+'''
+
 attacker_dict = {
     "bim": LinfBIMAttack,
     "mim": LinfMIMAttack,
