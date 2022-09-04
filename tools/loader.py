@@ -90,15 +90,24 @@ class DetDataset(Dataset):
             transforms.ToTensor()
         ])
 
-    def transform_fn(self, im):
-        p_drop = 0.5
-        gate = torch.tensor([0]).bernoulli_(1 - p_drop)
-        if gate.item() == 0: return im
+    def transform_fn(self, im, p_aug=0.5):
+        '''This is for random data augmentation of p_aug probability
 
+        :param im:
+        :param p_aug:
+        :return:
+        '''
+        gate = torch.tensor([0]).bernoulli_(1 - p_aug)
+        if gate.item() == 0: return im
         subpolicy = [
-            transforms.CenterCrop(int(self.input_size[0] / 1.5)),  # zoom in
+            # transforms.RandAugment(1, 3),
+            transforms.Pad(int(torch.FloatTensor([0]).uniform_(0, 120))), # Zoom out
+            transforms.CenterCrop(int(self.input_size[0] / 1.5)),  # Zoom in
             transforms.RandomRotation(20),
-            transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+            transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=.5),
+            transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5)),
+            transforms.Grayscale(), # RGB to Gray
+            transforms.AutoAugment(transforms.AutoAugmentPolicy.SVHN) # Random Shift
         ]
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),

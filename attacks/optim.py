@@ -21,10 +21,11 @@ class OptimAttacker(BaseAttacker):
         if self.cfg.LOSS_FUNC == 'obj-tv':
             tv_loss, obj_loss = loss.values()
             tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.tensor(0.1).to(self.device))
+            # print(obj_loss)
             obj_loss = obj_loss * self.cfg.obj_eta
             loss = tv_loss + obj_loss
         elif self.cfg.LOSS_FUNC == 'obj':
             loss = loss['obj_loss'] * self.cfg.obj_eta
             tv_loss = torch.cuda.FloatTensor([0])
-        out = {'loss': loss, 'det_loss': loss, 'tv_loss': tv_loss}
+        out = {'loss': loss, 'det_loss': obj_loss, 'tv_loss': tv_loss}
         return out

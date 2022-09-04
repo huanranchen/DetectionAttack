@@ -1,5 +1,5 @@
 DATA:
-  AUGMENT: ''
+  AUGMENT: '0'
   CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
 
 DETECTOR:

@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: ''
+  AUGMENT: '0'
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
     LAB_DIR: 'data/INRIAPerson/Train/labels'

@@ -62,7 +62,6 @@ class UniversalDetectorAttacker(DetctorAttacker):
         if gates is None: gates = self.gates
 
         img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=gates)
-
         if '2' in self.cfg.DATA.AUGMENT: img_tensor = self.data_transformer(img_tensor, True, True)
         return img_tensor
 

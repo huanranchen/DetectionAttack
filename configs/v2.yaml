@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '23'
+  AUGMENT: '3'
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -18,7 +18,6 @@ DETECTOR:
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
-  ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
     GATE: null

@@ -62,8 +62,8 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
         if epoch % 10 == 0:
             patch_name = f'{epoch}_{save_name}'
-            save_tensor(detector_attacker.universal_patch, patch_name, args.save_path + '/patch/')
-            print('Saving patch to ', os.path.join(args.save_path + '/patch/', save_patch_name))
+            save_tensor(detector_attacker.universal_patch, patch_name, args.save_path + 'patch/')
+            print('Saving patch to ', os.path.join(args.save_path + 'patch/', patch_name))
 
         et1 = time.time()
         ep_loss /= len(data_loader)

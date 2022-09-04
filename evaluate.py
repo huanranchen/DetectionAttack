@@ -199,7 +199,7 @@ def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() el
 
 def cfg_save_modify(cfg):
     cfg.DETECTOR.PERTURB.GATE = None
-    cfg.DATA.AUGMENT = False
+    cfg.DATA.AUGMENT = ''
     return cfg
 
 
@@ -240,7 +240,7 @@ def eva(args, cfg):
         det_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
                                 gt_path=paths['det-lab'], res_prefix='det', quiet=quiet)
         det_mAPs[detector.name] = round(det_mAP*100, 2)
-        shutil.rmtree(os.path.join(path, paths['attack-lab']))
+        # shutil.rmtree(os.path.join(path, paths['attack-lab']))
 
         if hasattr(args, 'test_gt') and args.test_gt:
             # link the path of the GT labels
@@ -291,5 +291,4 @@ if __name__ == '__main__':
     dict2txt(det_dict, det_mAP_file)
     dict2txt(gt_mAPs, os.path.join(args.save, 'gt-mAP.txt'))
     print("det dict      [mAP, acc] :", det_dict)
-    # with open(os.path.join(args.save, 'gt-mAP.txt'), 'a'):
-    #     det_mAPs['yolov3']
+

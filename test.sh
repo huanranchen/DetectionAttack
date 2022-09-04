@@ -6,12 +6,12 @@ patch_name=$2
 save=$3
 A=$4
 targets=$5
-#ifng=$6
-ifim=$6
-#echo 'ifng'$ifng
-#if [ $ifng = "-ng" ] ;then
-#    gg=""
-#fi
+ifng=$6
+ifim=$7
+echo 'ifng'$ifng
+if [ $ifng = "-ng" ] ;then
+    gg=""
+fi
 
 # 测试模型自身+迁移的效果
 for config in ${A[@]}
