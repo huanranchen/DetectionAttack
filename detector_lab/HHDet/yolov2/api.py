@@ -31,12 +31,13 @@ class HHYolov2(DetectorBase):
         all_boxes, obj_confs, cls_max_ids = get_region_boxes(detections_with_grad, self.conf_thres,
                                             self.detector.num_classes, self.detector.anchors,
                                             self.detector.num_anchors)
+        all_boxes = inter_nms(all_boxes, conf_thres=self.conf_thres, iou_thres=self.iou_thres)
+
         obj_confs = obj_confs.view(batch_tensor.size(0), -1)
         cls_max_ids = cls_max_ids.view(batch_tensor.size(0), -1)
-
         bbox_array = []
         for boxes in all_boxes:
-            boxes = torch.cuda.FloatTensor(boxes)
+            # boxes = torch.cuda.FloatTensor(boxes)
             # pad_size = self.max_n_labels - len(boxes)
             # boxes = F.pad(boxes, (0, 0, 0, pad_size), value=0).unsqueeze(0)
             if len(boxes):
@@ -44,8 +45,7 @@ class HHYolov2(DetectorBase):
             # print(boxes.shape)
             bbox_array.append(boxes)
             # bbox_array = torch.vstack((bbox_array, boxes)) if bbox_array is not None else boxes
-
-        bbox_array = inter_nms(bbox_array, conf_thres=self.conf_thres, iou_thres=self.iou_thres)
         # print(bbox_array)
+
         output = {'bbox_array': bbox_array, 'obj_confs': obj_confs, "cls_max_ids": cls_max_ids}
         return output

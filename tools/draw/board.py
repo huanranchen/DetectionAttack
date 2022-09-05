@@ -40,7 +40,7 @@ class VisualBoard:
         self.writer.add_scalar('total_loss/ep_loss', ep_loss.detach().cpu().numpy(), self.iter)
 
     def write_loss(self, loss, det_loss, tv_loss):
-        self.writer.add_scalar('total_loss/iter_loss', loss.detach().cpu().numpy(), self.iter)
+        self.writer.add_scalar('loss/iter_loss', loss.detach().cpu().numpy(), self.iter)
         self.writer.add_scalar('loss/det_loss', det_loss.detach().cpu().numpy(), self.iter)
         self.writer.add_scalar('loss/tv_loss', tv_loss.detach().cpu().numpy(), self.iter)
 

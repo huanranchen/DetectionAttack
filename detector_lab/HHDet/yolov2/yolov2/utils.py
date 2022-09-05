@@ -96,13 +96,14 @@ def inter_nms(all_predictions, conf_thres=0.25, iou_thres=0.45):
     max_det = 300  # maximum number of detections per image
     out = []
     for predictions in all_predictions:
-        # for each img in batch
+        if type(predictions) is np.ndarray:
+            predictions = torch.from_numpy(predictions).cuda()
+        elif isinstance(predictions, list):
+            predictions = torch.tensor(predictions).cuda()
+
         if predictions.numel() == 0:
             out.append(predictions)
             continue
-
-        if type(predictions) is np.ndarray:
-            predictions = torch.from_numpy(predictions)
 
         if predictions.ndim == 1:
             predictions = predictions.unsqueeze(0)

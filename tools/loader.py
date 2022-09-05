@@ -115,13 +115,13 @@ class DetDataset(Dataset):
         if gate.item() == 0: return im
         subpolicy = [
             # transforms.RandAugment(1, 3),
-            transforms.Pad(int(torch.FloatTensor([0]).uniform_(0, 120))), # Zoom out
+            transforms.Pad(int(torch.FloatTensor([0]).uniform_(60, 120))), # Zoom out
             transforms.CenterCrop(int(self.input_size[0] / 1.5)),  # Zoom in
-            transforms.RandomRotation(20),
-            transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=.5),
-            transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5)),
+            # transforms.RandomRotation(20),
+            transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+            transforms.GaussianBlur(kernel_size=(9, 9), sigma=(0.1, 5)),
             transforms.Grayscale(), # RGB to Gray
-            transforms.AutoAugment(transforms.AutoAugmentPolicy.SVHN) # Random Shift
+            # transforms.AutoAugment(transforms.AutoAugmentPolicy.SVHN) # Random Shift
         ]
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
