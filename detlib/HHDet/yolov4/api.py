@@ -1,8 +1,5 @@
 import sys
 
-import numpy as np
-import torch
-
 from .Pytorch_YOLOv4.tool.utils import *
 from .Pytorch_YOLOv4.tool.torch_utils import *
 from .Pytorch_YOLOv4.tool.darknet2pytorch import Darknet

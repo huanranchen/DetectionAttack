@@ -35,6 +35,7 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 1
   START_LEARNING_RATE: 0.03
+  class_specify: 1
 
   PATCH_ATTACK:
     WIDTH: 300

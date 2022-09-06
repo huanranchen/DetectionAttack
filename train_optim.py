@@ -31,15 +31,14 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     scheduler = scheduler_factory(optimizer)
     detector_attacker.attacker.set_optimizer(optimizer)
 
-    start_index = int(args.patch.split('/')[-1].split('_')[0]) if args.patch is not None else 1
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}', args.save_path)
 
     vlogger = None
     if not args.debugging:
-        vlogger = VisualBoard(optimizer, name=args.board_name, start_iter=start_index)
+        vlogger = VisualBoard(optimizer, name=args.board_name)
         detector_attacker.vlogger = vlogger
-    for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS+1):
+    for epoch in range(1, cfg.ATTACKER.MAX_ITERS+1):
         et0 = time.time()
         ep_loss = 0
         lab = None

@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '3'
+  AUGMENT: '13'
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -14,7 +14,7 @@ DETECTOR:
   NAME: ["YOLOV2"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
-  MODEL_CONFIG: 'detector_lab/HHDet/yolov2/yolov2/config/yolo.cfg'
+  MODEL_CONFIG: 'HHDet/yolov2/yolov2/config/yolo.cfg'
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
@@ -35,6 +35,7 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 1
   START_LEARNING_RATE: 0.03
+
 
   PATCH_ATTACK:
     WIDTH: 300

@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 
 from .PyTorch_YOLOv3.pytorchyolo.models import load_model
 from .PyTorch_YOLOv3.pytorchyolo.utils.utils import rescale_boxes, non_max_suppression

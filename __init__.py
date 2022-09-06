@@ -1,6 +1,6 @@
-from .config import config
 from .tools import *
 
-import os
+import os, sys
+# print(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-print("Project Dir: ", PROJECT_DIR)
+sys.path.append(PROJECT_DIR)

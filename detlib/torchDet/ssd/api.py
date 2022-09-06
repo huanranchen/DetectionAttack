@@ -1,11 +1,9 @@
 import sys
 
 import torch
-import numpy as np
-
 from . import ssd300_vgg16
 from ...base import DetectorBase
-from ..utils import inter_nms
+from .. import inter_nms
 
 
 class TorchSSD(DetectorBase):

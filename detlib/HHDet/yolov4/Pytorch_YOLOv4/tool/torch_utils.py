@@ -12,7 +12,7 @@ import imghdr  # get_image_size
 
 
 # from tool import utils 
-import detector_lab.HHDet.yolov4.Pytorch_YOLOv4.tool.utils
+from . import utils
 
 
 def bbox_ious(boxes1, boxes2, x1y1x2y2=True):

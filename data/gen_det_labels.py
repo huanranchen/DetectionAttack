@@ -10,8 +10,7 @@ PWD = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(PWD)
 sys.path.append(PROJECT_DIR)
 
-from detector_lab import init_detectors
-# from evaluate import UniversalPatchEvaluator
+from detlib import init_detectors
 from tools import ConfigParser
 from tools.loader import DetDataset
 from tools.parser import load_class_names

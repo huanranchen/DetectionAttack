@@ -1,10 +1,10 @@
 import torch
 import numpy as np
 
-from base import BaseAttacker
-from ..tools import FormatConverter, DataTransformer, save_tensor, attach_patch, pad_lab
-from ..tools.adv import PatchManager, PatchRandomApplier
-from ..detector.utils import inter_nms
+from attack.base import BaseAttacker
+from tools import FormatConverter, DataTransformer, save_tensor, attach_patch, pad_lab
+from tools.adv import PatchManager, PatchRandomApplier
+from tools.det_utils import inter_nms
 
 
 class UniversalAttacker(BaseAttacker):
@@ -29,13 +29,15 @@ class UniversalAttacker(BaseAttacker):
         self.patch_obj.init(patch_file)
         # self.universal_patch = self.patch_obj.patch
 
-    def filter_bbox(self, preds, cls_array=None):
+    def filter_bbox(self, preds, target_cls=None):
         # TODO: To be a more universal op
-        # print(preds)
+        if len(preds) == 0:
+            return preds
         # if cls_array is None: cls_array = preds[:, -1]
         # filt = [cls in self.cfg.attack_list for cls in cls_array]
         # preds = preds[filt]
-        return preds[preds[:, -1] == self.cfg.attack_cls]
+        target_cls = self.cfg.attack_cls if target_cls is None else target_cls
+        return preds[preds[:, -1] == target_cls]
 
     def get_patch_pos_batch(self, all_preds):
         # get all bboxs of setted target. If none target bbox is got, return has_target=False
@@ -70,7 +72,7 @@ class UniversalAttacker(BaseAttacker):
 
         return img_tensor
 
-    def process_merge(self, all_preds, preds):
+    def merge_batch(self, all_preds, preds):
         if all_preds is None:
             return preds
         for i, (all_pred, pred) in enumerate(zip(all_preds, preds)):
@@ -87,29 +89,20 @@ class UniversalAttacker(BaseAttacker):
         all_preds = None
         for detector in detectors:
             preds = detector(img_batch)['bbox_array']
-            all_preds = self.process_merge(all_preds, preds)
+            all_preds = self.merge_batch(all_preds, preds)
 
         # nms among detectors
         if len(detectors) > 1: all_preds = inter_nms(all_preds)
         return all_preds
 
     def attack(self, img_tensor_batch, mode='sequential'):
-        if mode == 'optim':
+        detectors_loss = []
+        if mode == 'optim' or mode == 'sequential':
             for detector in self.detectors:
                 loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
-        else:
-            if mode == 'sequential':
-                loss = self.sequential_attack(img_tensor_batch)
-            elif mode == 'parallel':
-                loss = self.parallel_attack(img_tensor_batch)
-        return loss
-
-    def sequential_attack(self, img_tensor_batch):
-        detectors_loss = []
-        for detector in self.detectors:
-            loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
-            # print('sequential attack: ', self.universal_patch.is_leaf)
-            detectors_loss.append(loss)
+                detectors_loss.append(loss)
+        elif mode == 'parallel':
+            detectors_loss = self.parallel_attack(img_tensor_batch)
         return torch.tensor(detectors_loss).mean()
 
     def parallel_attack(self, img_tensor_batch):
@@ -121,4 +114,4 @@ class UniversalAttacker(BaseAttacker):
             patch_updates += patch_update
             detectors_loss.append(loss)
         self.patch_obj.update_((self.universal_patch + patch_updates / len(self.detectors)).detach_())
-        return torch.tensor(detectors_loss).mean()
+        return detectors_loss

@@ -1,7 +1,5 @@
 import sys
 import torch
-import numpy as np
-import torch.nn.functional as F
 
 from .yolov2.darknet import Darknet
 from .yolov2.utils import get_region_boxes, inter_nms

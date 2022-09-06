@@ -2,7 +2,7 @@ import torch
 
 from . import faster_rcnn, fasterrcnn_resnet50_fpn
 from ...base import DetectorBase
-from ..utils import inter_nms
+from .. import inter_nms
 
 
 class TorchFasterRCNN(DetectorBase):

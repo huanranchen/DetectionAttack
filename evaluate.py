@@ -6,7 +6,7 @@ import torch
 import shutil
 from tqdm import tqdm
 
-from BaseDetectionAttack.attack.attacker import UniversalDetectorAttacker
+from attack.attacker import UniversalAttacker
 from data.gen_det_labels import Utils
 from tools.parser import ConfigParser
 from tools.eva.main import compute_mAP
@@ -48,7 +48,7 @@ def dir_check(save_path, child_paths, rebuild=False):
             buid(ipath, rebuild)
 
 
-class UniversalPatchEvaluator(UniversalDetectorAttacker):
+class UniversalPatchEvaluator(UniversalAttacker):
     def __init__(self, cfg, patch_path=None,
                  device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
                  ):
@@ -128,7 +128,6 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     data_loader = dataLoader(args.data_root, input_size=cfg.DETECTOR.INPUT_SIZE,
                              batch_size=batch_size, is_augment=False, pin_memory=True)
     save_path = args.save
-    aspect_ratio = args.aspect_ratio if hasattr(args, 'aspect_ratio') else None
     accs_total = {}
     for detector in evaluator.detectors: accs_total[detector.name] = []
     # print(evaluator.detectors)
@@ -150,11 +149,8 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 fp = os.path.join(tmp_path, paths['det-res'])
                 utils.save_label(all_preds[0], fp, img_name, save_conf=True, rescale=True)
 
-            target_nums_clean = evaluator.get_patch_pos_batch(all_preds, aspect_ratio=aspect_ratio)[0]
+            target_nums_clean = evaluator.get_patch_pos_batch(all_preds)[0]
             adv_img_tensor = evaluator.uap_apply(img_tensor_batch, gates=gates)
-
-            if hasattr(args, 'stimulate_uint8_loss') and args.stimulate_uint8_loss:
-                adv_img_tensor = detector.int8_precision_loss(adv_img_tensor)
 
             preds = detector(adv_img_tensor)['bbox_array']
             if hasattr(args, 'save_imgs') and args.save_imgs:

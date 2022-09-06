@@ -1,13 +1,13 @@
 import os
 
-from ..detector.utils import init_detectors
-from method.bim import LinfBIMAttack
-from method.mim import LinfMIMAttack
-from method.pgd import LinfPGDAttack
-from method.optim import OptimAttacker
-from ..tools.loss import *
-from ..tools.det_utils import plot_boxes_cv2, scale_area_ratio
-from ..tools import FormatConverter
+from detlib.utils import init_detectors
+from attack.method.bim import LinfBIMAttack
+from attack.method.mim import LinfMIMAttack
+from attack.method.pgd import LinfPGDAttack
+from attack.method.optim import OptimAttacker
+from tools.loss import *
+from tools.det_utils import plot_boxes_cv2, scale_area_ratio
+from tools import FormatConverter
 
 
 attacker_dict = {
