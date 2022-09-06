@@ -1,8 +1,6 @@
 import torch
-import os
 import numpy as np
 from tqdm import tqdm
-from detector_lab.utils import inter_nms
 
 import time
 from tools.draw import VisualBoard
@@ -10,15 +8,7 @@ from tools.loader import dataLoader
 from tools import save_tensor
 
 
-def modelDDP(detector_attacker, args):
-    for ind, detector in enumerate(detector_attacker.detectors):
-        detector_attacker.detectors[ind] = torch.nn.parallel.DistributedDataParallel(detector,
-                                                                                     device_ids=[args.local_rank],
-                                                                                     output_device=args.local_rank,
-                                                                                     find_unused_parameters=True)
-
-
-def logger(cfg, args, attack_confs_thresh=""):
+def logger(cfg, args):
     import time
     localtime = time.asctime(time.localtime(time.time()))
     print("                        time : ", localtime)
@@ -33,7 +23,6 @@ def logger(cfg, args, attack_confs_thresh=""):
     print('--------------------------ATTACKER---------------------------')
     print('               Attack method : ', args.attack_method)
     print('                   Loss func : ', cfg.ATTACKER.LOSS_FUNC)
-    print("         Attack confs thresh : ", attack_confs_thresh)
     print("                  Patch size : ",
           '[' + str(cfg.ATTACKER.PATCH_ATTACK.HEIGHT) + ', ' + str(cfg.ATTACKER.PATCH_ATTACK.WIDTH) + ']')
     print('               Attack method : ', cfg.ATTACKER.METHOD)
@@ -55,10 +44,12 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
 
     losses = []
     save_tensor(detector_attacker.universal_patch, f'{start_index - 1}_{save_name}', args.save_path + '/patch/')
+
     vlogger = None
     if not args.debugging:
         vlogger = VisualBoard(name=args.board_name, start_iter=start_index)
         detector_attacker.vlogger = vlogger
+
     for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS + 1):
         et0 = time.time()
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
@@ -87,7 +78,7 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
 
 if __name__ == '__main__':
     from tools.parser import ConfigParser
-    from attackAPI import UniversalDetectorAttacker
+    from BaseDetectionAttack.attack.attacker import UniversalDetectorAttacker
     import argparse
 
     parser = argparse.ArgumentParser()

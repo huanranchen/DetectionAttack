@@ -24,16 +24,15 @@ DETECTOR:
       MODEL_CONFIG: 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-chr.cfg' # rewrite model cfg when shake drop
 
 ATTACKER:
-  METHOD: "optim"
+  METHOD: "pgd"
   EPSILON: 255 # 0-255
   MAX_ITERS: 500
-  ITER_STEP: 1
-
+  ITER_STEP: 5
   STEP_SIZE: 0.005
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
-  LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv]
-  tv_eta: 2.5
+  LOSS_FUNC: "descend-mse" # [null, descend-mse, ascend-mse]
+  tv_eta: 0
   obj_eta: 1
   START_LEARNING_RATE: 0.03
 

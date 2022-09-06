@@ -29,22 +29,15 @@ class Utils:
         s = []
         for pred in preds:
             # N*6: x1, y1, x2, y2, conf, cls
+            if rescale:
+                pred[:4] *= ori_size
             x1, y1, x2, y2, conf, cls = pred
             cls = self.class_names[int(cls)].replace(' ', '')
-
-            if rescale:
-                tmp = [cls, float(x1) * ori_size, float(y1) * ori_size, float(x2) * ori_size,
-                       float(y2) * ori_size]
-            else:
-                tmp = [cls, float(x1), float(y1), float(x2), float(y2)]
-
-            if save_conf: tmp.insert(1, float(conf))
-
+            tmp = [cls, float(x1), float(y1), float(x2), float(y2)]
+            if save_conf:
+                tmp.insert(1, float(conf))
             tmp = [str(i) for i in tmp]
             s.append(' '.join(tmp))
-        if 'crop_000026' in save_to:
-            print(save_to)
-            print('\n'.join(s))
         with open(save_to, 'w') as f:
             f.write('\n'.join(s))
 

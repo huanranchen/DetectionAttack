@@ -1,8 +1,6 @@
 import torch
-import os
 import numpy as np
 from tqdm import tqdm
-from detector_lab.utils import inter_nms
 
 import time
 from tools.draw import VisualBoard
@@ -84,7 +82,7 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
 
 if __name__ == '__main__':
     from tools.parser import ConfigParser
-    from attackAPI import UniversalDetectorAttacker
+    from attack.attacker import UniversalAttacker
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -106,6 +104,6 @@ if __name__ == '__main__':
     print('                          cfg :', args.cfg)
 
     cfg = ConfigParser(args.cfg)
-    detector_attacker = UniversalDetectorAttacker(cfg, device)
+    detector_attacker = UniversalAttacker(cfg, device)
     cfg.show_class_label(cfg.attack_list)
     attack(cfg, detector_attacker, save_patch_name, args)

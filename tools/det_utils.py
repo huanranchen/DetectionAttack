@@ -6,7 +6,14 @@ import math
 import numpy as np
 import torch
 import torchvision
-from torchvision import transforms
+import torch.nn.functional as F
+
+
+def pad_lab(lab, max_n, value=0):
+    pad_size = max_n - len(lab)
+    if pad_size <= 0:
+        return lab[:max_n]
+    return F.pad(lab, (0, 0, 0, pad_size), value=value)
 
 
 def inter_nms(all_predictions, conf_thres=0.25, iou_thres=0.45):
@@ -167,6 +174,7 @@ def compute_aspect_ratio(x1, y1, x2, y2, scale, aspect_ratio):
     target_y = math.sqrt(bw * bh * scale / aspect_ratio)
     target_x = aspect_ratio * target_y
     return target_x / 2, target_y / 2
+
 
 def scale_area_ratio(x1, y1, x2, y2, image_height, image_width,
                      scale, aspect_ratio):

@@ -1,7 +1,7 @@
 #custom
 ../bak/evaluation/
 ../faster_rcnn/pytorch_faster_rcnn/
-detector_lab/weights/
+detector/weights/
 *.weights
 data/inria/
 results/

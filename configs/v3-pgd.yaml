@@ -29,7 +29,7 @@ ATTACKER:
   STEP_SIZE: 0.005
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
-  LOSS_FUNC: "descend-mse" # [null, descend-mse, ascend-mse]
+  LOSS_FUNC: "descend-mse" # [null, descend-mse, ascend-mse, obj, obj-tv]
   tv_eta: 0
   obj_eta: 1
   START_LEARNING_RATE: 0.03

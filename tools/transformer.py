@@ -50,7 +50,7 @@ class DataTransformer(torch.nn.Module):
         if gate == 0:
             return img_tensor
 
-        choice = int(torch.FloatTensor([0]).uniform_(0, 2.999))
+        choice = int(torch.FloatTensor([0]).uniform_(0, 3.999))
         img_tensor_t = img_tensor
         if choice == 0:
             img_tensor_t = K.RandomGaussianNoise(mean=0., std=.01, p=.5)(img_tensor)
@@ -63,8 +63,8 @@ class DataTransformer(torch.nn.Module):
         elif choice == 2:
             # img_tensor_t = K.RandomRotation(self.rand_rotate_angle)(img_tensor)
             img_tensor_t = self.rand_affine_matrix(img_tensor)
-        # elif choice == 3:
-        #     K.RandomGrayscale(p=0.5)
+        elif choice == 3:
+            img_tensor_t = K.RandomGrayscale(p=1)(img_tensor)
 
         # torch.clamp_(img_tensor_t, min=0, max=1)
         return img_tensor_t

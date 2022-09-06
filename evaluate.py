@@ -1,19 +1,15 @@
 import argparse
 import os
-import sys
 
-import cv2
 import numpy as np
 import torch
 import shutil
 from tqdm import tqdm
 
-from attackAPI import UniversalDetectorAttacker
+from BaseDetectionAttack.attack.attacker import UniversalDetectorAttacker
 from data.gen_det_labels import Utils
 from tools.parser import ConfigParser
-from detector_lab.utils import inter_nms
 from tools.eva.main import compute_mAP
-from tools import save_tensor
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -123,7 +119,7 @@ def ignore_class(args, cfg):
 
 def generate_labels(evaluator, cfg, args, save_label=False):
     from tools.loader import dataLoader
-
+    gates = {'jitter': False, 'median_pool': True, 'rotate': False, 'shift': False, 'p9_scale': True}
     dir_check(args.save, cfg.DETECTOR.NAME, rebuild=False)
     utils = Utils(cfg)
     batch_size = 1
@@ -131,7 +127,6 @@ def generate_labels(evaluator, cfg, args, save_label=False):
 
     data_loader = dataLoader(args.data_root, input_size=cfg.DETECTOR.INPUT_SIZE,
                              batch_size=batch_size, is_augment=False, pin_memory=True)
-    gates = {'jitter': False, 'median_pool': False, 'rotate': False, 'shift': False, 'p9_scale': False}
     save_path = args.save
     aspect_ratio = args.aspect_ratio if hasattr(args, 'aspect_ratio') else None
     accs_total = {}
@@ -236,7 +231,7 @@ def eva(args, cfg):
         os.system(cmd)
 
         # (det-results)take clear detection results as GT label: attack results as detections
-        print('ground truth     :', os.path.join(path, paths['det-lab']))
+        # print('ground truth     :', os.path.join(path, paths['det-lab']))
         det_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
                                 gt_path=paths['det-lab'], res_prefix='det', quiet=quiet)
         det_mAPs[detector.name] = round(det_mAP*100, 2)

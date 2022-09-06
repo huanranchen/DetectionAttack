@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '32'
+  AUGMENT: '3'
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -39,6 +39,6 @@ ATTACKER:
   PATCH_ATTACK:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.13
+    SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

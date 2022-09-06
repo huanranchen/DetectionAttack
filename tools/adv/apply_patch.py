@@ -50,7 +50,7 @@ class PatchTransformer(nn.Module):
 
         # Apply contrast/brightness/noise, clamp
         x = contrast * x + brightness + noise
-        x = torch.clamp(x, 0.000001, 0.99999)
+        # x = torch.clamp(x, 0.000001, 0.99999)
         return x
 
     def forward(self, adv_patch_batch, bboxes_batch, patch_ori_size, rand_rotate_gate=True, rand_shift_gate=False, p9_scale=True):
@@ -180,6 +180,7 @@ class PatchRandomApplier(nn.Module):
         adv_batch = adv_batch.expand(batch_size, lab_len, -1, -1, -1) # [batch_size, lab_len, 3, N, N]
         if gates['jitter']:
             adv_batch = self.patch_transformer.random_jitter(adv_batch)
+        adv_batch = torch.clamp(adv_batch, 0.000001, 0.99999)
         adv_batch = padding(adv_batch)
         adv_batch_t = self.patch_transformer(adv_batch, bboxes_batch, patch_ori_size,
                                              rand_rotate_gate=gates['rotate'],

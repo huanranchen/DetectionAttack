@@ -29,20 +29,18 @@ class ConfigParser:
         self.config_file = config_file
         # self.all_class_names = []
         self.attack_list = []
-
         self.load_config()
         self.all_class_names = load_class_names(
             os.path.join(PROJECT_DIR, self.DATA.CLASS_NAME_FILE))
-        # print("all cls num      : ", len(self.all_class_names))
         self.get_attack_list()
         self.num_classes = len(self.all_class_names)
-        # self.empty_class = get_empty_class(self.all_class_names)
-        # print(self.empty_class)
+
+        # TODO: To be more universal. This is a temp var(Attack single cls).
+        self.attack_cls = int(self.ATTACKER.ATTACK_CLASS)
 
     def get_attack_list(self):
         self.attack_list = self.rectify_class_list(self.ATTACKER.ATTACK_CLASS, dtype='int')
         # print('Attack class list from config file: ', self.attack_list)
-
 
     def rectify_class_list(self, class_str_list, dtype='int', split_str = ':'):
         class_list = []
@@ -110,20 +108,13 @@ class ConfigParser:
         # print('Class names: ', names)
         return names
 
-
     def load_config(self):
         cfg = yaml.load(open(self.config_file), Loader=yaml.FullLoader)
-        # print(cfg)
-        # cfg = obj(cfg)
-        # print('config: ', cfg)
         for a, b in cfg.items():
             if isinstance(b, (list, tuple)):
                setattr(self, a, [obj(x) if isinstance(x, dict) else x for x in b])
             else:
                setattr(self, a, obj(b) if isinstance(b, dict) else b)
-            # setattr(self, name, value)
-        # print('-------', cfg)
-        # print(cfg.ATTACKER.ATTACK_CLASS)
 
 
 def merge_dict_by_key(dict_s, dict_d):
