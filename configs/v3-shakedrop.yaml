@@ -26,12 +26,13 @@ DETECTOR:
 ATTACKER:
   METHOD: "pgd"
   EPSILON: 255 # 0-255
-  MAX_EPOCH: 500
-  ITER_STEP: 5
+  MAX_ITERS: 5000
+  ITER_STEP: 1
+
   STEP_SIZE: 0.005
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
-  LOSS_FUNC: "descend-mse" # [null, descend-mse, ascend-mse]
+  LOSS_FUNC: "descend-mse" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv]
   tv_eta: 0
   obj_eta: 1
   START_LEARNING_RATE: 0.03
