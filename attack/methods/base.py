@@ -36,7 +36,6 @@ class BaseAttacker(ABC):
 
     def logger(self, detector, adv_tensor_batch, bboxes, loss_dict):
         vlogger = self.detector_attacker.vlogger
-        print(vlogger.iter, vlogger.iter % 5)
         if vlogger and vlogger.iter % 500 == 0:
             filter_box = self.detector_attacker.filter_bbox
             vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
