@@ -61,6 +61,9 @@ class BaseAttacker(object):
         return plot_box
 
     def patch_pos(self, preds, aspect_ratio=-1):
+        '''
+        give predictions, return bounding boxs
+        '''
         height, width = self.cfg.DETECTOR.INPUT_SIZE
         scale_rate = self.cfg.ATTACKER.PATCH_ATTACK.SCALE
         patch_boxs = []
@@ -91,6 +94,9 @@ class BaseAttacker(object):
             self.patch_boxes[i].append(patch)  # x1, y1, x2, y2, patch
 
     def apply_patches(self, img_tensor, detector, is_normalize=True):
+        '''
+        useless. We use ramdom patch applier to achieve this goal
+        '''
         for i in range(len(self.patch_boxes)):
             p_x1, p_y1, p_x2, p_y2 = self.patch_boxes[i][:4]
             if is_normalize:

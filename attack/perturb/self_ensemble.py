@@ -1,8 +1,11 @@
 import torch
 from torch.autograd import Variable
 
+p_drop = 0.5
+alpha_range = [0, 2]
 
 class ShakeDropFunction(torch.autograd.Function):
+
     '''
     和普通的shakedrop不同。因为一般模型训练时不带shakedrop，因此不乘以期望0.5.
     我们可以把这种情况看成期望是1，
@@ -14,8 +17,11 @@ class ShakeDropFunction(torch.autograd.Function):
     you can modified alpha range, and keep the mean of alpha range = 1 please
     the reason is same with above
     '''
+
+
+
     @staticmethod
-    def forward(ctx, x, training=True, p_drop=0.5, alpha_range=[0, 2]):
+    def forward(ctx, x, training=True,):
         '''
         :param ctx:
         :param x:
@@ -37,7 +43,7 @@ class ShakeDropFunction(torch.autograd.Function):
     def backward(ctx, grad_output):
         gate = ctx.saved_tensors[0]
         if gate.item() == 0:
-            beta = torch.cuda.FloatTensor(grad_output.size(0)).uniform_(0, 2)
+            beta = torch.cuda.FloatTensor(grad_output.size(0)).uniform_(*alpha_range)
             beta = beta.view(beta.size(0), 1, 1, 1).expand_as(grad_output)
             beta = Variable(beta)
             return beta * grad_output, None, None, None
