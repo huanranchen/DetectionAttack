@@ -2,15 +2,15 @@ import torch
 import numpy as np
 
 from attack.base import BaseAttacker
-from tools import FormatConverter, DataTransformer, save_tensor, attach_patch, pad_lab
-from tools.adv import PatchManager, PatchRandomApplier
+from tools import DataTransformer, pad_lab
+from attack.uap import PatchManager, PatchRandomApplier
 from tools.det_utils import inter_nms
 
 
 class UniversalAttacker(BaseAttacker):
-    '''
+    """
     An attacker agent to coordinate the detect & base attack methods for universal attacks.
-    '''
+    """
     def __init__(self, cfg, device):
         super().__init__(cfg, device)
         self.vlogger = None
@@ -30,7 +30,7 @@ class UniversalAttacker(BaseAttacker):
         # self.universal_patch = self.patch_obj.patch
 
     def filter_bbox(self, preds, target_cls=None):
-        # TODO: To be a more universal op
+        # FIXME: To be a more universal op fn
         if len(preds) == 0:
             return preds
         # if cls_array is None: cls_array = preds[:, -1]

@@ -28,7 +28,7 @@ class BaseAttacker(ABC):
         self.norm = norm
         self.min_epsilon = 0.
         self.max_epsilon = cfg.EPSILON / 255.
-        self.max_iters = cfg.MAX_ITERS
+        self.max_iters = cfg.MAX_EPOCH
         self.iter_step = cfg.ITER_STEP
         self.step_size = cfg.STEP_SIZE
         self.class_id = cfg.TARGET_CLASS

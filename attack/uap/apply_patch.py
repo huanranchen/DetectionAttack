@@ -80,7 +80,8 @@ class PatchTransformer(nn.Module):
         bh *= adv_patch_batch.size(-2)
         # p9_scale = False
         if p9_scale:
-            target_size = torch.sqrt(((bw.mul(0.2)) ** 2) + ((bh.mul(0.2)) ** 2)).view(bboxes_size)
+            patch_scale = 0.2
+            target_size = patch_scale * torch.sqrt((bw ** 2) + (bh ** 2)).view(bboxes_size)
         else:
             target_size = torch.sqrt(bw * bh * self.scale_rate).view(bboxes_size)  # [0, 1]
         scale = target_size / patch_ori_size

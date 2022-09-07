@@ -5,9 +5,10 @@ import numpy as np
 from tqdm import tqdm
 
 from tools import save_tensor
-from tools.draw import VisualBoard
+from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from train_pgd import logger
+from tools.solver import Plateau_lr_scheduler, Warmup_lr_scheduler
 
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
@@ -23,22 +24,17 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     detector_attacker.gates = {'jitter': True, 'median_pool': True, 'rotate': True,
                                'shift': False, 'p9_scale': True}
     p_obj = detector_attacker.patch_obj.patch
-    p_obj.requires_grad = True
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
 
-    from torch import optim
-    scheduler_factory = lambda x: optim.lr_scheduler.ReduceLROnPlateau(x, 'min', patience=100)
-    scheduler = scheduler_factory(optimizer)
+    scheduler = Warmup_lr_scheduler((300, 400), optimizer)
     detector_attacker.attacker.set_optimizer(optimizer)
-
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}', args.save_path)
-
     vlogger = None
     if not args.debugging:
         vlogger = VisualBoard(optimizer, name=args.board_name)
         detector_attacker.vlogger = vlogger
-    for epoch in range(1, cfg.ATTACKER.MAX_ITERS+1):
+    for epoch in range(1, cfg.ATTACKER.MAX_EPOCH+1):
         et0 = time.time()
         ep_loss = 0
         lab = None

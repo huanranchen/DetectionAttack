@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '13'
+  AUGMENT: '3'
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -25,7 +25,7 @@ DETECTOR:
 ATTACKER:
   METHOD: "optim"
   EPSILON: 255 # 0-255
-  MAX_ITERS: 1000
+  MAX_EPOCH: 1000
   ITER_STEP: 1
 
   STEP_SIZE: 0.005
@@ -34,7 +34,7 @@ ATTACKER:
   LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse]
   tv_eta: 2.5
   obj_eta: 1
-  START_LEARNING_RATE: 0.03
+  START_LEARNING_RATE: 0.1
 
 
   PATCH_ATTACK:

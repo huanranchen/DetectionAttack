@@ -28,7 +28,7 @@ class TVLoss(nn.Module):
         return tv_loss
 
     @staticmethod
-    def compute(adv_patch):
+    def smooth(adv_patch):
         # bereken de total variation van de adv_patch
         tvcomp1 = torch.sum(torch.abs(adv_patch[:, :, 1:] - adv_patch[:, :, :-1] + 0.000001), 0)
         tvcomp1 = torch.sum(torch.sum(tvcomp1, 0), 0)
@@ -40,7 +40,7 @@ class TVLoss(nn.Module):
 
 def obj_tv_loss(**kwargs):
     confs = kwargs['confs']; patch = kwargs['patch']
-    tv_loss = TVLoss.compute(patch)
+    tv_loss = TVLoss.smooth(patch)
     obj_loss = torch.mean(confs)
     loss = {'tv_loss': tv_loss, 'obj_loss': obj_loss}
     return loss

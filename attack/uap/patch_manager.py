@@ -3,7 +3,7 @@ import torch
 import cv2
 from PIL import Image
 
-from ..convertor import FormatConverter
+from tools.convertor import FormatConverter
 
 
 class PatchManager:

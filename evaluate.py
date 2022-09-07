@@ -9,7 +9,7 @@ from tqdm import tqdm
 from attack.attacker import UniversalAttacker
 from data.gen_det_labels import Utils
 from tools.parser import ConfigParser
-from tools.eva.main import compute_mAP
+from tools.metrics.main import compute_mAP
 
 import warnings
 warnings.filterwarnings('ignore')

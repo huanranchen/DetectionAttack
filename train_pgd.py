@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 
 import time
-from tools.draw import VisualBoard
+from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools import save_tensor
 
@@ -56,7 +56,7 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
     if not args.debugging:
         vlogger = VisualBoard(name=args.board_name, start_iter=start_index)
         detector_attacker.vlogger = vlogger
-    for epoch in range(start_index, cfg.ATTACKER.MAX_ITERS+1):
+    for epoch in range(start_index, cfg.ATTACKER.MAX_EPOCH+1):
         et0 = time.time()
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
             now_step = get_iter(epoch, index)

@@ -1,5 +1,5 @@
 import os
-from BaseDetectionAttack.tools.draw.landscape.D2Landscape import D2Landscape
+from BaseDetectionAttack.tools.plot.landscape.D2Landscape import D2Landscape
 import torch
 import cv2
 import numpy as np

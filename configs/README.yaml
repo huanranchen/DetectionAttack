@@ -24,7 +24,7 @@ DETECTOR:
 ATTACKER:
   METHOD: "pgd" # attack algorithm: ['bim', 'pgd', 'mim']
   EPSILON: 255 # 0-255
-  MAX_ITERS: 1000 # N Epoches
+  MAX_EPOCH: 1000 # N Epoches
   ITER_STEP: 5 # Attack steps in every mini-batch
   STEP_SIZE: 0.005 # update rate. e.g. FGSM: step size * grad sign
   TARGET_CLASS: 0 # targeted attack

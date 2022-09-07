@@ -11,9 +11,7 @@ from natsort import natsorted
 
 
 class DetDatasetLab(Dataset):
-    '''This is a Dataset with data label loaded.
-
-    '''
+    """This is a Dataset with data label loaded."""
     def __init__(self, images_path, lab_path, input_size):
         self.im_path = images_path
         self.lab_path = lab_path
@@ -26,12 +24,12 @@ class DetDatasetLab(Dataset):
         ])
 
     def pad_im(self, img, lab):
-        '''Padding the img to a square-shape and rescale the labels.
+        """Padding the img to a square-shape and rescale the labels.
 
         :param img:
         :param lab:
         :return:
-        '''
+        """
         w, h = img.size
         if w == h:
             return img
@@ -52,12 +50,12 @@ class DetDatasetLab(Dataset):
 
         return padded_img, lab
 
-    def pad_lab(self, lab):
-        '''Padding the labels to the same length(self.max_n_labels) for batch loading.
+    def batchify_lab(self, lab):
+        """Padding to batchify the lab in length of (self.max_n_labels).
 
         :param lab:
         :return:
-        '''
+        """
         lab = torch.cat(
             (lab[:, 1:], torch.ones(len(lab)).unsqueeze(1), torch.zeros(len(lab)).unsqueeze(1)),
             1
@@ -84,7 +82,7 @@ class DetDatasetLab(Dataset):
         image = Image.open(im_path).convert('RGB')
         image, lab = self.pad_im(image, lab)
 
-        return self.ToTensor(image), self.pad_lab(lab)
+        return self.ToTensor(image), self.batchify_lab(lab)
 
     def __len__(self):
         return len(self.labs)
@@ -105,12 +103,12 @@ class DetDataset(Dataset):
         ])
 
     def transform_fn(self, im, p_aug=0.5):
-        '''This is for random data augmentation of p_aug probability
+        """This is for random data augmentation of p_aug probability
 
         :param im:
-        :param p_aug:
+        :param p_aug: probability to augment data.
         :return:
-        '''
+        """
         gate = torch.tensor([0]).bernoulli_(1 - p_aug)
         if gate.item() == 0: return im
         subpolicy = [
@@ -131,11 +129,11 @@ class DetDataset(Dataset):
         return im_t
 
     def pad_scale(self, img):
-        '''Padding the img to a square-shape to avoid stretch from the Resize op.
+        """Padding the img to a square-shape to avoid stretch from the Resize op.
 
         :param img:
         :return:
-        '''
+        """
         w, h = img.size
         if w == h:
             return img
@@ -165,11 +163,11 @@ class DetDataset(Dataset):
 
 
 def check_valid(name: str):
-    '''Check if the file name is of a valid image format.
+    """To check if the file name is of a valid image format.
 
     :param name: file name
     :return: Boolean
-    '''
+    """
     return name.endswith(('.bmp', '.dib', '.png', '.jpg', '.jpeg', '.pbm', '.pgm', '.ppm', '.tif', '.tiff'))
 
 
@@ -187,13 +185,14 @@ def dataLoader(data_root, lab_root=None, input_size=None, batch_size=1, is_augme
 
 
 def read_img_np_batch(names, input_size):
-    '''Read (RGB unit8) numpy img batch from names list and rescale into input_size
+    """Not used now.
+    Read (RGB unit8) numpy img batch from names list and rescale into input_size
     This is now replaced by the DataLoader and Dataset for a faster I/O.
 
     :param names:
     :param input_size:
     :return: numpy, uint8, RGB, [0, 255], NCHW
-    '''
+    """
     img_numpy_batch = None
     for name in names:
         if not check_valid(name):

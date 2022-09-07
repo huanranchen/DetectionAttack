@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 
 from tools.parser import ConfigParser
-from tools.loss import temp_attack_loss
+from tools.solver.loss import temp_attack_loss
 from evaluate import UniversalPatchEvaluator
 
 from tools.loader import detDataSet
@@ -81,6 +81,6 @@ class GetLoss():
 
 
 if __name__ == '__main__':
-    from BaseDetectionAttack.tools.draw.Landscape import train_valid_2dlandscape
+    from BaseDetectionAttack.tools.plot.Landscape import train_valid_2dlandscape
 
     train_valid_2dlandscape()
