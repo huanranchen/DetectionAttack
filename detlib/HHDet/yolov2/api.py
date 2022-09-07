@@ -29,8 +29,9 @@ class HHYolov2(DetectorBase):
         all_boxes, obj_confs, cls_max_ids = get_region_boxes(detections_with_grad, self.conf_thres,
                                             self.detector.num_classes, self.detector.anchors,
                                             self.detector.num_anchors)
+        # print(all_boxes[0])
         all_boxes = inter_nms(all_boxes, conf_thres=self.conf_thres, iou_thres=self.iou_thres)
-
+        # print(all_boxes[0])
         obj_confs = obj_confs.view(batch_tensor.size(0), -1)
         cls_max_ids = cls_max_ids.view(batch_tensor.size(0), -1)
         bbox_array = []

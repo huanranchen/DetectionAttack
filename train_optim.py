@@ -26,7 +26,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     p_obj = detector_attacker.patch_obj.patch
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
 
-    scheduler = Warmup_lr_scheduler((300, 400), optimizer)
+    scheduler = Plateau_lr_scheduler(optimizer)
     detector_attacker.attacker.set_optimizer(optimizer)
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}', args.save_path)

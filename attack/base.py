@@ -27,10 +27,10 @@ loss_dict = {
 
 
 class BaseAttacker(object):
-    '''
+    """
     A base attacker agent to coordinate the detect & base attack methods for single instance attacks.
-    TODO: the base class of attackers. But most of the functions in this file is useless.
-    '''
+    TODO: The base class of the attacker. But most of the functions in this file is useless.
+    """
     def __init__(self, cfg, device):
         self.cfg = cfg
         self.device = device
@@ -79,7 +79,6 @@ class BaseAttacker(object):
                 # print('rectify bbox:', [p_x1, p_y1, p_x2, p_y2])
         return patch_boxs
 
-
     def get_patch_pos(self, preds, patch):
         patch_boxs = self.patch_pos(preds, patch)
         self.patch_boxes += patch_boxs
@@ -90,7 +89,6 @@ class BaseAttacker(object):
             p_x1, p_y1, p_x2, p_y2 = self.patch_boxes[i][:4]
             patch = np.random.randint(low=0, high=255, size=(p_y2 - p_y1, p_x2 - p_x1, 3))
             self.patch_boxes[i].append(patch)  # x1, y1, x2, y2, patch
-
 
     def apply_patches(self, img_tensor, detector, is_normalize=True):
         for i in range(len(self.patch_boxes)):

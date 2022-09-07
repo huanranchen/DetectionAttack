@@ -1,7 +1,9 @@
 import torch
 import torch.nn.functional as F
 
-
+"""
+TODO: This file is not used now.
+"""
 def attach_patch(img_tensor, adv_patch, all_preds, cfg):
     height, width = cfg.DETECTOR.INPUT_SIZE
     scale = cfg.ATTACKER.PATCH_ATTACK.SCALE

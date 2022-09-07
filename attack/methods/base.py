@@ -36,7 +36,8 @@ class BaseAttacker(ABC):
 
     def logger(self, detector, adv_tensor_batch, bboxes, loss_dict):
         vlogger = self.detector_attacker.vlogger
-        if vlogger and vlogger.iter % 500:
+        print(vlogger.iter, vlogger.iter % 5)
+        if vlogger and vlogger.iter % 500 == 0:
             filter_box = self.detector_attacker.filter_bbox
             vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
             vlogger.write_loss(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
@@ -55,6 +56,9 @@ class BaseAttacker(ABC):
                 # TODO: only support filtering a single cls now
                 attack_cls = int(self.cfg.ATTACK_CLASS)
                 confs = torch.cat(([conf[cls==attack_cls].max(dim=-1, keepdim=True)[0] for conf, cls in zip(confs, cls_array)]))
+            elif hasattr(self.cfg, 'topx_conf'):
+                confs = torch.sort(confs, dim=-1, descending=True)[0][:, :self.cfg.topx_conf]
+                confs = torch.mean(confs, dim=-1)
             else:
                 # only attack the max confidence
                 confs = confs.max(dim=-1, keepdim=True)[0]
