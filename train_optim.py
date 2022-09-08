@@ -13,7 +13,7 @@ from tools.solver import Plateau_lr_scheduler, Warmup_lr_scheduler
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
     def get_iter():
-        return (epoch - 1) * len(data_loader) + index * cfg.DETECTOR.BATCH_SIZE
+        return (epoch - 1) * len(data_loader) + index
 
     logger(cfg, args)
     data_sampler = None
@@ -32,7 +32,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     save_tensor(detector_attacker.universal_patch, f'{save_name}', args.save_path)
     vlogger = None
     if not args.debugging:
-        vlogger = VisualBoard(optimizer, name=args.board_name)
+        vlogger = VisualBoard(optimizer, name=args.board_name, new_process=args.new_process)
         detector_attacker.vlogger = vlogger
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH+1):
         et0 = time.time()
@@ -86,6 +86,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
+    parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

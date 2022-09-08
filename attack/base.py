@@ -22,6 +22,7 @@ loss_dict = {
     "ascend-mse": ascend_mse_loss,
     "descend-mse": descend_mse_loss,
     "obj-tv": obj_tv_loss,
+    "mse-obj-tv": obj_mse_tv_loss,
     "obj": obj_loss
 }
 

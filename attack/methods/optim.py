@@ -18,7 +18,7 @@ class OptimAttacker(BaseAttacker):
     def attack_loss(self, confs):
         self.optimizer.zero_grad()
         loss = self.loss_fn(confs=confs, patch=self.detector_attacker.universal_patch[0])
-        if self.cfg.LOSS_FUNC == 'obj-tv':
+        if 'obj-tv' in self.cfg.LOSS_FUNC:
             tv_loss, obj_loss = loss.values()
             tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.tensor(0.1).to(self.device))
             # print(obj_loss)

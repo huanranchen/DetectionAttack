@@ -46,6 +46,14 @@ def obj_tv_loss(**kwargs):
     return loss
 
 
+def obj_mse_tv_loss(**kwargs):
+    confs = kwargs['confs']; patch = kwargs['patch']
+    tv_loss = TVLoss.smooth(patch)
+    obj_loss = descend_mse_loss(confs=confs)
+    loss = {'tv_loss': tv_loss, 'obj_loss': obj_loss}
+    return loss
+
+
 def obj_loss(**kwargs):
     confs = kwargs['confs']
     obj_loss = torch.mean(confs)
@@ -56,18 +64,14 @@ def obj_loss(**kwargs):
 def descend_mse_loss(**kwargs):
     # print(confs.shape)
     confs = kwargs['confs']
-    target = torch.zeros(confs.shape)
-    if confs.is_cuda:
-        target = target.cuda()
+    target = torch.cuda.FloatTensor(confs.shape).fill_(0)
     return torch.nn.MSELoss()(confs, target)
 
 
 def ascend_mse_loss(**kwargs):
     # print(confs.shape)
     confs = kwargs['confs']
-    target = torch.ones(confs.shape)
-    if confs.is_cuda:
-        target = target.cuda()
+    target = torch.cuda.FloatTensor(confs.shape).fill_(1)
     return torch.nn.MSELoss()(confs, target)
 
 
@@ -75,8 +79,7 @@ def attack_loss(det_score, det_labels, cls_scores, class_id, patch):
     disappear_loss = DisappearLoss()
     class_error_loss = ClassErrorLoss()
     tv_loss = TVLoss()
-    return disappear_loss(det_score, det_labels, class_id) + class_error_loss(cls_scores, class_id) - 10 * tv_loss(
-        patch)
+    return disappear_loss(det_score, det_labels, class_id) + class_error_loss(cls_scores, class_id) - 10 * tv_loss(patch)
 
 class DisappearLoss(nn.Module):
 
