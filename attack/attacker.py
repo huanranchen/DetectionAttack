@@ -96,6 +96,9 @@ class UniversalAttacker(BaseAttacker):
         return all_preds
 
     def attack(self, img_tensor_batch, mode='sequential'):
+        '''
+        given batch input, return loss, and optimize patch
+        '''
         detectors_loss = []
         if mode == 'optim' or mode == 'sequential':
             for detector in self.detectors:
