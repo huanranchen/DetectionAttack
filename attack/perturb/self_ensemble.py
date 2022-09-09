@@ -4,9 +4,9 @@ from torch.autograd import Variable
 p_drop = 0.5
 alpha_range = [0, 2]
 
-class ShakeDropFunction(torch.autograd.Function):
 
-    '''
+class ShakeDropFunction(torch.autograd.Function):
+    """
     和普通的shakedrop不同。因为一般模型训练时不带shakedrop，因此不乘以期望0.5.
     我们可以把这种情况看成期望是1，
     forward改法：alpha range改成0,2
@@ -16,9 +16,7 @@ class ShakeDropFunction(torch.autograd.Function):
     if modified, when gate = 1, the return value is not equal to the expectation of input.
     you can modified alpha range, and keep the mean of alpha range = 1 please
     the reason is same with above
-    '''
-
-
+    """
 
     @staticmethod
     def forward(ctx, x, training=True,):
