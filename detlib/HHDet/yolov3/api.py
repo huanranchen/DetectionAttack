@@ -17,7 +17,6 @@ class HHYolov3(DetectorBase):
     
     def load(self, model_weights, detector_config_file=None):
         if self.cfg.PERTURB.GATE == 'shake_drop':
-            detector_config_file = self.cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
             print('Self ensemble! Shake drop model cfg :', detector_config_file)
         self.detector = load_model(model_path=detector_config_file, weights_path=model_weights).to(self.device)
         self.eval()

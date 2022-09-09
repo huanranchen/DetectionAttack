@@ -36,7 +36,7 @@ class BaseAttacker(ABC):
 
     def logger(self, detector, adv_tensor_batch, bboxes, loss_dict):
         vlogger = self.detector_attacker.vlogger
-        # TODO: this is manually appointed
+        # TODO: this is manually appointed logger iter
         if vlogger and vlogger.iter % 77 == 0:
             filter_box = self.detector_attacker.filter_bbox
             vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
@@ -72,7 +72,7 @@ class BaseAttacker(ABC):
 
             # update patch. for optimizer, using optimizer.step(). for PGD or others, using clamp and SGD.
             self.patch_update(patch_clamp_=self.detector_attacker.patch_obj.clamp_)
-
+        # print(adv_tensor_batch, bboxes, loss_dict)
         # update training statistics on tensorboard
         self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
         return torch.tensor(losses).mean()

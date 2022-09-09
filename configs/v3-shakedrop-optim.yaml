@@ -21,7 +21,7 @@ DETECTOR:
   PERTURB:
     GATE: 'shake_drop' # ['shake_drop', 'grad_descend', 'random', null]
     SHAKE_DROP:
-      MODEL_CONFIG: 'detlib/HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-chr.cfg' # rewrite model cfg when shake drop
+      MODEL_CONFIG: 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-chr.cfg' # rewrite model cfg when shake drop
 
 ATTACKER:
   METHOD: "optim"
