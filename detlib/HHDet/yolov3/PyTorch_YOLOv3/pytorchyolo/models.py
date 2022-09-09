@@ -1,7 +1,7 @@
 from __future__ import division
 from itertools import chain
 import os
-
+from .shakedrop.shake_drop import ShakeDrop
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -196,7 +196,7 @@ class Darknet(nn.Module):
                 layer_i = int(module_def["from"])
                 x = layer_outputs[-1] + layer_outputs[layer_i]
             elif module_def["type"] == "shortcut_shakedrop":
-                from .shakedrop.shake_drop import ShakeDrop
+
                 layer_i = int(module_def["from"])
                 x = ShakeDrop.apply(layer_outputs[-1]) + layer_outputs[layer_i]
             elif module_def["type"] == "yolo":
