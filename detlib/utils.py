@@ -21,6 +21,9 @@ def init_detector(detector_name, cfg):
     detector = None
     detector_name = detector_name.lower()
     model_config = cfg.MODEL_CONFIG if hasattr(cfg, 'MODEL_CONFIG') else None
+    if cfg.PERTURB.GATE == 'shake_drop':
+        model_config = cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
+        print('Self ensemble! Shake drop model cfg :', model_config)
 
     if detector_name == "yolov2":
         detector = HHYolov2(name=detector_name, cfg=cfg)
