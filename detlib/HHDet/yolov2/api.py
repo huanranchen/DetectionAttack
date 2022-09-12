@@ -14,7 +14,6 @@ class HHYolov2(DetectorBase):
         super().__init__(name, cfg, input_tensor_size, device)
 
     def load(self, model_weights, detector_config_file=None):
-        print(detector_config_file)
         self.detector = Darknet(detector_config_file).to(self.device)
         self.detector.load_weights(model_weights)
         self.eval()

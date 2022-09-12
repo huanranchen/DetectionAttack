@@ -23,7 +23,7 @@ def init_detector(detector_name, cfg):
     model_config = cfg.MODEL_CONFIG if hasattr(cfg, 'MODEL_CONFIG') else None
     if cfg.PERTURB.GATE == 'shake_drop':
         model_config = cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
-        print('Self ensemble! Shake drop model cfg :', model_config)
+        print('Self-ensemble! Shakedrop ')
 
     if detector_name == "yolov2":
         detector = HHYolov2(name=detector_name, cfg=cfg)
@@ -83,6 +83,7 @@ def init_detector(detector_name, cfg):
         detector = TorchFasterRCNN(detector_name, cfg)
         detector.load()
 
+    print('                    model cfg :', model_config)
     return detector
 
 

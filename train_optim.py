@@ -8,7 +8,7 @@ from tools import save_tensor
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from train_pgd import logger
-from tools.solver import Plateau_lr_scheduler, Warmup_lr_scheduler
+from tools.solver import *
 
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
@@ -21,15 +21,15 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     data_loader = dataLoader(data_root,
                              input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
-    detector_attacker.gates = {'jitter': True, 'median_pool': True, 'rotate': True,
-                               'shift': False, 'p9_scale': True}
+    detector_attacker.gates = ['jitter', 'median_pool', 'rotate', 'p9_scale']
+    if args.random_drop: detector_attacker.gates.append('rdrop')
+
     p_obj = detector_attacker.patch_obj.patch
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
-
-    scheduler = Plateau_lr_scheduler(optimizer)
+    scheduler = Cosine_lr_scheduler(optimizer, cfg.ATTACKER.MAX_EPOCH)
     detector_attacker.attacker.set_optimizer(optimizer)
     loss_array = []
-    save_tensor(detector_attacker.universal_patch, f'{save_name}', args.save_path)
+    save_tensor(detector_attacker.universal_patch, f'{save_name}'+ '.png', args.save_path)
     vlogger = None
     if not args.debugging:
         vlogger = VisualBoard(optimizer, name=args.board_name, new_process=args.new_process)
@@ -52,24 +52,23 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
                 if sum(target_nums) == 0: continue
 
             loss = detector_attacker.attack(img_tensor_batch, mode='optim')
-            # print('                 loss : ', loss)
             ep_loss += loss
 
         if epoch % 10 == 0:
             # patch_name = f'{epoch}_{save_name}'
-            patch_name = f'{save_name}'
+            patch_name = f'{save_name}' + '.png'
             save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
             print('Saving patch to ', os.path.join(args.save_path, patch_name))
 
         et1 = time.time()
         ep_loss /= len(data_loader)
-        scheduler.step(ep_loss)
+        scheduler.step()
         if vlogger:
             vlogger.write_ep_loss(ep_loss)
             vlogger.write_scalar(et1-et0, 'misc/ep time')
         # print('           ep loss : ', ep_loss)
         loss_array.append(float(ep_loss))
-    np.save(os.path.join(args.save_path, 'loss.npy'), loss_array)
+    np.save(os.path.join(args.save_path, save_name+'-loss.npy'), loss_array)
 
 
 if __name__ == '__main__':
@@ -86,12 +85,12 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
+    parser.add_argument('-rd', '--random_drop', action='store_true', default=False)
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    save_prefix = args.cfg.split('.')[0] if args.board_name is None else args.board_name
-    save_patch_name = save_prefix + '.png'
+    save_patch_name = args.cfg.split('.')[0] if args.board_name is None else args.board_name
     args.cfg = './configs/' + args.cfg
 
     print('-------------------------Training-------------------------')
