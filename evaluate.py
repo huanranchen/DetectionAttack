@@ -119,7 +119,7 @@ def ignore_class(args, cfg):
 
 def generate_labels(evaluator, cfg, args, save_label=False):
     from tools.loader import dataLoader
-    gates = {'jitter': False, 'median_pool': True, 'rotate': False, 'shift': False, 'p9_scale': True}
+    gates = ['median_pool', 'p9_scale'] #
     dir_check(args.save, cfg.DETECTOR.NAME, rebuild=False)
     utils = Utils(cfg)
     batch_size = 1

@@ -1,11 +1,12 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 from bisect import bisect_right
 import torch
+from torch import optim
 
 # FIXME ideally this would be achieved with a CombinedLRScheduler,
 # separating MultiStepLR with WarmupLR
 # but the current LRScheduler design doesn't allow it
-class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
+class _WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
+    # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
     def __init__(
         self,
         optimizer,
@@ -42,7 +43,7 @@ class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
         self.warmup_factor = warmup_factor
         self.warmup_iters = warmup_iters
         self.warmup_method = warmup_method
-        super(WarmupMultiStepLR, self).__init__(optimizer, last_epoch)
+        super(_WarmupMultiStepLR, self).__init__(optimizer, last_epoch)
 
     def get_lr(self):
         warmup_factor = 1
@@ -60,12 +61,30 @@ class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
         ]
 
 
+class _ExponentStepLR(torch.optim.lr_scheduler._LRScheduler):
+    def __init__(self, optimizer, gamma=0.999, step_size=1, last_epoch=1):
+        self.gamma = gamma
+        self.step_size = step_size
+        super(_ExponentStepLR, self).__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        if self.last_epoch < 200 or self.last_epoch % self.step_size:
+            return [group['lr'] for group in self.optimizer.param_groups]
+
+        return [group['lr'] * self.gamma for group in self.optimizer.param_groups]
+
+
+def Expo_lr_scheduler(optimizer):
+    return optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.999, update_step=5)
+
+
+def Cosine_lr_scheduler(optimizer, total_epoch=1000):
+    return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_epoch)
+
+
 def Warmup_lr_scheduler(milestone, optimizer):
-    return WarmupMultiStepLR(
-        optimizer, milestone
-    )
+    return _WarmupMultiStepLR(optimizer, milestone)
 
 
-from torch import optim
-def Plateau_lr_scheduler(optimizer, patience=100):
+def Plateau_lr_scheduler(optimizer, patience=300):
     return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience)

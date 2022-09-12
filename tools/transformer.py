@@ -2,13 +2,16 @@ import kornia
 import torch
 import torch.nn.functional as F
 import math
+import numpy as np
+
 from .convertor import FormatConverter
 import kornia.augmentation as K
 
 
 class DataTransformer(torch.nn.Module):
-    def __init__(self, device, rand_rotate=20, rand_zoom_in=0.3, rand_brightness=0.2, rand_saturation=0.3,
-                 rand_shift=0.5):
+    def __init__(self, device, rand_rotate: int = 10, rand_zoom_in: float = 0.3, rand_brightness: float = 0.2,
+                 rand_saturation: float = 0.3,
+                 rand_shift: float = 0.3):
         super().__init__()
         self.device = device
         self.rand_rotate_angle = rand_rotate
@@ -44,7 +47,7 @@ class DataTransformer(torch.nn.Module):
         img_tensor_t = F.grid_sample(img_tensor, grid)
         return img_tensor_t
 
-    def forward(self, img_tensor, p_aug=0.5):
+    def forward(self, img_tensor: torch.tensor, p_aug: float = 0.5) -> torch.tensor:
         batch_size = img_tensor.size(0)
         gate = torch.zeros(1).bernoulli_(p_aug).item()
         if gate == 0:
@@ -68,3 +71,16 @@ class DataTransformer(torch.nn.Module):
 
         # torch.clamp_(img_tensor_t, min=0, max=1)
         return img_tensor_t
+
+
+def mixup(x: torch.tensor,  cutmix_prob: int = 0.5, beta: int = 10) -> torch.tensor:
+    if np.random.rand() > cutmix_prob:
+        return x
+    N, _, H, W = x.shape
+    indices = torch.randperm(N, device=torch.device('cuda'))
+    x1 = x[indices, :, :, :].clone()
+    lam = np.random.beta(beta, beta)
+
+    x = lam * x + (1 - lam) * x1
+    return x
+

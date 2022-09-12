@@ -53,16 +53,25 @@ class PatchTransformer(nn.Module):
         # x = torch.clamp(x, 0.000001, 0.99999)
         return x
 
-    def forward(self, adv_patch_batch, bboxes_batch, patch_ori_size, rand_rotate_gate=True, rand_shift_gate=False, p9_scale=True):
-        '''
+    def forward(self, adv_patch_batch, bboxes_batch, patch_ori_size, rand_rotate_gate=True, rand_shift_gate=False, p9_scale=True, rdrop=False):
+        """
         apply patches.
         : param bboxes_batch: batchsize, num_bboxes_in_each_image, size6([x1, y1, x2, y2, conf, cls_id])
-        '''
+        """
 
         batch_size = bboxes_batch.size(0)
         lab_len = bboxes_batch.size(1)
         bboxes_size = np.prod([batch_size, lab_len]) # np.product. just a number
         # print(bboxes_batch[0][:4, :])
+
+        # Rand drop--------------------------------------------
+        if rdrop:
+            drop_gate = torch.cuda.FloatTensor(torch.Size((batch_size, lab_len))).uniform_(0, 3.5).byte()
+            drop_gate[drop_gate>1] = 1
+            # print(drop_gate, drop_gate.size())
+            drop_gate = drop_gate.unsqueeze(-1).expand(-1, -1, 6)
+            # print(drop_gate)
+            bboxes_batch *= drop_gate
 
         # TODO: -------------Shift & Random relocate--------------
         # bbox format is [x1, y1, x2, y2, conf, cls_id]
@@ -75,7 +84,9 @@ class PatchTransformer(nn.Module):
             target_cx = self.random_shift(target_cx, bw / 2)
             target_cy = self.random_shift(target_cy, bh / 2)
         if p9_scale:
-            target_cy -= 0.05
+            # print(target_cy.size(), bh.size())
+            target_cy -= bh.view(bboxes_size) * 0.1
+            # target_cy -= 0.05
         tx = (0.5 - target_cx) * 2
         ty = (0.5 - target_cy) * 2
         # print("tx, ty: ", tx, ty)
@@ -172,6 +183,7 @@ class PatchRandomApplier(nn.Module):
         :return:
         """
         # print(img_batch.size, adv_patch.size)
+        gates = patch_aug_gates(gates)
         patch_ori_size = adv_patch.size(-1)
         batch_size = img_batch.size(0)
         pad_size = (img_batch.size(-1) - adv_patch.size(-1)) / 2
@@ -194,7 +206,7 @@ class PatchRandomApplier(nn.Module):
         adv_batch_t = self.patch_transformer(adv_batch, bboxes_batch, patch_ori_size,
                                              rand_rotate_gate=gates['rotate'],
                                              rand_shift_gate=gates['shift'],
-                                             p9_scale=gates['p9_scale'])
+                                             p9_scale=gates['p9_scale'], rdrop=gates['rdrop'])
 
         adv_img_batch = self.patch_applier(img_batch, adv_batch_t)
         # print('Patch apply out: ', adv_img_batch.shape)
@@ -217,3 +229,11 @@ class PatchApplier(nn.Module):
             # print(adv.shape)
             img_batch = torch.where((adv == 0), img_batch, adv)
         return img_batch
+
+
+
+def patch_aug_gates(aug_list):
+    gates = {'jitter': False, 'median_pool': False, 'rotate': False, 'shift': False, 'p9_scale': False, 'rdrop': False}
+    for aug in aug_list:
+        gates[aug] = True
+    return gates

@@ -15,7 +15,7 @@ def modelDDP(detector_attacker, args):
                                                           find_unused_parameters=True)
 
 
-def logger(cfg, args, attack_confs_thresh=""):
+def logger(cfg, args):
     import time
     localtime = time.asctime(time.localtime(time.time()))
     print("                        time : ", localtime)
@@ -30,7 +30,9 @@ def logger(cfg, args, attack_confs_thresh=""):
     print('--------------------------ATTACKER---------------------------')
     print('               Attack method : ', args.attack_method)
     print('                   Loss func : ', cfg.ATTACKER.LOSS_FUNC)
-    print("         Attack confs thresh : ", attack_confs_thresh)
+    print("         START_LEARNING_RATE : ", cfg.ATTACKER.START_LEARNING_RATE)
+    print('                      tv_eta : ', cfg.ATTACKER.tv_eta)
+    print('                     obj_eta : ', cfg.ATTACKER.obj_eta)
     print("                  Patch size : ",
           '['+str(cfg.ATTACKER.PATCH_ATTACK.HEIGHT)+', '+str(cfg.ATTACKER.PATCH_ATTACK.WIDTH)+']')
     print('               Attack method : ', cfg.ATTACKER.METHOD)
@@ -40,7 +42,7 @@ def logger(cfg, args, attack_confs_thresh=""):
 
 
 def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
-    detector_attacker.gates = {'jitter': False, 'median_pool': False, 'rotate': True, 'shift': False, 'p9_scale': True}
+    detector_attacker.gates = ['rotate', 'p9_scale']
     data_loader = dataLoader(cfg.DATA.TRAIN.IMG_DIR,
                              input_size=cfg.DETECTOR.INPUT_SIZE, is_augment=args.augment_data,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, shuffle=True)
