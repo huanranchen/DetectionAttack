@@ -22,9 +22,8 @@ def load_class_names(namesfile, trim=True):
 
 
 class ConfigParser:
-    '''The ConfigParser is to parse the config .yaml file, and process the attacking class list.
-
-    '''
+    """The ConfigParser is to parse the config .yaml file, and process the attacking class list.
+    """
     def __init__(self, config_file):
         self.config_file = config_file
         # self.all_class_names = []
@@ -116,6 +115,11 @@ class ConfigParser:
             else:
                setattr(self, a, obj(b) if isinstance(b, dict) else b)
 
+    def logger(self):
+        for a, b in cfg.items():
+            if isinstance(b, (list, tuple)):
+
+def my_printf(msg)
 
 def merge_dict_by_key(dict_s, dict_d):
     for k, v in dict_s.items():

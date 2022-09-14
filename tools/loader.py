@@ -117,15 +117,14 @@ class DetDataset(Dataset):
             transforms.RandomPerspective(distortion_scale=0.8, p=0.6),
             transforms.Pad(int(torch.FloatTensor([0]).uniform_(60, 120))), # Zoom out
             transforms.CenterCrop(int(self.input_size[0] / 1.5)),  # Zoom in
-            transforms.RandomRotation(10),
+            transforms.RandomRotation(15),
             transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
             transforms.GaussianBlur(kernel_size=(9, 9), sigma=(0.1, 5)),
             # transforms.Grayscale(), # RGB to Gray
-            transforms.RandomAffine(degrees=(2, 2), translate=(0.1, 0.2), scale=(0.75, 0.75))
+            transforms.RandomEqualize(p=0.3),
         ]
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
-            # transforms.RandomEqualize(p=0.3),
             transforms.RandomChoice(subpolicy)
         ])(im)
         return im_t
