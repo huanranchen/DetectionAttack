@@ -8,7 +8,12 @@ from tools import save_tensor
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from train_pgd import logger
-from tools.solver import *
+from tools.solver import Cosine_lr_scheduler, Plateau_lr_scheduler
+
+scheduler_factor = {
+    'plateau': Plateau_lr_scheduler,
+    'cosine': Cosine_lr_scheduler
+}
 
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
@@ -26,7 +31,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
     p_obj = detector_attacker.patch_obj.patch
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
-    scheduler = Cosine_lr_scheduler(optimizer, cfg.ATTACKER.MAX_EPOCH)
+    scheduler = scheduler_factor[cfg.ATTACKER.scheduler](optimizer, cfg.ATTACKER.MAX_EPOCH)
     detector_attacker.attacker.set_optimizer(optimizer)
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}'+ '.png', args.save_path)

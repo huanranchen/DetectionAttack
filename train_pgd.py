@@ -6,6 +6,7 @@ import time
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools import save_tensor
+from tools.parser import logger
 
 def modelDDP(detector_attacker, args):
     for ind, detector in enumerate(detector_attacker.detectors):
@@ -13,32 +14,6 @@ def modelDDP(detector_attacker, args):
                                                           device_ids=[args.local_rank],
                                                           output_device=args.local_rank,
                                                           find_unused_parameters=True)
-
-
-def logger(cfg, args):
-    import time
-    localtime = time.asctime(time.localtime(time.time()))
-    print("                        time : ", localtime)
-    print('--------------------------DETECTOR----------------------------')
-    print("             Attacking model :", cfg.DETECTOR.NAME)
-    print('                 CONF_THRESH :', cfg.DETECTOR.CONF_THRESH)
-    print('                  IOU_THRESH :', cfg.DETECTOR.IOU_THRESH)
-    print('                  Input size :', cfg.DETECTOR.INPUT_SIZE)
-    print('                  Batch size :', cfg.DETECTOR.BATCH_SIZE)
-    print('               Self-ensemble :', cfg.DETECTOR.PERTURB.GATE)
-
-    print('--------------------------ATTACKER---------------------------')
-    print('               Attack method : ', args.attack_method)
-    print('                   Loss func : ', cfg.ATTACKER.LOSS_FUNC)
-    print("         START_LEARNING_RATE : ", cfg.ATTACKER.START_LEARNING_RATE)
-    print('                      tv_eta : ', cfg.ATTACKER.tv_eta)
-    print('                     obj_eta : ', cfg.ATTACKER.obj_eta)
-    print("                  Patch size : ",
-          '['+str(cfg.ATTACKER.PATCH_ATTACK.HEIGHT)+', '+str(cfg.ATTACKER.PATCH_ATTACK.WIDTH)+']')
-    print('               Attack method : ', cfg.ATTACKER.METHOD)
-    print('             To Augment data : ', cfg.DATA.AUGMENT)
-    print('                   Step size : ', cfg.ATTACKER.STEP_SIZE)
-    print('------------------------------------------------------------')
 
 
 def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):

@@ -33,6 +33,7 @@ ATTACKER:
   LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv']
   tv_eta: 2.5
   obj_eta: 1
+  scheduler: 'plateau'
   START_LEARNING_RATE: 0.03
 
   PATCH_ATTACK:

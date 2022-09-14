@@ -1,5 +1,6 @@
 import numpy as np
 import yaml
+import time
 
 from .utils import obj
 import sys, os
@@ -22,8 +23,9 @@ def load_class_names(namesfile, trim=True):
 
 
 class ConfigParser:
-    """The ConfigParser is to parse the config .yaml file, and process the attacking class list.
-    """
+    '''The ConfigParser is to parse the config .yaml file, and process the attacking class list.
+
+    '''
     def __init__(self, config_file):
         self.config_file = config_file
         # self.all_class_names = []
@@ -115,11 +117,39 @@ class ConfigParser:
             else:
                setattr(self, a, obj(b) if isinstance(b, dict) else b)
 
-    def logger(self):
-        for a, b in cfg.items():
-            if isinstance(b, (list, tuple)):
+    def __str__(self):
+        pass
 
-def my_printf(msg)
+
+def logger_msg(k, v):
+    print('{:>30} : {:<30}'.format(str(k), str(v)))
+
+
+def logger_banner(banner):
+    dot = '------------------------------------------------------------'
+    pos = int(len(dot)/2 - len(banner)/2)
+    banner = dot[:pos] + banner + dot[pos+len(banner):]
+    print(banner)
+
+
+def logger_cfg(cfg, banner=None):
+    if banner is not None:
+        logger_banner(banner)
+    for k, v in cfg.__dict__.items():
+        if isinstance(v, obj):
+            logger_cfg(v)
+        else:
+            logger_msg(k, v)
+
+def logger(cfg, args):
+    localtime = time.asctime(time.localtime(time.time()))
+    logger_msg('time', localtime)
+    logger_cfg(cfg.DATA, 'DATA')
+    logger_cfg(cfg.DETECTOR, 'DETECTOR')
+    logger_cfg(cfg.ATTACKER, 'ATTACKER')
+    logger_msg('Attack method', args.attack_method)
+    logger_banner('END')
+
 
 def merge_dict_by_key(dict_s, dict_d):
     for k, v in dict_s.items():
