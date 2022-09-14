@@ -7,7 +7,7 @@ from tqdm import tqdm
 from tools import save_tensor
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
-from train_pgd import logger
+from tools.parser import logger
 from tools.solver import Cosine_lr_scheduler, Plateau_lr_scheduler
 
 scheduler_factor = {
@@ -67,7 +67,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
         et1 = time.time()
         ep_loss /= len(data_loader)
-        scheduler.step()
+        scheduler.step(ep_loss)
         if vlogger:
             vlogger.write_ep_loss(ep_loss)
             vlogger.write_scalar(et1-et0, 'misc/ep time')
