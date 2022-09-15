@@ -5,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 from tools import save_tensor
+from tools.transformer import mixup_transform
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools.parser import logger
@@ -47,6 +48,8 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
             if vlogger: vlogger(epoch, get_iter())
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
+            if args.mixup:
+                img_tensor_batch = mixup_transform(img_tensor_batch)
             if lab:
                 detector_attacker.all_preds = lab.to(detector_attacker.device)
                 # print(detector_attacker.all_preds)
@@ -94,6 +97,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--debugging', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
     parser.add_argument('-rd', '--random_drop', action='store_true', default=False)
+    parser.add_argument('-mu', '--mixup', action='store_true', default=False)
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 

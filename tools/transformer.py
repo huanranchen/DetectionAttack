@@ -73,13 +73,14 @@ class DataTransformer(torch.nn.Module):
         return img_tensor_t
 
 
-def mixup(x: torch.tensor,  cutmix_prob: int = 0.5, beta: int = 10) -> torch.tensor:
+def mixup_transform(x: torch.tensor,  cutmix_prob: int = 0.5, beta: int = 10) -> torch.tensor:
     if np.random.rand() > cutmix_prob:
         return x
-    N, _, H, W = x.shape
+    N, _, H, W = x.size()
     indices = torch.randperm(N, device=torch.device('cuda'))
     x1 = x[indices, :, :, :].clone()
-    lam = np.random.beta(beta, beta)
+    # print(np.random.beta(beta, beta))
+    lam = torch.cuda.FloatTensor(1).fill_(np.random.beta(beta, beta))
 
     x = lam * x + (1 - lam) * x1
     return x

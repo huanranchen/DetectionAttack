@@ -38,11 +38,12 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 1
   START_LEARNING_RATE: 0.03
-#  topx_conf: 1
+  scheduler: 'cosine'
+  topx_conf: 1
 
   PATCH_ATTACK:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.15
+#    SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

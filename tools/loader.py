@@ -9,7 +9,7 @@ from PIL import Image
 import torch.nn.functional as F
 from natsort import natsorted
 
-from .transformer import mixup
+from .transformer import mixup_transform
 
 
 class DetDatasetLab(Dataset):

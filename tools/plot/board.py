@@ -18,13 +18,13 @@ class VisualBoard:
         self.iter = start_iter
         self.optimizer = optimizer
 
+        self.init_loss()
+
     def __call__(self, epoch, iter):
         self.iter = iter
         self.writer.add_scalar('misc/epoch', epoch, self.iter)
         if self.optimizer:
             self.writer.add_scalar('misc/learning_rate', self.optimizer.param_groups[0]["lr"], self.iter)
-
-        self.init_loss()
 
     def write_scalar(self, scalar, name):
         try:
@@ -41,10 +41,9 @@ class VisualBoard:
         self.writer.add_image(f'attack/{name}', im, self.iter)
 
     def write_ep_loss(self, ep_loss):
-        self.writer.add_scalar('total_loss/ep_loss', ep_loss.detach().cpu().numpy(), self.iter)
-        self.writer.add_scalar('loss/iter_loss', np.array(self.loss).mean(), self.iter)
         self.writer.add_scalar('loss/det_loss', np.array(self.det_loss).mean(), self.iter)
         self.writer.add_scalar('loss/tv_loss', np.array(self.tv_loss).mean(), self.iter)
+        self.writer.add_scalar('loss/iter_loss', np.array(self.loss).mean(), self.iter)
         self.init_loss()
 
     def init_loss(self):
