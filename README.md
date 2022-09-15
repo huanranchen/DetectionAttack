@@ -3,13 +3,33 @@
 ## Background 背景介绍
 
 ## Install 安装
-
+### Environment
 ```bash
 conda create -n dassl python=3.7
 conda activate dassl
 pip install -r requirements.txt
 ```
 
+### Models
+```bash
+# make sure you have these pre-trained detector weight files prepared
+└── detlib
+    ├── base.py
+    ├── HHDet
+    ├── torchDet
+    └── weights
+        ├── setup.sh
+        ├── yolov2.weights
+        ├── yolov3-tiny.weights
+        ├── yolov3.weights
+        ├── yolov4.pth
+        ├── yolov4-tiny.weights
+        ├── yolov4.weights
+        ├── yolov5n.pt
+        ├── yolov5s6.pt
+        └── yolov5s.pt
+bash ./detlib/weights/setup.sh
+```
 ---
 
 ## Core API 核心API
