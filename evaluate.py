@@ -171,11 +171,11 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 acc = target_nums_clean - target_nums_adv
                 acc = 0 if acc < 0 else acc / target_nums_clean
                 # print('acc: ', acc)
-                accs_total[detector.name].append(round(acc*100, 2))
+                accs_total[detector.name].append(acc*100)
             # break
         # break
     for detector in evaluator.detectors:
-        accs_total[detector.name] = np.mean(accs_total[detector.name])
+        accs_total[detector.name] = np.round(np.mean(accs_total[detector.name]), 2)
     return accs_total
 
 
