@@ -45,7 +45,7 @@ pip install -r requirements.txt
 bash ./detlib/weights/setup.sh
 ```
 Labels can be downloaded from:
-* **BaiduCloud** https://pan.baidu.com/s/1tJh-E_0KepziQjsNa8KIJA?pwd=dm85
+* **BaiduCloud** https://pan.baidu.com/s/1vtkhu2heoXlHNeCEtF2CBA?pwd=o7x8
   * source: detected from the corresponding detectors
   * why rescaled? rescale to [0, 416] to compute AP
 
