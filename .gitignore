@@ -1,7 +1,7 @@
 detlib/weights/
 data/
 results/
-
+.idea
 *.weights
 *.png
 *.avi
