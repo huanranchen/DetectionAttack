@@ -31,7 +31,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
     p_obj = detector_attacker.patch_obj.patch
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
-    scheduler = scheduler_factor[cfg.ATTACKER.scheduler](optimizer, cfg.ATTACKER.MAX_EPOCH)
+    scheduler = scheduler_factor[cfg.ATTACKER.scheduler](optimizer)
     detector_attacker.attacker.set_optimizer(optimizer)
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}'+ '.png', args.save_path)
@@ -67,7 +67,10 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
         et1 = time.time()
         ep_loss /= len(data_loader)
-        scheduler.step(ep_loss)
+        if cfg.ATTACKER.scheduler == 'plateau':
+            scheduler.step(ep_loss)
+        else:
+            scheduler.step()
         if vlogger:
             vlogger.write_ep_loss(ep_loss)
             vlogger.write_scalar(et1-et0, 'misc/ep time')
