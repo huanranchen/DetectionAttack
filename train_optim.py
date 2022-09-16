@@ -55,7 +55,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             if vlogger: vlogger(epoch, get_iter())
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
             if args.mixup:
-                img_tensor_batch = mixup_transform(x1=img_tensor_batch, x2=img_tensor_batch2)
+                img_tensor_batch = mixup_transform(x1=img_tensor_batch, x2=img_tensor_batch2.to(detector_attacker.device))
             if lab:
                 detector_attacker.all_preds = lab.to(detector_attacker.device)
                 # print(detector_attacker.all_preds)
