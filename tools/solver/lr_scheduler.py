@@ -79,7 +79,7 @@ def Expo_lr_scheduler(optimizer):
 
 
 def Cosine_lr_scheduler(optimizer, total_epoch=1000):
-    return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=int(total_epoch*1.1))
+    return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_epoch)
 
 
 def Warmup_lr_scheduler(milestone, optimizer):

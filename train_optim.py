@@ -27,6 +27,12 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     data_loader = dataLoader(data_root,
                              input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
+    if args.mixup:
+        data_loader2 = dataLoader(data_root,
+                                 input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
+                                 batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
+    else:
+        data_loader2 = data_loader
     detector_attacker.gates = ['jitter', 'median_pool', 'rotate', 'p9_scale']
     if args.random_drop: detector_attacker.gates.append('rdrop')
 
@@ -45,11 +51,11 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         ep_loss = 0
         lab = None
         # for index, (img_tensor_batch, lab) in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
-        for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
+        for index, (img_tensor_batch, img_tensor_batch2) in enumerate(tqdm(zip(data_loader, data_loader2), desc=f'Epoch {epoch}')):
             if vlogger: vlogger(epoch, get_iter())
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
             if args.mixup:
-                img_tensor_batch = mixup_transform(img_tensor_batch)
+                img_tensor_batch = mixup_transform(x1=img_tensor_batch, x2=img_tensor_batch2)
             if lab:
                 detector_attacker.all_preds = lab.to(detector_attacker.device)
                 # print(detector_attacker.all_preds)

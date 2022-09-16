@@ -114,7 +114,7 @@ class DetDataset(Dataset):
         gate = torch.tensor([0]).bernoulli_(1 - p_aug)
         if gate.item() == 0: return im
         subpolicy = [
-            transforms.RandomPerspective(distortion_scale=0.8, p=0.6),
+            # transforms.RandomPerspective(distortion_scale=0.8, p=0.6),
             transforms.Pad(int(torch.FloatTensor([0]).uniform_(60, 120))), # Zoom out
             transforms.CenterCrop(int(self.input_size[0] / 1.5)),  # Zoom in
             transforms.RandomRotation(15),
