@@ -34,13 +34,20 @@ class PatchTransformer(nn.Module):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, empty_pixel=0.5, erase_mag=30):
+    def random_erase(self, x, cutout_magnitude=0.5, erase_size=100):
+        '''
+        Random erase(or Cut out) area of the adversarial patches.
+        :param x: adversarial patches in a mini-batch.
+        :param cutout_magnitude: cutout area to fill with what magnitude.
+        :param erase_size:
+        :return:
+        '''
         bboxes_shape = torch.Size((x.size(0), x.size(1)))
         batch_size = x.size(0)
         lab_len = x.size(1)
         bboxes_size = np.prod([batch_size, lab_len])
 
-        bg = torch.cuda.FloatTensor(bboxes_size).fill_(empty_pixel)
+        bg = torch.cuda.FloatTensor(bboxes_shape).fill_(cutout_magnitude)
         bg = self.equal_size(bg, x.size)
 
         angle = torch.cuda.FloatTensor(bboxes_size).fill_(0)
@@ -52,7 +59,7 @@ class PatchTransformer(nn.Module):
         tx = (0.5 - target_cx) * 2
         ty = (0.5 - target_cy) * 2
 
-        scale = erase_mag / x.size(3)
+        scale = erase_size / x.size(3)
         theta = torch.cuda.FloatTensor(bboxes_size, 2, 3).fill_(0)
         # print(cos, scale)
         theta[:, 0, 0] = cos / scale
@@ -63,14 +70,14 @@ class PatchTransformer(nn.Module):
         theta[:, 1, 2] = -tx * sin / scale + ty * cos / scale
 
         s = x.size()
-        # bg = bg.view(bboxes_size, s[2], s[3], s[4])
+        bg = bg.view(bboxes_size, s[2], s[3], s[4])
+        x = x.view(bboxes_size, s[2], s[3], s[4])
         # print('adv batch view', adv_patch_batch.shape)
         grid = F.affine_grid(theta, bg.shape)
         bg = F.grid_sample(bg, grid)
-        bg = bg.view(s[0], s[1], s[2], s[3], s[4])
-
-        x_t = PatchApplier.forward(x, bg)
-        return x_t
+        # print(bg.size(), x.size())
+        x_t = torch.where((bg == 0), x, bg)
+        return x_t.view(s[0], s[1], s[2], s[3], s[4])
 
     def equal_size(self, tensor, size):
         tensor = tensor.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
@@ -265,7 +272,6 @@ class PatchApplier(nn.Module):
     def forward(img_batch, adv_batch):
         advs = torch.unbind(adv_batch, 1)
         for adv in advs:
-            # print(adv.shape)
             img_batch = torch.where((adv == 0), img_batch, adv)
         return img_batch
 
