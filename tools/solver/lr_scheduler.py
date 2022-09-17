@@ -2,20 +2,21 @@ from bisect import bisect_right
 import torch
 from torch import optim
 
+
 # FIXME ideally this would be achieved with a CombinedLRScheduler,
 # separating MultiStepLR with WarmupLR
 # but the current LRScheduler design doesn't allow it
 class _WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
     # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
     def __init__(
-        self,
-        optimizer,
-        milestones,
-        gamma=0.1,
-        warmup_factor=1.0 / 3,
-        warmup_iters=500,
-        warmup_method="linear",
-        last_epoch=-1,
+            self,
+            optimizer,
+            milestones,
+            gamma=0.1,
+            warmup_factor=1.0 / 3,
+            warmup_iters=500,
+            warmup_method="linear",
+            last_epoch=-1,
     ):
         """
 
@@ -88,3 +89,30 @@ def Warmup_lr_scheduler(milestone, optimizer):
 
 def Plateau_lr_scheduler(optimizer, patience=100):
     return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience)
+
+
+class ALRS():
+    '''
+    proposer: Huanran Chen
+    theory: landscape
+    Bootstrap Generalization Ability from Loss Landscape Perspective
+    '''
+
+    def __init__(self, optimizer, loss_threshold=0.01, loss_ratio_threshold=0.01, decay_rate=0.95):
+        self.optimizer = optimizer
+
+        self.loss_threshold = loss_threshold
+        self.decay_rate = decay_rate
+        self.loss_ratio_threshold = loss_ratio_threshold
+
+        self.last_loss = 999
+
+    def step(self, loss):
+        delta = self.last_loss - loss
+        if delta < self.loss_threshold and delta/self.last_loss < self.loss_ratio_threshold:
+            for group in self.optimizer.param_groups:
+                group['lr'] *= self.decay_rate
+                now_lr = group['lr']
+                print(f'now lr = {now_lr}')
+
+        self.last_loss = loss

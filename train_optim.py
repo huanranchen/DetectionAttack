@@ -9,11 +9,12 @@ from tools.transformer import mixup_transform
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools.parser import logger
-from tools.solver import Cosine_lr_scheduler, Plateau_lr_scheduler
+from tools.solver import Cosine_lr_scheduler, Plateau_lr_scheduler, ALRS
 
 scheduler_factor = {
     'plateau': Plateau_lr_scheduler,
-    'cosine': Cosine_lr_scheduler
+    'cosine': Cosine_lr_scheduler,
+    'ALRS': ALRS,
 }
 
 
@@ -36,16 +37,16 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     scheduler = scheduler_factor[cfg.ATTACKER.scheduler](optimizer)
     detector_attacker.attacker.set_optimizer(optimizer)
     loss_array = []
-    save_tensor(detector_attacker.universal_patch, f'{save_name}'+ '.png', args.save_path)
+    save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)
     vlogger = None
     if not args.debugging:
         vlogger = VisualBoard(optimizer, name=args.board_name, new_process=args.new_process)
         detector_attacker.vlogger = vlogger
-    for epoch in range(1, cfg.ATTACKER.MAX_EPOCH+1):
+    for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
         et0 = time.time()
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
-        # for index, (img_tensor_batch, img_tensor_batch2) in enumerate(tqdm(zip(data_loader, data_loader2), desc=f'Epoch {epoch}')):
+            # for index, (img_tensor_batch, img_tensor_batch2) in enumerate(tqdm(zip(data_loader, data_loader2), desc=f'Epoch {epoch}')):
             if vlogger: vlogger(epoch, get_iter())
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
             if args.mixup:
@@ -67,16 +68,16 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
         et1 = time.time()
         ep_loss /= len(data_loader)
-        if cfg.ATTACKER.scheduler == 'plateau':
+        if cfg.ATTACKER.scheduler == 'plateau' or cfg.ATTACKER.scheduler == 'ALRS':
             scheduler.step(ep_loss)
         else:
             scheduler.step()
         if vlogger:
             vlogger.write_ep_loss(ep_loss)
-            vlogger.write_scalar(et1-et0, 'misc/ep time')
+            vlogger.write_scalar(et1 - et0, 'misc/ep time')
         # print('           ep loss : ', ep_loss)
         loss_array.append(float(ep_loss))
-    np.save(os.path.join(args.save_path, save_name+'-loss.npy'), loss_array)
+    np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
 
 
 if __name__ == '__main__':
@@ -84,6 +85,7 @@ if __name__ == '__main__':
     from attack.attacker import UniversalAttacker
     import argparse
     import warnings
+
     warnings.filterwarnings('ignore')
 
     parser = argparse.ArgumentParser()
