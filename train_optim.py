@@ -34,7 +34,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     else:
         data_loader2 = data_loader
     detector_attacker.gates = ['jitter', 'median_pool', 'rotate', 'p9_scale']
-    if args.random_drop: detector_attacker.gates.append('rdrop')
+    if args.random_erase: detector_attacker.gates.append('rerase')
 
     p_obj = detector_attacker.patch_obj.patch
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
-    parser.add_argument('-af', '--aug_fix', action='store_true', default=False)
+    parser.add_argument('-re', '--random_erase', action='store_true', default=False)
     parser.add_argument('-mu', '--mixup', action='store_true', default=False)
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
