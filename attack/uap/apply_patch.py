@@ -34,11 +34,11 @@ class PatchTransformer(nn.Module):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, cutout_magnitude=0.5, erase_size=100):
+    def random_erase(self, x, cutout_fill=0.5, erase_size=100, rand_shift=0.1):
         '''
         Random erase(or Cut out) area of the adversarial patches.
         :param x: adversarial patches in a mini-batch.
-        :param cutout_magnitude: cutout area to fill with what magnitude.
+        :param cutout_fill: cutout area to fill with what magnitude.
         :param erase_size:
         :return:
         '''
@@ -47,15 +47,15 @@ class PatchTransformer(nn.Module):
         lab_len = x.size(1)
         bboxes_size = np.prod([batch_size, lab_len])
 
-        bg = torch.cuda.FloatTensor(bboxes_shape).fill_(cutout_magnitude)
+        bg = torch.cuda.FloatTensor(bboxes_shape).fill_(1)
         bg = self.equal_size(bg, x.size)
 
         angle = torch.cuda.FloatTensor(bboxes_size).fill_(0)
         sin = torch.sin(angle)
         cos = torch.cos(angle)
 
-        target_cx = torch.cuda.FloatTensor(bboxes_size).uniform_(0.1, 0.9)
-        target_cy = torch.cuda.FloatTensor(bboxes_size).uniform_(0.1, 0.9)
+        target_cx = torch.cuda.FloatTensor(bboxes_size).uniform_(rand_shift, 1-rand_shift)
+        target_cy = torch.cuda.FloatTensor(bboxes_size).uniform_(rand_shift, 1-rand_shift)
         tx = (0.5 - target_cx) * 2
         ty = (0.5 - target_cy) * 2
 
@@ -75,8 +75,15 @@ class PatchTransformer(nn.Module):
         # print('adv batch view', adv_patch_batch.shape)
         grid = F.affine_grid(theta, bg.shape)
         bg = F.grid_sample(bg, grid)
+
+        bg_mag = cutout_fill-0.5
+        bg_fill = torch.ones_like(bg) * bg_mag
+        cutout_fill = torch.ones_like(bg) * cutout_fill
+        bg = torch.where(bg == 0, bg_fill, bg)
+        bg = torch.where(bg == 1, cutout_fill, bg)
+
         # print(bg.size(), x.size())
-        x_t = torch.where((bg == 0), x, bg)
+        x_t = torch.where((bg == bg_mag), x, bg)
         return x_t.view(s[0], s[1], s[2], s[3], s[4])
 
     def equal_size(self, tensor, size):
@@ -246,9 +253,9 @@ class PatchRandomApplier(nn.Module):
         adv_batch = adv_batch.expand(batch_size, lab_len, -1, -1, -1) # [batch_size, lab_len, 3, N, N]
         if gates['jitter']:
             adv_batch = self.patch_transformer.random_jitter(adv_batch)
+        adv_batch = torch.clamp(adv_batch, 0.000001, 0.99999)
         if gates['rerase']:
             adv_batch = self.patch_transformer.random_erase(adv_batch)
-        adv_batch = torch.clamp(adv_batch, 0.000001, 0.99999)
         adv_batch = padding(adv_batch)
 
         # TODO: transform gates by gates
