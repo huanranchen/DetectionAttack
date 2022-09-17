@@ -5,10 +5,16 @@ import numpy as np
 from tqdm import tqdm
 
 from tools import save_tensor
+from tools.transformer import mixup_transform
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
-from train_pgd import logger
-from tools.solver import *
+from tools.parser import logger
+from tools.solver import Cosine_lr_scheduler, Plateau_lr_scheduler
+
+scheduler_factor = {
+    'plateau': Plateau_lr_scheduler,
+    'cosine': Cosine_lr_scheduler
+}
 
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
@@ -21,12 +27,13 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     data_loader = dataLoader(data_root,
                              input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
+
     detector_attacker.gates = ['jitter', 'median_pool', 'rotate', 'p9_scale']
-    if args.random_drop: detector_attacker.gates.append('rdrop')
+    if args.random_erase: detector_attacker.gates.append('rerase')
 
     p_obj = detector_attacker.patch_obj.patch
     optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
-    scheduler = Cosine_lr_scheduler(optimizer, cfg.ATTACKER.MAX_EPOCH)
+    scheduler = scheduler_factor[cfg.ATTACKER.scheduler](optimizer)
     detector_attacker.attacker.set_optimizer(optimizer)
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}'+ '.png', args.save_path)
@@ -37,19 +44,17 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH+1):
         et0 = time.time()
         ep_loss = 0
-        lab = None
-        # for index, (img_tensor_batch, lab) in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
+        # for index, (img_tensor_batch, img_tensor_batch2) in enumerate(tqdm(zip(data_loader, data_loader2), desc=f'Epoch {epoch}')):
             if vlogger: vlogger(epoch, get_iter())
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
-            if lab:
-                detector_attacker.all_preds = lab.to(detector_attacker.device)
-                # print(detector_attacker.all_preds)
-            else:
-                all_preds = detector_attacker.detect_bbox(img_tensor_batch)
-                # get position of adversarial patches
-                target_nums = detector_attacker.get_patch_pos_batch(all_preds)
-                if sum(target_nums) == 0: continue
+            if args.mixup:
+                img_tensor_batch = mixup_transform(x1=img_tensor_batch)
+
+            all_preds = detector_attacker.detect_bbox(img_tensor_batch)
+            # get position of adversarial patches
+            target_nums = detector_attacker.get_patch_pos_batch(all_preds)
+            if sum(target_nums) == 0: continue
 
             loss = detector_attacker.attack(img_tensor_batch, mode='optim')
             ep_loss += loss
@@ -62,7 +67,10 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
 
         et1 = time.time()
         ep_loss /= len(data_loader)
-        scheduler.step()
+        if cfg.ATTACKER.scheduler == 'plateau':
+            scheduler.step(ep_loss)
+        else:
+            scheduler.step()
         if vlogger:
             vlogger.write_ep_loss(ep_loss)
             vlogger.write_scalar(et1-et0, 'misc/ep time')
@@ -85,7 +93,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
-    parser.add_argument('-rd', '--random_drop', action='store_true', default=False)
+    parser.add_argument('-re', '--random_erase', action='store_true', default=False)
+    parser.add_argument('-mu', '--mixup', action='store_true', default=False)
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 

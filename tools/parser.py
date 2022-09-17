@@ -1,5 +1,6 @@
 import numpy as np
 import yaml
+import time
 
 from .utils import obj
 import sys, os
@@ -115,6 +116,39 @@ class ConfigParser:
                setattr(self, a, [obj(x) if isinstance(x, dict) else x for x in b])
             else:
                setattr(self, a, obj(b) if isinstance(b, dict) else b)
+
+    def __str__(self):
+        pass
+
+
+def logger_msg(k, v):
+    print('{:>30} : {:<30}'.format(str(k), str(v)))
+
+
+def logger_banner(banner):
+    dot = '------------------------------------------------------------'
+    pos = int(len(dot)/2 - len(banner)/2)
+    banner = dot[:pos] + banner + dot[pos+len(banner):]
+    print(banner)
+
+
+def logger_cfg(cfg, banner=None):
+    if banner is not None:
+        logger_banner(banner)
+    for k, v in cfg.__dict__.items():
+        if isinstance(v, obj):
+            logger_cfg(v)
+        else:
+            logger_msg(k, v)
+
+def logger(cfg, args):
+    localtime = time.asctime(time.localtime(time.time()))
+    logger_msg('time', localtime)
+    logger_cfg(cfg.DATA, 'DATA')
+    logger_cfg(cfg.DETECTOR, 'DETECTOR')
+    logger_cfg(cfg.ATTACKER, 'ATTACKER')
+    logger_msg('Attack method', args.attack_method)
+    logger_banner('END')
 
 
 def merge_dict_by_key(dict_s, dict_d):

@@ -1,3 +1,4 @@
+import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import subprocess
 import time
@@ -10,12 +11,14 @@ class VisualBoard:
             subprocess.Popen(['tensorboard', '--logdir=runs'])
         time_str = time.strftime("%m-%d-%H%M%S")
         if name is not None:
-            self.writer = SummaryWriter(f'runs/{time_str}_{name}')
+            self.writer = SummaryWriter(f'runs/{name}')
         else:
             self.writer = SummaryWriter(f'runs/{time_str}')
 
         self.iter = start_iter
         self.optimizer = optimizer
+
+        self.init_loss()
 
     def __call__(self, epoch, iter):
         self.iter = iter
@@ -38,11 +41,18 @@ class VisualBoard:
         self.writer.add_image(f'attack/{name}', im, self.iter)
 
     def write_ep_loss(self, ep_loss):
-        self.writer.add_scalar('total_loss/ep_loss', ep_loss.detach().cpu().numpy(), self.iter)
+        self.writer.add_scalar('loss/det_loss', np.array(self.det_loss).mean(), self.iter)
+        self.writer.add_scalar('loss/tv_loss', np.array(self.tv_loss).mean(), self.iter)
+        self.writer.add_scalar('loss/iter_loss', np.array(self.loss).mean(), self.iter)
+        self.init_loss()
 
-    def write_loss(self, loss, det_loss, tv_loss):
-        self.writer.add_scalar('loss/iter_loss', loss.detach().cpu().numpy(), self.iter)
-        self.writer.add_scalar('loss/det_loss', det_loss.detach().cpu().numpy(), self.iter)
-        self.writer.add_scalar('loss/tv_loss', tv_loss.detach().cpu().numpy(), self.iter)
+    def init_loss(self):
+        self.loss = []
+        self.det_loss = []
+        self.tv_loss = []
 
+    def note_loss(self, loss, det_loss, tv_loss):
+        self.loss.append(loss.detach().cpu().numpy())
+        self.det_loss.append(det_loss.detach().cpu().numpy())
+        self.tv_loss.append(tv_loss.detach().cpu().numpy())
 

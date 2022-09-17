@@ -3,12 +3,54 @@
 ## Background 背景介绍
 
 ## Install 安装
-
+### Environment
 ```bash
 conda create -n dassl python=3.7
 conda activate dassl
 pip install -r requirements.txt
 ```
+
+### Models
+```bash
+# make sure you have these pre-trained detector weights & INRIAPerson labels prepared
+├── data
+    ├── INRIAPerson
+        ├── Train
+        ├── Test
+            ├── labels
+                ├── faster_rcnn-rescale-labels
+                ├── ground-truth-rescale-labels
+                ├── ssd-rescale-labels
+                ├── yolov2-rescale-labels
+                ├── yolov3-rescale-labels
+                ├── yolov3-tiny-rescale-labels
+                ├── yolov4-rescale-labels
+                ├── yolov4-tiny-rescale-labels
+                └── yolov5-rescale-labels
+└── detlib
+    ├── base.py
+    ├── HHDet
+    ├── torchDet
+    └── weights
+        ├── setup.sh
+        ├── yolov2.weights
+        ├── yolov3-tiny.weights
+        ├── yolov3.weights
+        ├── yolov4.pth
+        ├── yolov4-tiny.weights
+        ├── yolov4.weights
+        ├── yolov5n.pt
+        ├── yolov5s6.pt
+        └── yolov5s.pt
+bash ./detlib/weights/setup.sh
+```
+Labels can be downloaded from:
+* **BaiduCloud** https://pan.baidu.com/s/1vtkhu2heoXlHNeCEtF2CBA?pwd=o7x8
+  * source: detected from the corresponding detectors
+  * why rescaled? rescale to [0, 416] to compute AP
+
+Weights can be downloaded from:
+* **BaiduCloud** https://pan.baidu.com/s/1tJh-E_0KepziQjsNa8KIJA?pwd=dm85
 
 ---
 
@@ -48,62 +90,50 @@ class DetctorAttacker(object):
 
 ### 检测部分API(您需要提供的)
 
-api（您需要提供的, 以Faster R-CNN为例子）
+universal-attacker-api（您需要提供的, 以Yolo-v2为例子）
 
 ``` python
-class FRCNN(object):
+class HHYolov2(DetectorBase):
+    def __init__(self,
+                 name, cfg,
+                 input_tensor_size=412,
+                 device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
+        super().__init__(name, cfg, input_tensor_size, device)
 
-    # 请务必复制__init__方法的所有内容, detector的类型会被赋值为torch.nn.module
-    def __init__(self, name, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
-        self.device = device
-        self.detector = None
-        self.name = name
+    def load(self, model_weights, detector_config_file=None):
+        self.detector = Darknet(detector_config_file).to(self.device)
+        self.detector.load_weights(model_weights)
+        self.eval()
 
-    # 模型梯度清零
-    def zero_grad(self):
-        self.detector.zero_grad()
+    def detect_test(self, batch_tensor):
+        detections_with_grad = self.detector(batch_tensor)
+        return detections_with_grad
 
-    # 载入模型和类别信息，不需要返回值，此函数调用后请保证self.detector()可以检测图片（预处理后的），因不同检测器load参数代码不同，本函数不提供示例，如有需求，请参考./detector_lab/HHDet/military_faster_rcnn/api.py中对应函数编写
-    def load(self, detector_weights, classes_path):
-        pass
+    def __call__(self, batch_tensor, **kwargs):
+        detections_with_grad = self.detector(batch_tensor)  # torch.tensor([1, num, classes_num+4+1])
+        # x1, y1, x2, y2, det_conf, cls_max_conf, cls_max_id
+        all_boxes, obj_confs, cls_max_ids = get_region_boxes(detections_with_grad, self.conf_thres,
+                                            self.detector.num_classes, self.detector.anchors,
+                                            self.detector.num_anchors)
+        # print(all_boxes[0])
+        all_boxes = inter_nms(all_boxes, conf_thres=self.conf_thres, iou_thres=self.iou_thres)
+        # print(all_boxes[0])
+        obj_confs = obj_confs.view(batch_tensor.size(0), -1)
+        cls_max_ids = cls_max_ids.view(batch_tensor.size(0), -1)
+        bbox_array = []
+        for boxes in all_boxes:
+            # boxes = torch.cuda.FloatTensor(boxes)
+            # pad_size = self.max_n_labels - len(boxes)
+            # boxes = F.pad(boxes, (0, 0, 0, pad_size), value=0).unsqueeze(0)
+            if len(boxes):
+                boxes[:, :4] = torch.clamp(boxes[:, :4], min=0., max=1.)
+            # print(boxes.shape)
+            bbox_array.append(boxes)
+            # bbox_array = torch.vstack((bbox_array, boxes)) if bbox_array is not None else boxes
+        # print(bbox_array)
 
-    # 图片准备，输入可能是图片路径，可能是cv2格式的图片，调用此函数进行数据预处理，输出为单张图片处理好的tensor和cv2格式的图片矩阵，例子如下
-    def prepare_img(self, img_path=None, img_cv2=None, input_shape=(416, 416)):
-        if img_path:
-            image = Image.open(img_path)
-        else:
-            image = Image.fromarray(cv2.cvtColor(img_cv2.astype('uint8'), cv2.COLOR_BGRA2RGBA))
-        size = np.array(np.shape(image)[0:2])
-        image = cvtColor(image)
-        image_data = resize_image(image, [input_shape[1], input_shape[0]])
-        image_data = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
-        img_tensor = torch.from_numpy(image_data).to(self.device)
-        return img_tensor, np.array(image)
-    
-    # 提供从为预处理的cv2格式的图片到处理后的图片的转换，返回为预处理后的tensor和cv2格式的图片矩阵
-    def normalize(self, image_data):
-        image_data = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
-        img_tensor = torch.from_numpy(image_data).to(self.device)
-        img_tensor.requires_grad = True
-        return img_tensor, np.array(image_data)
-    
-    # 提供预处理后好的tensor，返回值为预处理前的图片(cv2格式)和预处理前的图片（cv2格式，整形0-255，可直接保存）
-    def unnormalize(self, img_tensor):
-        img_numpy = img_tensor.squeeze(0).cpu().detach().numpy() * 255.
-        img_numpy = np.transpose(img_numpy, (1, 2, 0))
-        img_numpy = cv2.cvtColor(img_numpy, cv2.COLOR_RGB2BGR)
-        img_numpy_int8 = img_numpy.astype('uint8')
-        return img_numpy, img_numpy_int8
-
-    # 检测接口，不直接被外部调用
-    def detect(self, img_tensor):
-        ...
-        return roi_cls_locs, roi_scores, rois, rpn_scores
-
-    # 检测和置信度返回接口，输入预处理后的tensor和原始图片(cv2格式)，返回检测结果[[x1, y1, x2, y2, conf, class_id], ...]和物体置信度（obj_conf），
-    def detect_img_tensor_get_bbox_conf(self, input_img, ori_img_cv2):
-        ...
-        return results, rpn_scores
+        output = {'bbox_array': bbox_array, 'obj_confs': obj_confs, "cls_max_ids": cls_max_ids}
+        return output
 
 ```
 
@@ -209,49 +239,7 @@ class FRCNN(object):
 ```
 
 ### Pipeline elaboration
-#### 通用跨模型攻击
-一个带删减的简略pipeline
-
-```python
-#初始化clean的图像batch: RGB [b, 3, h, w] numpy
-read_img_np_batch()
-```
-
-
-```python
-# 调用所有检测器对 img_numpy_batch 进行目标检测
-for detector in detectors:
-    detector()
-# 检测器间NMS
-inter_nms()
-# 获取所有的target初始目标locations
-has_target = get_patch_pos_batch()
-
-# 检查当前batch图像是否包含一个以上检测框，否则不进行攻击
-if not has_target:
-    continue
-```
-
-
-```python
-# Sequential or Parallel attack
-for i in range(cfg.MAX_ITER):
-    for detector in detectors:
-        # 获取攻击后的img_tensor
-        adv_img_tensor = uap_apply()
-        # 进行迭代攻击，（串/并行）更新universal_patch
-        non_targeted_attack_batch(adv_img_tensor, detector)
-```
-目前攻击只写了第一种串行更新的方法
-在条件
-MAX_ITER=100，
-ITER_STEP=2，
-BATCH_SIZE=2下，
-攻击一整轮所需时间:
-
-对于military YOLOX、FAST RCNN：80s左右;
-
-对于YOLOV4、YOLOV3：50s左右
+#### TODO:通用跨模型攻击
 
 ### examples
 attack examples from YOLOV3

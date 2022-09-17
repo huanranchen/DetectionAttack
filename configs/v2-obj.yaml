@@ -35,7 +35,7 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 2.5
   START_LEARNING_RATE: 0.03
-  topx_conf: 5
+  scheduler: 'plateau'
 
   PATCH_ATTACK:
     WIDTH: 300

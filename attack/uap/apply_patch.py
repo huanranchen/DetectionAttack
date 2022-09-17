@@ -34,16 +34,64 @@ class PatchTransformer(nn.Module):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
+    def random_erase(self, x, cutout_magnitude=0.5, erase_size=100):
+        '''
+        Random erase(or Cut out) area of the adversarial patches.
+        :param x: adversarial patches in a mini-batch.
+        :param cutout_magnitude: cutout area to fill with what magnitude.
+        :param erase_size:
+        :return:
+        '''
+        bboxes_shape = torch.Size((x.size(0), x.size(1)))
+        batch_size = x.size(0)
+        lab_len = x.size(1)
+        bboxes_size = np.prod([batch_size, lab_len])
+
+        bg = torch.cuda.FloatTensor(bboxes_shape).fill_(cutout_magnitude)
+        bg = self.equal_size(bg, x.size)
+
+        angle = torch.cuda.FloatTensor(bboxes_size).fill_(0)
+        sin = torch.sin(angle)
+        cos = torch.cos(angle)
+
+        target_cx = torch.cuda.FloatTensor(bboxes_size).uniform_(0.1, 0.9)
+        target_cy = torch.cuda.FloatTensor(bboxes_size).uniform_(0.1, 0.9)
+        tx = (0.5 - target_cx) * 2
+        ty = (0.5 - target_cy) * 2
+
+        scale = erase_size / x.size(3)
+        theta = torch.cuda.FloatTensor(bboxes_size, 2, 3).fill_(0)
+        # print(cos, scale)
+        theta[:, 0, 0] = cos / scale
+        theta[:, 0, 1] = sin / scale
+        theta[:, 0, 2] = tx * cos / scale + ty * sin / scale
+        theta[:, 1, 0] = -sin / scale
+        theta[:, 1, 1] = cos / scale
+        theta[:, 1, 2] = -tx * sin / scale + ty * cos / scale
+
+        s = x.size()
+        bg = bg.view(bboxes_size, s[2], s[3], s[4])
+        x = x.view(bboxes_size, s[2], s[3], s[4])
+        # print('adv batch view', adv_patch_batch.shape)
+        grid = F.affine_grid(theta, bg.shape)
+        bg = F.grid_sample(bg, grid)
+        # print(bg.size(), x.size())
+        x_t = torch.where((bg == 0), x, bg)
+        return x_t.view(s[0], s[1], s[2], s[3], s[4])
+
+    def equal_size(self, tensor, size):
+        tensor = tensor.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+        tensor = tensor.expand(-1, -1, size(-3), size(-2), size(-1))
+        return tensor
+
     def random_jitter(self, x, min_contrast=0.8, max_contrast=1.2, min_brightness=-0.1, max_brightness=0.1, noise_factor = 0.10):
         bboxes_shape = torch.Size((x.size(0), x.size(1)))
         contrast = torch.cuda.FloatTensor(bboxes_shape).uniform_(min_contrast, max_contrast)
-        contrast = contrast.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-        contrast = contrast.expand(-1, -1, x.size(-3), x.size(-2), x.size(-1))
+        contrast = self.equal_size(contrast, x.size)
 
         # Create random brightness tensor
         brightness = torch.cuda.FloatTensor(bboxes_shape).uniform_(min_brightness, max_brightness)
-        brightness = brightness.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-        brightness = brightness.expand(-1, -1, x.size(-3), x.size(-2), x.size(-1))
+        brightness = self.equal_size(brightness, x.size)
 
         # Create random noise tensor
         noise = torch.cuda.FloatTensor(x.size()).uniform_(-1, 1) * noise_factor
@@ -104,7 +152,7 @@ class PatchTransformer(nn.Module):
         # print('scale shape: ', scale)
 
         # TODO: ----------------Random Rotate-------------------------
-        angle = torch.cuda.FloatTensor(bboxes_size).fill_(0).to(self.device)
+        angle = torch.cuda.FloatTensor(bboxes_size).fill_(0)
         if rand_rotate_gate:
             angle = angle.uniform_(self.min_rotate_angle, self.max_rotate_angle)
         # print('angle shape:', angle.shape)
@@ -127,7 +175,7 @@ class PatchTransformer(nn.Module):
         grid = F.affine_grid(theta, adv_patch_batch.shape)
         adv_patch_batch_t = F.grid_sample(adv_patch_batch, grid)
 
-        return adv_patch_batch_t.view(batch_size, lab_len, s[2], s[3], s[4])
+        return adv_patch_batch_t.view(s[0], s[1], s[2], s[3], s[4])
 
 
 class PatchRandomApplier(nn.Module):
@@ -141,7 +189,6 @@ class PatchRandomApplier(nn.Module):
         """
         super().__init__()
         self.patch_transformer = PatchTransformer(device, rotate_angle, rand_loc_rate, scale_rate).to(device)
-        self.patch_applier = PatchApplier().to(device)
         self.device = device
 
     def list2tensor(self, list_batch, max_len=10):
@@ -199,6 +246,8 @@ class PatchRandomApplier(nn.Module):
         adv_batch = adv_batch.expand(batch_size, lab_len, -1, -1, -1) # [batch_size, lab_len, 3, N, N]
         if gates['jitter']:
             adv_batch = self.patch_transformer.random_jitter(adv_batch)
+        if gates['rerase']:
+            adv_batch = self.patch_transformer.random_erase(adv_batch)
         adv_batch = torch.clamp(adv_batch, 0.000001, 0.99999)
         adv_batch = padding(adv_batch)
 
@@ -208,7 +257,7 @@ class PatchRandomApplier(nn.Module):
                                              rand_shift_gate=gates['shift'],
                                              p9_scale=gates['p9_scale'], rdrop=gates['rdrop'])
 
-        adv_img_batch = self.patch_applier(img_batch, adv_batch_t)
+        adv_img_batch = PatchApplier.forward(img_batch, adv_batch_t)
         # print('Patch apply out: ', adv_img_batch.shape)
         return adv_img_batch
 
@@ -219,21 +268,17 @@ class PatchApplier(nn.Module):
     Module providing the functionality necessary to apply a patch to all detections in all images in the batch.
 
     """
-
-    def __init__(self):
-        super(PatchApplier, self).__init__()
-
-    def forward(self, img_batch, adv_batch):
+    @staticmethod
+    def forward(img_batch, adv_batch):
         advs = torch.unbind(adv_batch, 1)
         for adv in advs:
-            # print(adv.shape)
             img_batch = torch.where((adv == 0), img_batch, adv)
         return img_batch
 
 
 
 def patch_aug_gates(aug_list):
-    gates = {'jitter': False, 'median_pool': False, 'rotate': False, 'shift': False, 'p9_scale': False, 'rdrop': False}
+    gates = {'jitter': False, 'median_pool': False, 'rotate': False, 'shift': False, 'p9_scale': False, 'rdrop': False, 'rerase': False}
     for aug in aug_list:
         gates[aug] = True
     return gates

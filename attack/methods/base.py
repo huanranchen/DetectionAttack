@@ -37,12 +37,13 @@ class BaseAttacker(ABC):
     def logger(self, detector, adv_tensor_batch, bboxes, loss_dict):
         vlogger = self.detector_attacker.vlogger
         # TODO: this is manually appointed logger iter
-        if vlogger and vlogger.iter % 77 == 0:
-            filter_box = self.detector_attacker.filter_bbox
-            vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
-            vlogger.write_loss(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
-            plotted = self.detector_attacker.plot_boxes(adv_tensor_batch[0], filter_box(bboxes[0]))
-            vlogger.write_cv2(plotted, f'{detector.name}')
+        if vlogger:
+            vlogger.note_loss(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
+            if vlogger.iter % 77 == 0:
+                filter_box = self.detector_attacker.filter_bbox
+                vlogger.write_tensor(self.detector_attacker.universal_patch[0], 'adv patch')
+                plotted = self.detector_attacker.plot_boxes(adv_tensor_batch[0], filter_box(bboxes[0]))
+                vlogger.write_cv2(plotted, f'{detector.name}')
 
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
