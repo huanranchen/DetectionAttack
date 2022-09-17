@@ -29,6 +29,9 @@ class PatchTransformer(nn.Module):
         self.median_pooler = MedianPool2d(7, same=True)
         self.device = device
         # self.max_n_labels = 10
+        # Random erase
+        # self.empty_pixel = 0.5
+        # self.erase_mag = 10
 
     def random_shift(self, x, limited_range):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
@@ -51,6 +54,11 @@ class PatchTransformer(nn.Module):
         # Apply contrast/brightness/noise, clamp
         x = contrast * x + brightness + noise
         # x = torch.clamp(x, 0.000001, 0.99999)
+
+        # Random Erase
+        # px1 = torch.cuda.FloatTensor(bboxes_shape).uniform_(0, x.size(3))
+        # py1 = torch.cuda.FloatTensor(bboxes_shape).uniform_(0, x.size(2))
+
         return x
 
     def forward(self, adv_patch_batch, bboxes_batch, patch_ori_size, rand_rotate_gate=True, rand_shift_gate=False, p9_scale=True, rdrop=False):
