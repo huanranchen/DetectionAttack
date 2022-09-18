@@ -29,25 +29,28 @@ class PatchTransformer(nn.Module):
         self.median_pooler = MedianPool2d(7, same=True)
         self.device = device
         # self.max_n_labels = 10
+        print("Random erase: shift ", -0.05)
 
     def random_shift(self, x, limited_range):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, cutout_fill=0.5, erase_size=100, rand_shift=0.1):
+    def random_erase(self, x, cutout_fill=0.5, erase_size=100, rand_shift=-0.5):
         '''
         Random erase(or Cut out) area of the adversarial patches.
         :param x: adversarial patches in a mini-batch.
-        :param cutout_fill: cutout area to fill with what magnitude.
+        :param cutout_fill(>0): cutout area to fill with what magnitude.(0 is the backround)
         :param erase_size:
         :return:
         '''
+        assert cutout_fill > 0, 'Error! The cutout area can\'t be filled with 0'
+
         bboxes_shape = torch.Size((x.size(0), x.size(1)))
         batch_size = x.size(0)
         lab_len = x.size(1)
         bboxes_size = np.prod([batch_size, lab_len])
 
-        bg = torch.cuda.FloatTensor(bboxes_shape).fill_(1)
+        bg = torch.cuda.FloatTensor(bboxes_shape).fill_(cutout_fill)
         bg = self.equal_size(bg, x.size)
 
         angle = torch.cuda.FloatTensor(bboxes_size).fill_(0)
@@ -59,6 +62,7 @@ class PatchTransformer(nn.Module):
         tx = (0.5 - target_cx) * 2
         ty = (0.5 - target_cy) * 2
 
+        # TODO: This assumes the patch is in a square-shape
         scale = erase_size / x.size(3)
         theta = torch.cuda.FloatTensor(bboxes_size, 2, 3).fill_(0)
         # print(cos, scale)
@@ -76,14 +80,14 @@ class PatchTransformer(nn.Module):
         grid = F.affine_grid(theta, bg.shape)
         bg = F.grid_sample(bg, grid)
 
-        bg_mag = cutout_fill-0.5
-        bg_fill = torch.ones_like(bg) * bg_mag
-        cutout_fill = torch.ones_like(bg) * cutout_fill
-        bg = torch.where(bg == 0, bg_fill, bg)
-        bg = torch.where(bg == 1, cutout_fill, bg)
+        # bg_mag = cutout_fill-1
+        # bg_fill = torch.ones_like(bg) * bg_mag
+        # cutout_fill = torch.ones_like(bg) * cutout_fill
+        # bg = torch.where(bg == 0, bg_fill, bg)
+        # bg = torch.where(bg == 1, cutout_fill, bg)
 
         # print(bg.size(), x.size())
-        x_t = torch.where((bg == bg_mag), x, bg)
+        x_t = torch.where((bg == 0), x, bg)
         return x_t.view(s[0], s[1], s[2], s[3], s[4])
 
     def equal_size(self, tensor, size):

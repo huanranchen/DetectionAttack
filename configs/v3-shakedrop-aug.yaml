@@ -13,7 +13,7 @@ DATA:
 DETECTOR:
   NAME: ["YOLOV3"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
-  BATCH_SIZE: 16
+  BATCH_SIZE: 8
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
@@ -38,7 +38,7 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 1
   START_LEARNING_RATE: 0.03
-  scheduler: 'cosine'
+  scheduler: 'plateau'
   topx_conf: 1
 
   PATCH_ATTACK:
