@@ -42,6 +42,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     if not args.debugging:
         vlogger = VisualBoard(optimizer, name=args.board_name, new_process=args.new_process)
         detector_attacker.vlogger = vlogger
+    ten_epoch_loss = 0
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
         et0 = time.time()
         ep_loss = 0
@@ -66,11 +67,17 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
             print('Saving patch to ', os.path.join(args.save_path, patch_name))
 
+            if cfg.ATTACKER.scheduler == 'ALRS':
+                ten_epoch_loss /= 10
+                scheduler.step(ten_epoch_loss)
+                ten_epoch_loss = 0
+
         et1 = time.time()
         ep_loss /= len(data_loader)
-        if cfg.ATTACKER.scheduler == 'plateau' or cfg.ATTACKER.scheduler == 'ALRS':
+        ten_epoch_loss += ep_loss
+        if cfg.ATTACKER.scheduler == 'plateau':
             scheduler.step(ep_loss)
-        else:
+        elif cfg.ATTACKER.scheduler != 'ALRS':
             scheduler.step()
         if vlogger:
             vlogger.write_ep_loss(ep_loss)
