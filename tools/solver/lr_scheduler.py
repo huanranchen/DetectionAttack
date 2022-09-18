@@ -98,7 +98,7 @@ class ALRS():
     Bootstrap Generalization Ability from Loss Landscape Perspective
     '''
 
-    def __init__(self, optimizer, loss_threshold=0.01, loss_ratio_threshold=0.01, decay_rate=0.95):
+    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
         self.optimizer = optimizer
 
         self.loss_threshold = loss_threshold

@@ -14,6 +14,7 @@ from .transformer import mixup_transform
 
 class DetDatasetLab(Dataset):
     """This is a Dataset with data label loaded."""
+
     def __init__(self, images_path, lab_path, input_size):
         self.im_path = images_path
         self.lab_path = lab_path
@@ -115,17 +116,19 @@ class DetDataset(Dataset):
         if gate.item() == 0: return im
         subpolicy = [
             # transforms.RandomPerspective(distortion_scale=0.8, p=0.6),
-            transforms.Pad(int(torch.FloatTensor([0]).uniform_(60, 120))), # Zoom out
-            transforms.CenterCrop(int(self.input_size[0] / 1.5)),  # Zoom in
-            transforms.RandomRotation(15),
-            transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
-            transforms.GaussianBlur(kernel_size=(9, 9), sigma=(0.1, 5)),
+            transforms.RandomResizedCrop((416, 416), scale=(0.4, 1.0)),
+            transforms.RandomRotation(5),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+            # transforms.GaussianBlur(kernel_size=(9, 9), sigma=(0.1, 5)),
             # transforms.Grayscale(), # RGB to Gray
-            transforms.RandomEqualize(p=0.3),
+            # transforms.RandomEqualize(p=0.3),
         ]
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomChoice(subpolicy)
+            # transforms.RandomChoice(subpolicy)
+            transforms.RandomResizedCrop((416, 416), scale=(0.4, 1.0)),
+            transforms.RandomRotation(10), # 5也可以
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
         ])(im)
         return im_t
 
