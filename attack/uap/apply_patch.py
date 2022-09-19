@@ -29,13 +29,15 @@ class PatchTransformer(nn.Module):
         self.median_pooler = MedianPool2d(7, same=True)
         self.device = device
         # self.max_n_labels = 10
-        print("Random erase: shift ", -0.05)
+        # cutout
+        self.cutout_rand_shift = -0.5
+        print("Random erase: shift ", self.cutout_rand_shift)
 
     def random_shift(self, x, limited_range):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, cutout_fill=0.5, erase_size=100, rand_shift=-0.5):
+    def random_erase(self, x, cutout_fill=0.5, erase_size=100):
         '''
         Random erase(or Cut out) area of the adversarial patches.
         :param x: adversarial patches in a mini-batch.
@@ -44,7 +46,7 @@ class PatchTransformer(nn.Module):
         :return:
         '''
         assert cutout_fill > 0, 'Error! The cutout area can\'t be filled with 0'
-
+        rand_shift = self.cutout_rand_shift
         bboxes_shape = torch.Size((x.size(0), x.size(1)))
         batch_size = x.size(0)
         lab_len = x.size(1)
