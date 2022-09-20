@@ -87,8 +87,8 @@ def Warmup_lr_scheduler(milestone, optimizer):
     return _WarmupMultiStepLR(optimizer, milestone)
 
 
-def Plateau_lr_scheduler(optimizer, patience=100):
-    return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience)
+def Plateau_lr_scheduler(optimizer, patience=500, factor=0.5):
+    return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience, factor=factor)
 
 
 class ALRS():

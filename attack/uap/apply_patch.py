@@ -30,8 +30,8 @@ class PatchTransformer(nn.Module):
         self.device = device
         # self.max_n_labels = 10
         # cutout
-        self.cutout_rand_shift = -0.5
-        print("Random erase: shift ", self.cutout_rand_shift)
+        self.cutout_rand_shift = -0.1
+        print("Random erase shift ", self.cutout_rand_shift)
 
     def random_shift(self, x, limited_range):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
