@@ -30,14 +30,14 @@ class PatchTransformer(nn.Module):
         self.device = device
         # self.max_n_labels = 10
         # cutout
-        self.cutout_rand_shift = -0.1
-        print("Random erase: shift ", self.cutout_rand_shift)
+        self.cutout_rand_shift = -0.05
+
 
     def random_shift(self, x, limited_range):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, cutout_fill=0.5, erase_size=100, level='image'):
+    def random_erase(self, x, cutout_fill=0.5, erase_size=100, level='instance'):
         '''
         Random erase(or Cut out) area of the adversarial patches.
         :param x: adversarial patches in a mini-batch.
@@ -82,7 +82,7 @@ class PatchTransformer(nn.Module):
         # TODO: This assumes the patch is in a square-shape
         scale = erase_size / x.size(3)
         theta = torch.cuda.FloatTensor(bboxes_size, 2, 3).fill_(0)
-        print(cos, scale)
+        # print(cos, scale)
         theta[:, 0, 0] = cos / scale
         theta[:, 0, 1] = sin / scale
         theta[:, 0, 2] = tx * cos / scale + ty * sin / scale
@@ -275,6 +275,7 @@ class PatchRandomApplier(nn.Module):
             adv_batch = self.patch_transformer.random_jitter(adv_batch)
         adv_batch = torch.clamp(adv_batch, 0.000001, 0.99999)
         if gates['rerase']:
+            print("Random erase shift ", self.patch_transformer.cutout_rand_shift)
             adv_batch = self.patch_transformer.random_erase(adv_batch)
         adv_batch = padding(adv_batch)
 
