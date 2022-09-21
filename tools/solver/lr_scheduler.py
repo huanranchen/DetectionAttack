@@ -87,8 +87,8 @@ def Warmup_lr_scheduler(milestone, optimizer):
     return _WarmupMultiStepLR(optimizer, milestone)
 
 
-def Plateau_lr_scheduler(optimizer, patience=500, factor=0.5):
-    return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience, factor=factor)
+def Plateau_lr_scheduler(optimizer, patience=100):
+    return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience)
 
 
 class ALRS():
@@ -98,7 +98,7 @@ class ALRS():
     Bootstrap Generalization Ability from Loss Landscape Perspective
     '''
 
-    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
+    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.999):
         self.optimizer = optimizer
 
         self.loss_threshold = loss_threshold

@@ -31,13 +31,13 @@ class PatchTransformer(nn.Module):
         # self.max_n_labels = 10
         # cutout
         self.cutout_rand_shift = -0.1
-        print("Random erase shift ", self.cutout_rand_shift)
+        print("Random erase: shift ", self.cutout_rand_shift)
 
     def random_shift(self, x, limited_range):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, cutout_fill=0.5, erase_size=100):
+    def random_erase(self, x, cutout_fill=0.5, erase_size=100, level='image'):
         '''
         Random erase(or Cut out) area of the adversarial patches.
         :param x: adversarial patches in a mini-batch.
@@ -47,27 +47,42 @@ class PatchTransformer(nn.Module):
         '''
         assert cutout_fill > 0, 'Error! The cutout area can\'t be filled with 0'
         rand_shift = self.cutout_rand_shift
-        bboxes_shape = torch.Size((x.size(0), x.size(1)))
-        batch_size = x.size(0)
-        lab_len = x.size(1)
+        s = x.size()
+        batch_size = s[0]
+        lab_len = s[1]
+        bboxes_shape = torch.Size((batch_size, lab_len))
         bboxes_size = np.prod([batch_size, lab_len])
+
+        print('Cutout '+level)
+        if level is 'instance':
+            target_size = bboxes_size
+        elif level is 'image':
+            target_size = batch_size
+        elif level is 'batch':
+            target_size = 1
+        # print(bboxes_size, target_size)
 
         bg = torch.cuda.FloatTensor(bboxes_shape).fill_(cutout_fill)
         bg = self.equal_size(bg, x.size)
 
-        angle = torch.cuda.FloatTensor(bboxes_size).fill_(0)
+        angle = torch.cuda.FloatTensor(target_size).fill_(0)
+        if level is not 'instance':
+            angle = angle.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)
         sin = torch.sin(angle)
         cos = torch.cos(angle)
 
-        target_cx = torch.cuda.FloatTensor(bboxes_size).uniform_(rand_shift, 1-rand_shift)
-        target_cy = torch.cuda.FloatTensor(bboxes_size).uniform_(rand_shift, 1-rand_shift)
+        target_cx = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
+        target_cy = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
+        if level is not 'instance':
+            target_cx = target_cx.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)
+            target_cy = target_cy.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)
         tx = (0.5 - target_cx) * 2
         ty = (0.5 - target_cy) * 2
 
         # TODO: This assumes the patch is in a square-shape
         scale = erase_size / x.size(3)
         theta = torch.cuda.FloatTensor(bboxes_size, 2, 3).fill_(0)
-        # print(cos, scale)
+        print(cos, scale)
         theta[:, 0, 0] = cos / scale
         theta[:, 0, 1] = sin / scale
         theta[:, 0, 2] = tx * cos / scale + ty * sin / scale
@@ -75,7 +90,6 @@ class PatchTransformer(nn.Module):
         theta[:, 1, 1] = cos / scale
         theta[:, 1, 2] = -tx * sin / scale + ty * cos / scale
 
-        s = x.size()
         bg = bg.view(bboxes_size, s[2], s[3], s[4])
         x = x.view(bboxes_size, s[2], s[3], s[4])
         # print('adv batch view', adv_patch_batch.shape)
