@@ -71,8 +71,10 @@ class PatchTransformer(nn.Module):
         sin = torch.sin(angle)
         cos = torch.cos(angle)
 
-        target_cx = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
-        target_cy = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
+        # target_cx = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
+        # target_cy = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
+        target_cx = torch.cuda.FloatTensor(target_size).normal_(0, 1)
+        target_cy = torch.cuda.FloatTensor(target_size).normal_(0, 1)
         if level is not 'instance':
             target_cx = target_cx.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)
             target_cy = target_cy.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)

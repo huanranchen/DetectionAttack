@@ -127,8 +127,8 @@ class DetDataset(Dataset):
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-            # transforms.RandomResizedCrop((512, 512), scale=(0.4, 1.0)),
-            transforms.RandomChoice(subpolicy),
+            transforms.RandomResizedCrop((512, 512), scale=(0.4, 1.0)),
+            # transforms.RandomChoice(subpolicy),
             transforms.RandomRotation(10), # 5也可以
         ])(im)
         return im_t
