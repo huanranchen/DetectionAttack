@@ -87,3 +87,18 @@ def mixup_transform(x1: torch.tensor,  cutmix_prob: int = 0.5, beta: int = 10, x
     x = lam * x1 + (1 - lam) * x2
     return x
 
+def mosaic_transform(image_data, min_offset_x=0.3, min_offset_y=0.3):
+    #     w = image_data.size(3)
+    #     h = image_data.size(2)
+    #     cutx = np.random.randint(int(w * min_offset_x), int(w * (1 - min_offset_x)))
+    #     cuty = np.random.randint(int(h * min_offset_y), int(h * (1 - min_offset_y)))
+    #     print(cuty, cutx)
+    #
+    #     new_image = torch.cuda.FloatTensor(image_data.size())
+    #     new_image[:cuty, :cutx, :] = image_datas[0][:cuty, :cutx, :]
+    #     new_image[cuty:, :cutx, :] = image_datas[1][cuty:, :cutx, :]
+    #     new_image[cuty:, cutx:, :] = image_datas[2][cuty:, cutx:, :]
+    #     new_image[:cuty, cutx:, :] = image_datas[3][:cuty, cutx:, :]
+    #
+    #     return new_image
+    pass

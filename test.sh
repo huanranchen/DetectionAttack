@@ -8,7 +8,7 @@ A=$4
 targets=$5
 ifng=$6
 ifim=$7
-echo 'ifng'$ifng
+echo 'ifng: '$ifng
 if [ $ifng = "-ng" ] ;then
     gg=""
 fi

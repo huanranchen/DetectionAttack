@@ -91,6 +91,38 @@ def Plateau_lr_scheduler(optimizer, patience=100):
     return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience)
 
 
+class warmupALRS():
+    def __init__(self, optimizer, warmup_epoch=50, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.999):
+        self.optimizer = optimizer
+
+        self.warmup_rate = 1/3
+        self.warmup_epoch = warmup_epoch
+        self.start_lr = optimizer.param_groups[0]["lr"]
+        self.warmup_lr = self.start_lr * (1-self.warmup_rate)
+        self.update_lr(lambda x: x*self.warmup_rate)
+
+        self.loss_threshold = loss_threshold
+        self.decay_rate = decay_rate
+        self.loss_ratio_threshold = loss_ratio_threshold
+
+        self.last_loss = 999
+
+    def update_lr(self, update_fn):
+        for group in self.optimizer.param_groups:
+            group['lr'] = update_fn(group['lr'])
+            now_lr = group['lr']
+            print(f'now lr = {now_lr}')
+
+
+    def step(self, loss, epoch):
+        delta = self.last_loss - loss
+        self.last_loss = loss
+        if epoch < self.warmup_epoch:
+            self.update_lr(lambda x: -(self.warmup_epoch-epoch)*self.warmup_lr / self.warmup_epoch + self.start_lr)
+        elif delta < self.loss_threshold and delta/self.last_loss < self.loss_ratio_threshold:
+            self.update_lr(lambda x: x*self.decay_rate)
+
+
 class ALRS():
     '''
     proposer: Huanran Chen

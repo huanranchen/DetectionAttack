@@ -5,16 +5,17 @@ import numpy as np
 from tqdm import tqdm
 
 from tools import save_tensor
-from tools.transformer import mixup_transform
+from tools.transformer import mixup_transform, mosaic_transform
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools.parser import logger
-from tools.solver import Cosine_lr_scheduler, Plateau_lr_scheduler, ALRS
+from tools.solver import Cosine_lr_scheduler, Plateau_lr_scheduler, ALRS, warmupALRS
 
 scheduler_factor = {
     'plateau': Plateau_lr_scheduler,
     'cosine': Cosine_lr_scheduler,
     'ALRS': ALRS,
+    'warmupALRS': warmupALRS
 }
 
 
@@ -52,6 +53,8 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
             if args.mixup:
                 img_tensor_batch = mixup_transform(x1=img_tensor_batch)
+            # if args.mosaic:
+            #     img_tensor_batch = mosaic_transform(img_tensor_batch)
 
             all_preds = detector_attacker.detect_bbox(img_tensor_batch)
             # get position of adversarial patches
@@ -77,6 +80,8 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         ten_epoch_loss += ep_loss
         if cfg.ATTACKER.scheduler == 'plateau':
             scheduler.step(ep_loss)
+        elif 'warmup' in cfg.ATTACKER.scheduler:
+            scheduler.step(loss=ep_loss, epoch=epoch)
         elif cfg.ATTACKER.scheduler != 'ALRS':
             scheduler.step()
         if vlogger:
@@ -104,6 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
     parser.add_argument('-re', '--random_erase', action='store_true', default=False)
     parser.add_argument('-mu', '--mixup', action='store_true', default=False)
+    parser.add_argument('-mo', '--mosaic', action='store_true', default=False)
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 
