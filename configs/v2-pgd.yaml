@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: 3
+  AUGMENT: '3'
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -36,8 +36,8 @@ ATTACKER:
   START_LEARNING_RATE: 0.03
 
   PATCH_ATTACK:
-    WIDTH: 128
-    HEIGHT: 128
+    WIDTH: 300
+    HEIGHT: 300
     SCALE: 0.15
-    INIT: "random" # ['random', 'gray']
+    INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

@@ -19,7 +19,10 @@ DETECTOR:
   ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
-    GATE: null
+    GATE: 'shake_drop' # ['shake_drop', 'grad_descend', 'random', null]
+    SHAKE_DROP:
+      MODEL_CONFIG: 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-chr.cfg' # rewrite model cfg when shake drop
+
 
 ATTACKER:
   METHOD: "pgd"
