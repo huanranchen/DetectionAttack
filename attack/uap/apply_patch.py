@@ -24,27 +24,26 @@ class PatchTransformer(nn.Module):
         super().__init__()
         self.min_rotate_angle = -rotate_angle / 180 * math.pi
         self.max_rotate_angle = rotate_angle / 180 * math.pi
+        self.cutout_rand_shift = -0.05
         self.rand_shift_rate = rand_shift_rate
         self.scale_rate = scale_rate
         self.median_pooler = MedianPool2d(7, same=True)
         self.device = device
-        # self.max_n_labels = 10
-        # cutout
-        self.cutout_rand_shift = -0.05
-
 
     def random_shift(self, x, limited_range):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, cutout_fill=0.5, erase_size=100, level='instance'):
-        '''
+    def random_erase(self, x, cutout_fill=0.5, erase_size=100, level='instance', p_erase=0.5):
+        """
         Random erase(or Cut out) area of the adversarial patches.
         :param x: adversarial patches in a mini-batch.
         :param cutout_fill(>0): cutout area to fill with what magnitude.(0 is the backround)
         :param erase_size:
         :return:
-        '''
+        """
+        gate = torch.tensor([0]).bernoulli_(1 - p_erase)
+        if gate.item() == 0: return x
         assert cutout_fill > 0, 'Error! The cutout area can\'t be filled with 0'
         rand_shift = self.cutout_rand_shift
         s = x.size()
@@ -71,10 +70,8 @@ class PatchTransformer(nn.Module):
         sin = torch.sin(angle)
         cos = torch.cos(angle)
 
-        # target_cx = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
-        # target_cy = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
-        target_cx = torch.cuda.FloatTensor(target_size).normal_(0, 1)
-        target_cy = torch.cuda.FloatTensor(target_size).normal_(0, 1)
+        target_cx = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
+        target_cy = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
         if level is not 'instance':
             target_cx = target_cx.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)
             target_cy = target_cy.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)

@@ -105,14 +105,14 @@ class DetDataset(Dataset):
             transforms.ToTensor()
         ])
 
-    def transform_fn(self, im, p_aug=0.5):
+    def transform_fn(self, im, p_aug=1):
         """This is for random data augmentation of p_aug probability
 
         :param im:
         :param p_aug: probability to augment data.
         :return:
         """
-        gate = torch.tensor([0]).bernoulli_(1 - p_aug)
+        gate = torch.tensor([0]).bernoulli_(p_aug)
         if gate.item() == 0: return im
         subpolicy = [
             # transforms.RandomPerspective(distortion_scale=0.8, p=0.6),
