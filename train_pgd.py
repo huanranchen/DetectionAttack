@@ -45,7 +45,7 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
             if sum(target_nums) == 0: continue
 
             loss = detector_attacker.attack(img_tensor_batch, args.attack_method)
-            if vlogger: vlogger.write_scalar(loss, 'loss/iter loss')
+            if vlogger: vlogger.write_scalar(loss, 'loss/iter_loss')
             # the patch will be saved in every 5000 images
             if (epoch_save_mode and index == 1 and epoch % 10 == 0) or (not epoch_save_mode and now_step % save_step == 0):
                 prefix = epoch if epoch_save_mode else int(now_step / 5000)
