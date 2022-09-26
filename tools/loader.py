@@ -105,7 +105,7 @@ class DetDataset(Dataset):
             transforms.ToTensor()
         ])
 
-    def transform_fn(self, im, p_aug=0.9):
+    def transform_fn(self, im, p_aug=0.5):
         """This is for random data augmentation of p_aug probability
 
         :param im:
