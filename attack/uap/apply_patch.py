@@ -42,7 +42,7 @@ class PatchTransformer(nn.Module):
         :param erase_size:
         :return:
         """
-        gate = torch.tensor([0]).bernoulli_(1 - p_erase)
+        gate = torch.tensor([0]).bernoulli_(p_erase)
         if gate.item() == 0: return x
         assert cutout_fill > 0, 'Error! The cutout area can\'t be filled with 0'
         rand_shift = self.cutout_rand_shift
