@@ -34,7 +34,7 @@ class PatchTransformer(nn.Module):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, cutout_fill=0.5, erase_size=100, level='instance', p_erase=1):
+    def random_erase(self, x, cutout_ratio=0.4, cutout_fill=0.5, level='instance', p_erase=0.9):
         """
         Random erase(or Cut out) area of the adversarial patches.
         :param x: adversarial patches in a mini-batch.
@@ -79,7 +79,7 @@ class PatchTransformer(nn.Module):
         ty = (0.5 - target_cy) * 2
 
         # TODO: This assumes the patch is in a square-shape
-        scale = erase_size / x.size(3)
+        scale = cutout_ratio
         theta = torch.cuda.FloatTensor(bboxes_size, 2, 3).fill_(0)
         # print(cos, scale)
         theta[:, 0, 0] = cos / scale
@@ -109,6 +109,15 @@ class PatchTransformer(nn.Module):
         tensor = tensor.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
         tensor = tensor.expand(-1, -1, size(-3), size(-2), size(-1))
         return tensor
+
+    def random_shuffle(self, x):
+        batchsize, channels, height, width = x.size()
+        groups = 1
+        channels_per_group = int(channels / groups)
+        x_s = x.view(batchsize, groups, channels_per_group, height, width)
+        x_s = x_s.transpose(1, 2).contiguous()
+        x_s = x_s.view(batchsize, -1, height, width)
+        return x_s
 
     def random_jitter(self, x, min_contrast=0.8, max_contrast=1.2, min_brightness=-0.1, max_brightness=0.1, noise_factor = 0.10):
         bboxes_shape = torch.Size((x.size(0), x.size(1)))
