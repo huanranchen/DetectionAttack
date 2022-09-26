@@ -55,13 +55,13 @@ class UniversalAttacker(BaseAttacker):
         return np.array(target_nums)
 
     def uap_apply(self, img_tensor, adv_patch=None, gates=None):
-        '''
+        """
         UAP: universal adversarial patch
         :param img_tensor:
         :param adv_patch:
         :param gates: The patch augmentation gates(dict: True or False).
         :return:
-        '''
+        """
         if adv_patch is None: adv_patch = self.universal_patch
         if gates is None: gates = self.gates
 

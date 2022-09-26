@@ -18,17 +18,18 @@ def modelDDP(detector_attacker, args):
 
 def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
     detector_attacker.gates = ['rotate', 'p9_scale']
+    if args.random_erase: detector_attacker.gates.append('rerase')
+
     data_loader = dataLoader(cfg.DATA.TRAIN.IMG_DIR,
-                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment=args.augment_data,
+                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, shuffle=True)
     get_iter = lambda epoch, index: (epoch - 1) * len(data_loader) + index
     logger(cfg, args)
-    epoch_save_mode = False if len(data_loader) > save_step else True
     start_index = int(args.patch.split('/')[-1].split('_')[0]) if args.patch is not None else 1
     detector_attacker.init_universal_patch(args.patch)
 
     losses = []
-    save_tensor(detector_attacker.universal_patch, f'{start_index - 1}_{save_name}', args.save_path + '/patch/')
+    save_tensor(detector_attacker.universal_patch, save_name, args.save_path)
     vlogger = None
     if not args.debugging:
         vlogger = VisualBoard(name=args.board_name, start_iter=start_index)
@@ -47,10 +48,8 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
             loss = detector_attacker.attack(img_tensor_batch, args.attack_method)
             if vlogger: vlogger.write_scalar(loss, 'loss/iter_loss')
             # the patch will be saved in every 5000 images
-            if (epoch_save_mode and index == 1 and epoch % 10 == 0) or (not epoch_save_mode and now_step % save_step == 0):
-                prefix = epoch if epoch_save_mode else int(now_step / 5000)
-                patch_name = f'{prefix}_{save_name}'
-                save_tensor(detector_attacker.universal_patch, patch_name, args.save_path + '/patch/')
+            if epoch % 10 == 0:
+                save_tensor(detector_attacker.universal_patch, save_name, args.save_path)
 
         et1 = time.time()
         if vlogger: vlogger.write_scalar(et1-et0, 'misc/ep time')
@@ -68,6 +67,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--attack_method', type=str, default='sequential')
     parser.add_argument('-cfg', '--cfg', type=str, default='test.yaml')
     parser.add_argument('-n', '--board_name', type=str, default=None)
+    parser.add_argument('-re', '--random_erase', action='store_true', default=False)
     parser.add_argument('-s', '--save_path', type=str, default='./results/inria')
     parser.add_argument('-d', '--debugging', action='store_true')
     args = parser.parse_args()

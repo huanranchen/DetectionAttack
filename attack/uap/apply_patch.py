@@ -138,7 +138,7 @@ class PatchTransformer(nn.Module):
         bboxes_size = np.prod([batch_size, lab_len]) # np.product. just a number
         # print(bboxes_batch[0][:4, :])
 
-        # Rand drop--------------------------------------------
+        # ------------------Rand drop----------------------
         if rdrop:
             drop_gate = torch.cuda.FloatTensor(torch.Size((batch_size, lab_len))).uniform_(0, 3.5).byte()
             drop_gate[drop_gate>1] = 1
@@ -147,7 +147,7 @@ class PatchTransformer(nn.Module):
             # print(drop_gate)
             bboxes_batch *= drop_gate
 
-        # TODO: -------------Shift & Random relocate--------------
+        # -------------Shift & Random relocate--------------
         # bbox format is [x1, y1, x2, y2, conf, cls_id]
         bw = bboxes_batch[:, :, 2] - bboxes_batch[:, :, 0]
         bh = bboxes_batch[:, :, 3] - bboxes_batch[:, :, 1]
@@ -165,19 +165,18 @@ class PatchTransformer(nn.Module):
         ty = (0.5 - target_cy) * 2
         # print("tx, ty: ", tx, ty)
 
-        # TODO: -----------------------Scale--------------------------
+        # -----------------------Scale--------------------------
         bw *= adv_patch_batch.size(-1)
         bh *= adv_patch_batch.size(-2)
         # p9_scale = False
         if p9_scale:
-            patch_scale = 0.2
-            target_size = patch_scale * torch.sqrt((bw ** 2) + (bh ** 2)).view(bboxes_size)
+            target_size = self.scale_rate * torch.sqrt((bw ** 2) + (bh ** 2)).view(bboxes_size)
         else:
             target_size = torch.sqrt(bw * bh * self.scale_rate).view(bboxes_size)  # [0, 1]
         scale = target_size / patch_ori_size
         # print('scale shape: ', scale)
 
-        # TODO: ----------------Random Rotate-------------------------
+        # ----------------Random Rotate-------------------------
         angle = torch.cuda.FloatTensor(bboxes_size).fill_(0)
         if rand_rotate_gate:
             angle = angle.uniform_(self.min_rotate_angle, self.max_rotate_angle)
@@ -185,7 +184,7 @@ class PatchTransformer(nn.Module):
         sin = torch.sin(angle)
         cos = torch.cos(angle)
 
-        # TODO: Ready for the affine matrix
+        # ----------Ready for the affine matrix-------------
         theta = torch.cuda.FloatTensor(bboxes_size, 2, 3).fill_(0)
         # print(cos, scale)
         theta[:, 0, 0] = cos / scale
@@ -205,7 +204,7 @@ class PatchTransformer(nn.Module):
 
 
 class PatchRandomApplier(nn.Module):
-    # TODO: apply this patch
+    # apply patch
     def __init__(self, device, rotate_angle=20, rand_loc_rate=0.1, scale_rate=0.2):
         """
 
@@ -278,7 +277,7 @@ class PatchRandomApplier(nn.Module):
             adv_batch = self.patch_transformer.random_erase(adv_batch)
         adv_batch = padding(adv_batch)
 
-        # TODO: transform gates by gates
+        # transform by gates
         adv_batch_t = self.patch_transformer(adv_batch, bboxes_batch, patch_ori_size,
                                              rand_rotate_gate=gates['rotate'],
                                              rand_shift_gate=gates['shift'],

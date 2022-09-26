@@ -56,8 +56,9 @@ class PatchManager:
 
     def update_(self, patch_new):
         del self.patch
-        self.patch = patch_new.detach_()
+        self.patch = patch_new.detach()
         self.patch.requires_grad = True
 
+    @torch.no_grad()
     def clamp_(self, p_min=0, p_max=1):
-        torch.clamp_(self.patch.data, min=p_min, max=p_max)
+        torch.clamp_(self.patch, min=p_min, max=p_max)

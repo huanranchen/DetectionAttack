@@ -52,7 +52,7 @@ class LinfPGDAttack(BaseAttacker):
             loss.append(float(disappear_loss))
             detector.zero_grad()
             disappear_loss.backward()
-            self.patch_update(patch_tmp, detector_attacker.patch_obj.clamp_)
+            self.patch_update(patch_tmp=patch_tmp, clamp_fn=detector_attacker.patch_obj.clamp_)
             adv_tensor_batch, _ = detector_attacker.uap_apply(ori_tensor_batch, universal_patch=patch_tmp)
 
         return patch_tmp
