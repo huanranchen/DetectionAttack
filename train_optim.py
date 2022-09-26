@@ -109,7 +109,6 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
     parser.add_argument('-re', '--random_erase', action='store_true', default=False)
     parser.add_argument('-mu', '--mixup', action='store_true', default=False)
-    parser.add_argument('-mo', '--mosaic', action='store_true', default=False)
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 

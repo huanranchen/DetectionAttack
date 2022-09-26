@@ -41,6 +41,6 @@ ATTACKER:
   PATCH_ATTACK:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.15
+    SCALE: 0.2
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1
