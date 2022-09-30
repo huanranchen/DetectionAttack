@@ -29,11 +29,10 @@ class RSCchr(OptimAttacker):
 
     def non_targeted_attack(self, ori_tensor_batch, detector, mask_prob=0.1):
         losses = []
-        # suggest to use iter_step == 2
-        assert self.iter_step >= 2, 'if you use RSCchr, should iterate at least twice'
-        mask = torch.ones_like(self.optimizer.param_groups[0]['params'][0])
-        for iter in range(self.iter_step):
-            if iter > 0: ori_tensor_batch = ori_tensor_batch.clone()
+        assert self.iter_step == 2, 'if you use RSCchr, should iterate only twice'
+        for iteration in range(1, self.iter_step + 1):
+            if iteration > 0:
+                ori_tensor_batch = ori_tensor_batch.clone()
             adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch)
             # detect adv img batch to get bbox and obj confs
             bboxes, confs, cls_array = detector(adv_tensor_batch).values()
@@ -43,11 +42,9 @@ class RSCchr(OptimAttacker):
                 confs = torch.cat(
                     ([conf[cls == attack_cls].max(dim=-1, keepdim=True)[0] for conf, cls in zip(confs, cls_array)]))
             elif hasattr(self.cfg, 'topx_conf'):
-                # attack top x confidence
                 confs = torch.sort(confs, dim=-1, descending=True)[0][:, :self.cfg.topx_conf]
                 confs = torch.mean(confs, dim=-1)
             else:
-                # only attack the max confidence
                 confs = confs.max(dim=-1, keepdim=True)[0]
 
             detector.zero_grad()
@@ -66,14 +63,17 @@ class RSCchr(OptimAttacker):
             self.patch_update(patch_clamp_=self.detector_attacker.patch_obj.clamp_)
 
             # do the mask
-            patch = self.optimizer.param_groups[0]['params'][0]
-            original_patch = patch.clone()
-            patch[mask] = original_patch  # restore the patch
-            if iter != self.iter_step - 1:
+            if iteration == 1:
+                patch = self.optimizer.param_groups[0]['params'][0]
+                original_patch = patch.clone().detach()  # backup
                 grad = patch.grad
-                mask = self.get_mask(grad)
+                mask = self.get_mask(self.get_patched_activation(grad))
                 with torch.no_grad():
-                    patch.mul_(1 - mask)
+                    patch.mul_(~mask)
+            if iteration == 2:
+                patch = self.optimizer.param_groups[0]['params'][0]
+                with torch.no_grad():
+                    patch[mask] = original_patch[mask]  # restore the patch
 
         self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
         return torch.tensor(losses).mean()
@@ -89,6 +89,7 @@ class RSCchr(OptimAttacker):
         '''
         把图片分成若干个小patch，每个patch部分求均值
         '''
+        shape = x.shape
         x = x.squeeze()  # 3, 300, 300
         height, width = x.shape[1], x.shape[2]
         num_patch_height = height // small_patch_size[0]
@@ -109,17 +110,7 @@ class RSCchr(OptimAttacker):
         x = torch.sum(x, dim=0, keepdim=True)
         x = x.repeat(3, 1, 1)
 
-        # to check whether above is right
-        # check 3, 20, 20 is same!
-        # gt = patch_grad[0, 0, 0]
-        # for i in range(small_patch_size[0]):
-        #     for j in range(small_patch_size[1]):
-        #         for c in range(3):  # channel
-        #             if (patch_grad[c, i, j] != gt):
-        #                 print('above is false!')
-
-        ################################
-        return x
+        return x.reshape(shape)
 
     @torch.no_grad()
     def visualize_patch_saliency_map(self, patch_data: torch.tensor, patch_grad: torch.tensor,
