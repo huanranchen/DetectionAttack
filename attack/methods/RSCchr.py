@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-
 from .optim import OptimAttacker
 import torch
 import os
@@ -28,8 +27,11 @@ class RSCchr(OptimAttacker):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def non_targeted_attack(self, ori_tensor_batch, detector):
+    def non_targeted_attack(self, ori_tensor_batch, detector, mask_prob=0.1):
         losses = []
+        # suggest to use iter_step == 2
+        assert self.iter_step >= 2, 'if you use RSCchr, should iterate at least twice'
+        mask = torch.ones_like(self.optimizer.param_groups[0]['params'][0])
         for iter in range(self.iter_step):
             if iter > 0: ori_tensor_batch = ori_tensor_batch.clone()
             adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch)
@@ -53,18 +55,71 @@ class RSCchr(OptimAttacker):
             loss = loss_dict['loss']
             loss.backward()
 
-            # do the visualizations
-            if random.random() < 0.1:
-                patch = self.optimizer.param_groups[0]['params'][0]
-                self.visualize_patch_saliency_map(patch.detach(), patch.grad)
+            # # do the visualizations
+            # if random.random() < 0.1:
+            #     patch = self.optimizer.param_groups[0]['params'][0]
+            #     self.visualize_patch_saliency_map(patch.detach(), patch.grad)
 
             losses.append(float(loss))
 
             # update patch. for optimizer, using optimizer.step(). for PGD or others, using clamp and SGD.
             self.patch_update(patch_clamp_=self.detector_attacker.patch_obj.clamp_)
 
+            # do the mask
+            patch = self.optimizer.param_groups[0]['params'][0]
+            original_patch = patch.clone()
+            patch[mask] = original_patch  # restore the patch
+            if iter != self.iter_step - 1:
+                grad = patch.grad
+                mask = self.get_mask(grad)
+                with torch.no_grad():
+                    patch.mul_(1 - mask)
+
         self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
         return torch.tensor(losses).mean()
+
+    def get_mask(self, x: torch.tensor, mask_ratio=0.25):
+        sorted_x = torch.sort(x.reshape(-1), dim=0, descending=True)[0]
+        threshold = sorted_x[int(sorted_x.shape[0] * mask_ratio)]
+        mask = x >= threshold
+        return mask
+
+    @staticmethod
+    def get_patched_activation(x: torch.tensor, small_patch_size: tuple = (20, 20)):
+        '''
+        把图片分成若干个小patch，每个patch部分求均值
+        '''
+        x = x.squeeze()  # 3, 300, 300
+        height, width = x.shape[1], x.shape[2]
+        num_patch_height = height // small_patch_size[0]
+        num_patch_width = width // small_patch_size[1]
+        x = x.reshape(3, num_patch_height, small_patch_size[0],
+                      num_patch_width, small_patch_size[1])
+        x = x.permute(0, 1, 3, 2, 4)
+        x = x.reshape(x.shape[0], x.shape[1], x.shape[2],
+                      small_patch_size[0] * small_patch_size[1])
+        x = torch.sum(torch.abs(x), dim=-1, keepdim=True)  # 此处是否加abs存疑
+        x = x.repeat(1, 1, 1, small_patch_size[0] * small_patch_size[1])
+        x = x.reshape(x.shape[0], x.shape[1], x.shape[2],
+                      small_patch_size[0], small_patch_size[1])
+        x = x.permute(0, 1, 3, 2, 4)
+        x = x.reshape(3, height, width)
+
+        # handle the channel
+        x = torch.sum(x, dim=0, keepdim=True)
+        x = x.repeat(3, 1, 1)
+
+        # to check whether above is right
+        # check 3, 20, 20 is same!
+        # gt = patch_grad[0, 0, 0]
+        # for i in range(small_patch_size[0]):
+        #     for j in range(small_patch_size[1]):
+        #         for c in range(3):  # channel
+        #             if (patch_grad[c, i, j] != gt):
+        #                 print('above is false!')
+
+        ################################
+        return x
 
     @torch.no_grad()
     def visualize_patch_saliency_map(self, patch_data: torch.tensor, patch_grad: torch.tensor,
@@ -79,25 +134,9 @@ class RSCchr(OptimAttacker):
 
         patch_data = self.tensor2cv2image(patch_data)
 
-        print(patch_grad.shape)
         # process grad, parallel computing:
-        patch_grad = patch_grad.squeeze()  # 3, 300, 300
-        height, width = patch_grad.shape[1], patch_grad.shape[2]
-        num_patch_height = height // small_patch_size[0]
-        num_patch_width = width // small_patch_size[1]
-        patch_grad = patch_grad.reshape(3, num_patch_height, small_patch_size[0], num_patch_width, small_patch_size[1])
-        patch_grad = patch_grad.permute(0, 2, 4, 1, 3)
-        patch_grad = patch_grad.reshape(patch_grad.shape[0], patch_grad.shape[1], patch_grad.shape[2],
-                                        num_patch_height * num_patch_width)
-        patch_grad = torch.sum(torch.abs(patch_grad), dim=-1, keepdim=True)  # 此处是否加abs存疑
-        patch_grad = patch_grad.repeat(1, 1, 1, num_patch_width * num_patch_height)
-        patch_grad = patch_grad.reshape(patch_grad.shape[0], patch_grad.shape[1], patch_grad.shape[2],
-                                        num_patch_height, num_patch_width)
-        patch_grad = patch_grad.permute(0, 3, 1, 4, 2)
-        patch_grad = patch_grad.reshape(3, height, width)
-
-        patch_grad = self.normalize(patch_grad)
-        ################################
+        patch_grad = self.get_patched_activation(patch_grad, small_patch_size)
+        patch_grad = self.normalize(patch_grad)  # 3, 300, 300
 
         patch_grad = self.tensor2cv2image(patch_grad)
 
@@ -107,9 +146,6 @@ class RSCchr(OptimAttacker):
         result = heatmap * 0.5 + patch_data * 0.5  # 比例可以自己调节
 
         cv2.imwrite(os.path.join(save_path, get_datetime_str() + '.jpg'), result)
-        plt.imshow(heatmap)
-        plt.savefig(os.path.join(save_path, get_datetime_str() + '.jpg'))
-        plt.close()
 
     @staticmethod
     def normalize(x: torch.tensor) -> torch.tensor:
@@ -122,7 +158,6 @@ class RSCchr(OptimAttacker):
         x *= scale
         print(torch.max(x), torch.mean(x))
         return x
-
 
     @staticmethod
     def tensor2cv2image(x: torch.tensor) -> np.array:
