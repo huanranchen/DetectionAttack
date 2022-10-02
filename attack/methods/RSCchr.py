@@ -78,7 +78,7 @@ class RSCchr(OptimAttacker):
         self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
         return torch.tensor(losses).mean()
 
-    def get_mask(self, x: torch.tensor, mask_ratio=0.25):
+    def get_mask(self, x: torch.tensor, mask_ratio=0.75):
         sorted_x = torch.sort(x.reshape(-1), dim=0, descending=True)[0]
         threshold = sorted_x[int(sorted_x.shape[0] * mask_ratio)]
         mask = x >= threshold
