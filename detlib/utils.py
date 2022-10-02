@@ -9,6 +9,7 @@ from .torchDet import TorchFasterRCNN, TorchSSD
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DET_LIB = os.path.join(PROJECT_DIR, 'detlib')
 
+
 def init_detectors(detector_names, cfg=None):
     detectors = []
     for detector_name in detector_names:
@@ -21,9 +22,9 @@ def init_detector(detector_name, cfg):
     detector = None
     detector_name = detector_name.lower()
     model_config = cfg.MODEL_CONFIG if hasattr(cfg, 'MODEL_CONFIG') else None
-    if cfg.PERTURB.GATE == 'shake_drop':
-        model_config = cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
-        print('Self-ensemble! Shakedrop ')
+    # if cfg.PERTURB.GATE == 'shake_drop':
+    #     model_config = cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
+    #     print('Self-ensemble! Shakedrop ')
 
     if detector_name == "yolov2":
         detector = HHYolov2(name=detector_name, cfg=cfg)
@@ -38,6 +39,9 @@ def init_detector(detector_name, cfg):
         detector = HHYolov3(name=detector_name, cfg=cfg)
         if model_config is None:
             model_config = 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3.cfg'
+        if cfg.PERTURB.GATE == 'shake_drop':
+            print('Self-ensemble! Shakedrop ')
+            model_config = 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-chr.cfg'
         detector.load(
             detector_config_file=os.path.join(DET_LIB, model_config),
             model_weights=os.path.join(DET_LIB, 'HHDet/yolov3/PyTorch_YOLOv3/weights/yolov3.weights'),
@@ -63,6 +67,9 @@ def init_detector(detector_name, cfg):
         detector = HHYolov4(name=detector_name, cfg=cfg)
         if model_config is None:
             model_config = 'HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4.cfg'
+        if cfg.PERTURB.GATE == 'shake_drop':
+            print('Self-ensemble! Shakedrop ')
+            model_config = 'HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4-shakedrop.cfg'
         detector.load(
             detector_config_file=os.path.join(DET_LIB, model_config),
             model_weights=os.path.join(DET_LIB, 'HHDet/yolov4/Pytorch_YOLOv4/weight/yolov4.weights')
