@@ -34,7 +34,7 @@ class PatchTransformer(nn.Module):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, cutout_ratio=0.3, cutout_fill=0.5, level='instance', p_erase=0.9):
+    def random_erase(self, x, cutout_ratio=0.4, cutout_fill=0.5, level='instance', p_erase=0.9):
         """
         Random erase(or Cut out) area of the adversarial patches.
         :param x: adversarial patches in a mini-batch.

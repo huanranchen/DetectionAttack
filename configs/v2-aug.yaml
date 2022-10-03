@@ -36,7 +36,7 @@ ATTACKER:
   obj_eta: 1
   START_LEARNING_RATE: 0.03
   scheduler: 'ALRS'
-  topx_conf: 3
+  topx_conf: 1
 
   PATCH_ATTACK:
     WIDTH: 300

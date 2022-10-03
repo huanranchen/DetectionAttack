@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '3'
+  AUGMENT: '13'
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -36,6 +36,7 @@ ATTACKER:
   obj_eta: 1
   START_LEARNING_RATE: 0.03
   scheduler: 'ALRS'
+  topx_conf: 1
 
   PATCH_ATTACK:
     WIDTH: 300

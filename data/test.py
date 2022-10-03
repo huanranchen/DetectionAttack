@@ -71,23 +71,51 @@ def check(query, refer, args=None):
 
     print('diff: ', total, args.query, 'query: ', qsn, '; ', args.refer, 'refer: ', rsn)
 
+def check_person(file_path):
+    with open(file_path, 'r') as f:
+        content = f.readlines()
+        for bbox in content:
+            bbox = bbox.split(' ')
+            if bbox[0] == 'person':
+                return True
+    return False
+
+
 if __name__ == '__main__':
     import argparse
-    target = 'Test'
+    from tqdm import tqdm
+    import shutil
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--refer', default='yolov3')
     parser.add_argument('-q', '--query', type=str, default=None)
     args = parser.parse_args()
-    if args.query is None:
-        args.query = args.refer
-    # remove_file(r"./inra/gap/aug/inria0/all_data", r"./inria/aug/in-dataset-gap/aug/all_data")
 
-    query_dir = f'./INRIAPerson/{target}/labels/{args.query}-labels'
-    query_dir = f'./INRIAPerson/{target}/labels/yolov2-rescale-labels'
-    # query_dir = f'./INRIAPerson/{target}/labels/bak/{args.query}-labels'
+    model = 'ground-truth'
+    models = ['ground-truth', 'yolov3', 'yolov3-tiny', 'yolov4', 'yolov4-tiny', 'yolov5', 'faster_rcnn', 'ssd']
+    target = '/train/train2017/'
 
-    refer_dir = f'./INRIAPerson/{target}/yolo-labels-natural/{args.refer}-labels'
-    refer_dir = f'./INRIAPerson/{target}/labels/origin/yolov2-rescale-labels'
-    qs = [os.path.join(query_dir, d) for d in os.listdir(query_dir)]
-    rs = [os.path.join(refer_dir, d) for d in os.listdir(refer_dir)]
-    check(qs, rs, args)
+    source = './coco'
+    save = './coco_person'
+
+    label_postfix = 'labels/'+model+'-rescale-labels'
+    source_label_fp = source + target + label_postfix
+    save_label_fp = save + target + label_postfix
+    source_im_fp = source + target + 'pos'
+    save_im_fp = save + target + 'pos'
+    os.makedirs(save_label_fp, exist_ok=True)
+    os.makedirs(save_im_fp, exist_ok=True)
+
+    all_f = os.listdir(source_label_fp)
+    person_fs = 0
+    for label_f in tqdm(all_f):
+        im_f = label_f.replace('.txt', '.jpg')
+
+        label_fp = os.path.join(source_label_fp, label_f)
+        if check_person(label_fp):
+            # print('have person: ', label_f)
+            shutil.copyfile(os.path.join(source_im_fp, im_f), os.path.join(save_im_fp, im_f))
+            shutil.copyfile(label_fp, os.path.join(save_label_fp, label_f))
+            person_fs += 1
+
+        # if person_fs > 10:
+        #     break

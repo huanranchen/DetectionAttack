@@ -12,7 +12,7 @@ sys.path.append(PROJECT_DIR)
 
 from detlib import init_detectors
 from tools import ConfigParser
-from tools.loader import DetDataset
+from tools.loader import dataLoader
 from tools.parser import load_class_names
 from tools.det_utils import plot_boxes_cv2
 
@@ -70,9 +70,8 @@ if __name__ == "__main__":
     print('dataroot     :', os.getcwd(), args.data_root)
     img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
 
-    data_set = detDataSet(args.data_root, cfg.DETECTOR.INPUT_SIZE, is_augment=False)
-    data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=False,
-                             num_workers=8, pin_memory=True)
+    data_loader = dataLoader(data_root=args.data_root, input_size=cfg.DETECTOR.INPUT_SIZE,
+                             batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
     postfix = '-labels' if args.nrescale else '-rescale-labels'
     print('rescale      :', args.nrescale, postfix)
     save_path = args.save_root
@@ -96,3 +95,5 @@ if __name__ == "__main__":
             # os.path.join('./test/' + img_name)
             # print(fp)
             utils.save_label(preds[0], fp, img_name, save_conf=False, rescale=not args.nrescale)
+
+            exit()

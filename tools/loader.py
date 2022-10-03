@@ -105,7 +105,7 @@ class DetDataset(Dataset):
             transforms.ToTensor()
         ])
 
-    def transform_fn(self, im, p_aug=0.5):
+    def transform_fn(self, im, p_aug=0.6):
         """This is for random data augmentation of p_aug probability
 
         :param im:
@@ -127,9 +127,9 @@ class DetDataset(Dataset):
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-            transforms.RandomResizedCrop((512, 512), scale=(0.1, 1.0)),
+            transforms.RandomResizedCrop((512, 512), scale=(0.9, 1.0)),
             # transforms.RandomChoice(subpolicy),
-            transforms.RandomRotation(5), # 5也可以
+            # transforms.RandomRotation(5), # 5也可以
         ])(im)
         return im_t
 
