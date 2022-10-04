@@ -22,6 +22,7 @@ class LinfPGDAttack(BaseAttacker):
     """PGD attacks (arxiv: https://arxiv.org/pdf/1706.06083.pdf)"""
     def __init__(self, loss_func, cfg, device, detector_attacker, norm='L_infty'):
         super().__init__(loss_func, norm, cfg, device, detector_attacker)
+        self.learning_rate = cfg.STEP_SIZE
 
     def patch_update(self, **kwargs):
         patch_tmp = self.detector_attacker.patch_obj.patch

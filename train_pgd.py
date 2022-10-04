@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from tqdm import tqdm
-
+import os
 import time
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
@@ -32,10 +32,12 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
     save_tensor(detector_attacker.universal_patch, save_name, args.save_path)
     vlogger = None
     if not args.debugging:
-        vlogger = VisualBoard(name=args.board_name, start_iter=start_index)
+        vlogger = VisualBoard(name=args.board_name, start_iter=start_index, new_process=args.new_process)
         detector_attacker.vlogger = vlogger
+    loss_array = []
     for epoch in range(start_index, cfg.ATTACKER.MAX_EPOCH+1):
         et0 = time.time()
+        ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
             now_step = get_iter(epoch, index)
             if vlogger: vlogger(epoch, now_step)
@@ -46,14 +48,20 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
             if sum(target_nums) == 0: continue
 
             loss = detector_attacker.attack(img_tensor_batch, args.attack_method)
-            if vlogger: vlogger.write_scalar(loss, 'loss/iter_loss')
+            ep_loss += loss
+
             # the patch will be saved in every 5000 images
             if epoch % 10 == 0:
                 save_tensor(detector_attacker.universal_patch, save_name, args.save_path)
 
         et1 = time.time()
-        if vlogger: vlogger.write_scalar(et1-et0, 'misc/ep time')
-    np.save(args.save_path+'/losses.npy', np.array(losses))
+        ep_loss /= len(data_loader)
+        loss_array.append(ep_loss)
+        if vlogger:
+            vlogger.write_ep_loss(ep_loss)
+            vlogger.write_scalar(et1-et0, 'misc/ep time')
+
+    np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
 
 
 if __name__ == '__main__':
@@ -70,6 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('-re', '--random_erase', action='store_true', default=False)
     parser.add_argument('-s', '--save_path', type=str, default='./results/inria')
     parser.add_argument('-d', '--debugging', action='store_true')
+    parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

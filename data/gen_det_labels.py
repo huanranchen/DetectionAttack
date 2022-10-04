@@ -48,7 +48,6 @@ if __name__ == "__main__":
     parser.add_argument('-dr', '--data_root', type=str, default=f"{PROJECT_DIR}/data/INRIAPerson/{source}/pos")
     parser.add_argument('-sr', '--save_root', type=str, default=f'{PROJECT_DIR}/data/INRIAPerson/{source}/labels/')
     parser.add_argument('-cfg', '--config_file', type=str, default=f'test.yaml')
-    parser.add_argument('-d', '--detector_name', nargs='+', default=None)
     parser.add_argument('-nr', '--nrescale', action='store_true')
     parser.add_argument('-i', '--imgs', action='store_true')
     # parser.add_argument('-c', '--class', nargs='+', default=-1)
@@ -58,8 +57,6 @@ if __name__ == "__main__":
     args.save_root = os.path.join(PROJECT_DIR, args.save_root)
     args.config_file = os.path.join(f'{PROJECT_DIR}/configs', args.config_file)
     cfg = ConfigParser(args.config_file)
-    if args.detector_name is not None:
-        cfg.DETECTOR.NAME = args.detector_name
     detectors = init_detectors(cfg.DETECTOR.NAME, cfg)
 
     utils = Utils(cfg)
@@ -78,13 +75,13 @@ if __name__ == "__main__":
     for detector in detectors:
         fp = os.path.join(save_path, detector.name + postfix)
         os.makedirs(fp, exist_ok=True)
-        for index, img_tensor_batch in tqdm(enumerate(data_loader)):
+        for index, img_tensor_batch in enumerate(tqdm(data_loader)):
             names = img_names[index:index + batch_size]
             img_name = names[0].split('/')[-1]
             all_preds = None
 
             img_tensor_batch = img_tensor_batch.to(detector.device)
-            preds, _ = detector(img_tensor_batch)
+            preds = detector(img_tensor_batch)['bbox_array']
 
             if args.imgs:
                 save_dir = f'./test/{detector.name}'
@@ -95,5 +92,3 @@ if __name__ == "__main__":
             # os.path.join('./test/' + img_name)
             # print(fp)
             utils.save_label(preds[0], fp, img_name, save_conf=False, rescale=not args.nrescale)
-
-            exit()

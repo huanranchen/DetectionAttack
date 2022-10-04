@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     model = 'ground-truth'
     models = ['ground-truth', 'yolov3', 'yolov3-tiny', 'yolov4', 'yolov4-tiny', 'yolov5', 'faster_rcnn', 'ssd']
-    target = '/train/train2017/'
+    target = '/val/val2017/'
 
     source = './coco'
     save = './coco_person'

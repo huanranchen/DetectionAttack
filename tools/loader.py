@@ -10,7 +10,8 @@ import torch.nn.functional as F
 from natsort import natsorted
 
 from .transformer import mixup_transform
-
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class DetDatasetLab(Dataset):
     """This is a Dataset with data label loaded."""

@@ -24,17 +24,17 @@ class PatchTransformer(nn.Module):
         super().__init__()
         self.min_rotate_angle = -rotate_angle / 180 * math.pi
         self.max_rotate_angle = rotate_angle / 180 * math.pi
-        self.cutout_rand_shift = -0.05
         self.rand_shift_rate = rand_shift_rate
         self.scale_rate = scale_rate
         self.median_pooler = MedianPool2d(7, same=True)
         self.device = device
+        self.logger = True
 
     def random_shift(self, x, limited_range):
         shift = limited_range * torch.cuda.FloatTensor(x.size()).uniform_(-self.rand_shift_rate, self.rand_shift_rate)
         return x + shift
 
-    def random_erase(self, x, cutout_ratio=0.4, cutout_fill=0.5, level='instance', p_erase=0.9):
+    def random_erase(self, x, cutout_ratio=0.4, cutout_fill=0.5, rand_shift=-0.05, level='instance', p_erase=0.9):
         """
         Random erase(or Cut out) area of the adversarial patches.
         :param x: adversarial patches in a mini-batch.
@@ -42,17 +42,19 @@ class PatchTransformer(nn.Module):
         :param erase_size:
         :return:
         """
+        if self.logger:
+            self.logger = False
+            print('Cutout level: ', level, '; cutout ratio: ', cutout_ratio, '; random shift: ', rand_shift)
+
         gate = torch.tensor([0]).bernoulli_(p_erase)
         if gate.item() == 0: return x
         assert cutout_fill > 0, 'Error! The cutout area can\'t be filled with 0'
-        rand_shift = self.cutout_rand_shift
         s = x.size()
         batch_size = s[0]
         lab_len = s[1]
         bboxes_shape = torch.Size((batch_size, lab_len))
         bboxes_size = np.prod([batch_size, lab_len])
 
-        print('Cutout '+level)
         if level is 'instance':
             target_size = bboxes_size
         elif level is 'image':
@@ -282,7 +284,6 @@ class PatchRandomApplier(nn.Module):
             adv_batch = self.patch_transformer.random_jitter(adv_batch)
         adv_batch = torch.clamp(adv_batch, 0.000001, 0.99999)
         if gates['rerase']:
-            print("Random erase shift ", self.patch_transformer.cutout_rand_shift)
             adv_batch = self.patch_transformer.random_erase(adv_batch)
         adv_batch = padding(adv_batch)
 
