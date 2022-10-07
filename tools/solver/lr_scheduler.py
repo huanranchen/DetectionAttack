@@ -92,7 +92,7 @@ def Plateau_lr_scheduler(optimizer, patience=100):
 
 
 class warmupALRS():
-    def __init__(self, optimizer, warmup_epoch=50, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.999):
+    def __init__(self, optimizer, warmup_epoch=50, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
         self.optimizer = optimizer
 
         self.warmup_rate = 1/3

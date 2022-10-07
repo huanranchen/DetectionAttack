@@ -38,6 +38,7 @@ class BaseAttacker(ABC):
         vlogger = self.detector_attacker.vlogger
         # TODO: this is manually appointed logger iter
         if vlogger:
+            print(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
             vlogger.note_loss(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
             if vlogger.iter % 77 == 0:
                 filter_box = self.detector_attacker.filter_bbox
