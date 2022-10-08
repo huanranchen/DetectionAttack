@@ -50,6 +50,11 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
             loss = detector_attacker.attack(img_tensor_batch, args.attack_method)
             ep_loss += loss
 
+            if epoch % 10 == 0:
+                # patch_name = f'{epoch}_{save_name}'
+                patch_name = f'{save_name}' + '.png'
+                save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
+
         et1 = time.time()
         ep_loss /= len(data_loader)
         loss_array.append(ep_loss)

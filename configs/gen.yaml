@@ -1,0 +1,33 @@
+DATA:
+  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  AUGMENT: '0'
+  TRAIN:
+    IMG_DIR: './coco_person/train/train2017/pos'
+    LAB_DIR: './coco_person/train/train2017/labels'
+
+DETECTOR:
+  NAME: ['YOLOV2', "YOLOV3", "YOLOV3-TINY", "YOLOV4", "YOLOV4-TINY", "YOLOV5"] # YOLOV3, YOLOV4, YOLOV5
+  INPUT_SIZE: [416, 416] # height, width
+  BATCH_SIZE: 16
+
+  CONF_THRESH: 0.5
+  IOU_THRESH: 0.45
+
+  PERTURB:
+    GATE: null
+
+
+ATTACKER:
+  METHOD: "pgd"
+  EPSILON: 255 # 0-255
+  MAX_EPOCH: 1000
+  ITER_STEP: 5
+  STEP_SIZE: 0.005
+  TARGET_CLASS: 0
+  ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
+
+  PATCH_ATTACK:
+    WIDTH: 128
+    HEIGHT: 128
+    SCALE: 0.2
+    ASPECT_RATIO: -1
