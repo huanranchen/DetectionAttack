@@ -207,7 +207,7 @@ class DarknetShakedrop(nn.Module):
                 from_layer = from_layer if from_layer > 0 else from_layer + ind
                 x1 = outputs[from_layer]
                 x2 = outputs[ind - 1]
-                x = ShakeDrop.apply(x1) + x2
+                x = x1 + ShakeDrop.apply(x2)
                 if activation == 'leaky':
                     x = F.leaky_relu(x, 0.1, inplace=True)
                 elif activation == 'relu':

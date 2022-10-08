@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
-  AUGMENT: '3'
+  AUGMENT: '13'
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
     LAB_DIR: 'data/INRIAPerson/Train/labels/ground-truth-labels'
@@ -18,24 +18,28 @@ DETECTOR:
   PERTURB:
     GATE: 'shake_drop' # ['shake_drop', 'grad_descend', 'random', null]
     SHAKE_DROP:
-      MODEL_CONFIG: 'detector_lab/HHDet/yolov3/PyTorch_YOLOv3/config/yolov4-shakedrop.cfg' # rewrite model cfg when shake drop
+      MODEL_CONFIG: 'detlib/yolov4/Pytorch_YOLOv4/cfg/yolov4-shakedrop.cfg' # rewrite model cfg when shake drop
 
-    GRAD_DESCEND:
-      GRAD_RESET: 10
-      RESET_FREQ: 1000
 
 ATTACKER:
-  METHOD: "pgd"
+  METHOD: "optim"
   EPSILON: 255 # 0-255
   MAX_EPOCH: 1000
-  ITER_STEP: 5
+  ITER_STEP: 1
 
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
-  ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id (corresponds to the namefile)
+  ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
+  LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse]
+  tv_eta: 2.5
+  obj_eta: 1
+  START_LEARNING_RATE: 0.03
+  scheduler: 'ALRS'
+  topx_conf: 3
 
   PATCH_ATTACK:
-    WIDTH: 128
-    HEIGHT: 128
-    SCALE: 0.2
-    ASPECT_RATIO: -1
+    WIDTH: 300
+    HEIGHT: 300
+    SCALE: 0.15
+    INIT: "gray" # ['random', 'gray']
+    ASPECT_RATIO: 1
