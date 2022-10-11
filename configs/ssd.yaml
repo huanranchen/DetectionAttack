@@ -1,5 +1,5 @@
 DATA:
-  CLASS_NAME_FILE: 'configs/namefiles/coco91.names'
+  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
   AUGMENT: '3'
 
   TRAIN:
