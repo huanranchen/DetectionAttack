@@ -1,22 +1,26 @@
 DATA:
-  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
-  AUGMENT: '13'
+  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  AUGMENT: '3'
+
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
-    LAB_DIR: 'data/INRIAPerson/Train/labels/ground-truth-labels'
+    LAB_DIR: 'data/INRIAPerson/Train/labels/yolo-labels'
+
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV5"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
+
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
+  ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
-    GATE: 'shake_drop' # ['shake_drop', 'grad_descend', 'random', null]
+    GATE: null
 
 ATTACKER:
   METHOD: "optim"
@@ -32,7 +36,6 @@ ATTACKER:
   obj_eta: 1
   START_LEARNING_RATE: 0.03
   scheduler: 'ALRS'
-  topx_conf: 3
 
   PATCH_ATTACK:
     WIDTH: 300
