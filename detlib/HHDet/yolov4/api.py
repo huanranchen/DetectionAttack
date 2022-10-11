@@ -1,4 +1,5 @@
 import sys
+import torch
 
 from .Pytorch_YOLOv4.tool.utils import *
 from .Pytorch_YOLOv4.tool.torch_utils import *
@@ -19,13 +20,7 @@ class HHYolov4(DetectorBase):
         self.detector.models.requires_grad_(state)
 
     def load(self, model_weights, detector_config_file=None):
-        if self.cfg.PERTURB.GATE == 'shake_drop':
-            from .Pytorch_YOLOv4.tool.darknet_shakedrop import DarknetShakedrop
-            detector_config_file = self.cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
-            print('Self ensemble! Shake drop model cfg :', detector_config_file)
-            self.detector = DarknetShakedrop(detector_config_file).to(self.device)
-        else:
-            self.detector = Darknet(detector_config_file).to(self.device)
+        self.detector = Darknet(detector_config_file).to(self.device)
 
         self.detector.load_weights(model_weights)
         self.eval()
