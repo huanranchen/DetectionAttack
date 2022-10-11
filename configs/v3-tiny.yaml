@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '13'
+  AUGMENT: '3'
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -11,13 +11,14 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["YOLOV2"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV3-tiny"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
-  MODEL_CONFIG: 'HHDet/yolov2/yolov2/config/yolo.cfg'
+  MODEL_CONFIG: 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-tiny.cfg'
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
+  ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
     GATE: null
@@ -25,7 +26,7 @@ DETECTOR:
 ATTACKER:
   METHOD: "optim"
   EPSILON: 255 # 0-255
-  MAX_EPOCH: 5000
+  MAX_EPOCH: 1000
   ITER_STEP: 1
 
   STEP_SIZE: 0.005
@@ -35,8 +36,7 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 1
   START_LEARNING_RATE: 0.03
-  scheduler: 'warmupALRS'
-  topx_conf: 1
+  scheduler: 'ALRS'
 
   PATCH_ATTACK:
     WIDTH: 300

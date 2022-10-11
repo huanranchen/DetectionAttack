@@ -68,8 +68,9 @@ def init_detector(detector_name, cfg):
         if model_config is None:
             model_config = 'HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4.cfg'
         if cfg.PERTURB.GATE == 'shake_drop':
-            print('Self-ensemble! Shakedrop ')
+            print('Self-ensemble! Shakedrop v4')
             model_config = 'HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4-shakedrop.cfg'
+
         detector.load(
             detector_config_file=os.path.join(DET_LIB, model_config),
             model_weights=os.path.join(DET_LIB, 'HHDet/yolov4/Pytorch_YOLOv4/weight/yolov4.weights')

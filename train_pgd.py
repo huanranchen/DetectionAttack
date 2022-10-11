@@ -29,7 +29,7 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
     detector_attacker.init_universal_patch(args.patch)
 
     losses = []
-    save_tensor(detector_attacker.universal_patch, save_name, args.save_path)
+    save_tensor(detector_attacker.universal_patch, save_name + '.png', args.save_path)
     vlogger = None
     if not args.debugging:
         vlogger = VisualBoard(name=args.board_name, start_iter=start_index, new_process=args.new_process)
@@ -49,10 +49,6 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
 
             loss = detector_attacker.attack(img_tensor_batch, args.attack_method)
             ep_loss += loss
-
-            # the patch will be saved in every 5000 images
-            if epoch % 10 == 0:
-                save_tensor(detector_attacker.universal_patch, save_name, args.save_path)
 
         et1 = time.time()
         ep_loss /= len(data_loader)
@@ -82,7 +78,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    save_patch_name = args.cfg.split('.')[0] + '.png'
+    save_patch_name = args.cfg.split('.')[0]
     args.cfg = './configs/' + args.cfg
 
     print('-------------------------Training-------------------------')
