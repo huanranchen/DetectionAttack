@@ -39,7 +39,7 @@ class LinfPGDAttack(BaseAttacker):
         obj_loss = self.loss_fn(confs=confs)
         tv_loss = self.detector_attacker.patch_obj.total_variation()
         # tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.cuda.FloatTensor([0.1]))
-        tv_loss = self.cfg.tv_eta * tv_loss
+        tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.tensor(0.1).to(self.device))
         loss = obj_loss * self.cfg.obj_eta + tv_loss
         out = {'loss': loss, 'det_loss': obj_loss, 'tv_loss': tv_loss}
         return out
