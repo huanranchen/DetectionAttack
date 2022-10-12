@@ -69,7 +69,9 @@ class BaseAttacker(ABC):
             detector.zero_grad()
             loss_dict = self.attack_loss(confs=confs)
             loss = loss_dict['loss']
+            print(loss)
             loss.backward()
+            print(self.detector_attacker.patch_obj.patch.grad)
             losses.append(float(loss))
 
             # update patch. for optimizer, using optimizer.step(). for PGD or others, using clamp and SGD.
