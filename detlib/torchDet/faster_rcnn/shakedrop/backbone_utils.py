@@ -46,7 +46,7 @@ class BackboneWithFPN(nn.Module):
         return x
 
 
-def my_resnet_fpn_backbone(
+def resnet_fpn_backbone_shakedrop(
     backbone_name,
     pretrained,
     norm_layer=misc_nn_ops.FrozenBatchNorm2d,

@@ -15,7 +15,7 @@ from ..utils.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone, _validate_trainable_layers, mobilenet_backbone
 
 # modified!!!!!!!!
-from .shakedrop.backbone_utils import my_resnet_fpn_backbone
+from .shakedrop.backbone_utils import resnet_fpn_backbone_shakedrop
 
 __all__ = [
     "FasterRCNN", "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_320_fpn",
@@ -482,7 +482,7 @@ def faster_rcnn_resnet50_shakedrop(pretrained=True, progress=True,
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = my_resnet_fpn_backbone('resnet50_shakedrop', pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    backbone = resnet_fpn_backbone_shakedrop('resnet50_shakedrop', pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls["fasterrcnn_resnet50_fpn_coco"], progress=progress)

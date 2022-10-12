@@ -26,6 +26,7 @@ class OptimAttacker(BaseAttacker):
             loss = tv_loss + obj_loss
         elif self.cfg.LOSS_FUNC == 'obj':
             loss = loss['obj_loss'] * self.cfg.obj_eta
+            obj_loss = loss
             tv_loss = torch.cuda.FloatTensor([0])
         out = {'loss': loss, 'det_loss': obj_loss, 'tv_loss': tv_loss}
         return out
