@@ -25,7 +25,7 @@ DETECTOR:
 ATTACKER:
   METHOD: "optim"
   EPSILON: 255 # 0-255
-  MAX_EPOCH: 5000
+  MAX_EPOCH: 1000
   ITER_STEP: 1
 
   STEP_SIZE: 0.005
@@ -35,7 +35,7 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 1
   START_LEARNING_RATE: 0.03
-  scheduler: 'warmupALRS'
+  scheduler: 'ALRS'
   topx_conf: 1
 
   PATCH_ATTACK:

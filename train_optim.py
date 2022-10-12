@@ -113,8 +113,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    save_patch_name = args.cfg.split('.')[0] if args.board_name is None else args.board_name
     args.cfg = './configs/' + args.cfg
+    save_patch_name = args.cfg.split('/')[-1].split('.')[0] if args.board_name is None else args.board_name
 
     print('-------------------------Training-------------------------')
     print('                       device : ', device)
