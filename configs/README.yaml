@@ -38,6 +38,7 @@ ATTACKER:
   PATCH_ATTACK:
     WIDTH: 128 # Patch width
     HEIGHT: 128 # Patch height
-#    SCALE: 0.2 # patch scale when attaching patch on bbox (the SCALE is default as P9's scale)
+    SCALE: 0.2 # patch scale when attaching patch on bbox (the SCALE is default as P9's scale)
     INIT: "gray" # ['random', 'gray']
     AREA_RATIO: 1 # 1: square
+    AUGMENT: [] # ['jitter', 'median_pool', 'rotate', 'shift', 'p9_scale', 'rdrop', 'rerase']

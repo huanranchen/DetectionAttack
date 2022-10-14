@@ -38,7 +38,7 @@ class BaseAttacker(ABC):
         vlogger = self.detector_attacker.vlogger
         # TODO: this is manually appointed logger iter
         if vlogger:
-            print(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
+            # print(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
             vlogger.note_loss(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
             if vlogger.iter % 77 == 0:
                 filter_box = self.detector_attacker.filter_bbox
@@ -60,6 +60,7 @@ class BaseAttacker(ABC):
                 confs = torch.cat(([conf[cls==attack_cls].max(dim=-1, keepdim=True)[0] for conf, cls in zip(confs, cls_array)]))
             elif hasattr(self.cfg, 'topx_conf'):
                 # attack top x confidence
+                # print(confs.size())
                 confs = torch.sort(confs, dim=-1, descending=True)[0][:, :self.cfg.topx_conf]
                 confs = torch.mean(confs, dim=-1)
             else:
@@ -69,9 +70,9 @@ class BaseAttacker(ABC):
             detector.zero_grad()
             loss_dict = self.attack_loss(confs=confs)
             loss = loss_dict['loss']
-            print(loss)
+            # print(loss)
             loss.backward()
-            print(self.detector_attacker.patch_obj.patch.grad)
+            # print(self.detector_attacker.patch_obj.patch.grad)
             losses.append(float(loss))
 
             # update patch. for optimizer, using optimizer.step(). for PGD or others, using clamp and SGD.

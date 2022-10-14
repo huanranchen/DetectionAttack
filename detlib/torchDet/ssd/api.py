@@ -11,6 +11,7 @@ class TorchSSD(DetectorBase):
                  input_tensor_size=None,
                  device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
         super().__init__(name, cfg, input_tensor_size, device)
+        self.max_conf_num = 200
 
     def load(self, model_weights=None, **args):
         kwargs = {}
@@ -39,7 +40,9 @@ class TorchSSD(DetectorBase):
             ), 1) if len else torch.cuda.FloatTensor([])
 
             conf = pred['scores']
-            confs_array = conf if confs_array is None else torch.cat((confs_array, conf), -1)
+            if conf.size(0) != self.max_conf_num:
+                conf = torch.cat((conf, torch.zeros(self.max_conf_num - conf.size(0)).to(self.device)), -1)
+            confs_array = conf if confs_array is None else torch.vstack((confs_array, conf))
             bbox_array.append(array)
 
         bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
