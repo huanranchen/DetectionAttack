@@ -21,6 +21,7 @@ ATTACKER:
   STEP_SIZE: 0.005
   TARGET_CLASS: 0
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
+  LOSS_FUNC: ''
 
   PATCH_ATTACK:
     WIDTH: 128

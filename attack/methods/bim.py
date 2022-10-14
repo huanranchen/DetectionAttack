@@ -23,7 +23,6 @@ class LinfBIMAttack(BaseAttacker):
 
         if "descend" in self.cfg.LOSS_FUNC:
             update *= -1
-
         update = torch.clamp(update, min=-self.epsilon, max=self.epsilon)
         patch_tmp = self.patch_obj.patch + update
         patch_tmp = torch.clamp(patch_tmp, min=self.min_epsilon, max=self.max_epsilon)
