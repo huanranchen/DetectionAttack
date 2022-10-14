@@ -23,3 +23,16 @@ class obj(object):
                 setattr(self, a, [obj(x) if isinstance(x, dict) else x for x in b])
             else:
                 setattr(self, a, obj(b) if isinstance(b, dict) else b)
+
+
+import logging
+def set_logging(name=None, verbose=True):
+    # Sets level and returns logger
+    for h in logging.root.handlers:
+        logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
+    rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
+    logging.basicConfig(format="%(message)s", level=logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING)
+    return logging.getLogger(name)
+
+def getLogger():
+    return set_logging(__name__)  # define globally (used in train.py, val.py, detect.py, etc.)

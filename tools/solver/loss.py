@@ -46,21 +46,6 @@ def obj_tv_loss(**kwargs):
     return loss
 
 
-def obj_mse_tv_loss(**kwargs):
-    confs = kwargs['confs']; patch = kwargs['patch']
-    tv_loss = TVLoss.smooth(patch)
-    obj_loss = descend_mse_loss(confs=confs)
-    loss = {'tv_loss': tv_loss, 'obj_loss': obj_loss}
-    return loss
-
-
-def obj_loss(**kwargs):
-    confs = kwargs['confs']
-    obj_loss = torch.mean(confs)
-    loss = {'obj_loss': obj_loss}
-    return loss
-
-
 def descend_mse_loss(**kwargs):
     # print(confs.shape)
     confs = kwargs['confs']

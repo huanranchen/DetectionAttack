@@ -18,12 +18,9 @@ attacker_dict = {
 }
 
 loss_dict = {
-    "default": obj_loss,
     "ascend-mse": ascend_mse_loss,
     "descend-mse": descend_mse_loss,
     "obj-tv": obj_tv_loss,
-    "mse-obj-tv": obj_mse_tv_loss,
-    "obj": obj_loss
 }
 
 
@@ -44,9 +41,7 @@ class BaseAttacker(object):
 
     def init_attaker(self):
         cfg = self.cfg.ATTACKER
-        loss_func = loss_dict['default']
-        if hasattr(cfg, 'LOSS_FUNC') and cfg.LOSS_FUNC is not None:
-            loss_func = loss_dict[cfg.LOSS_FUNC]
+        loss_func = loss_dict[cfg.LOSS_FUNC]
 
         self.attacker = attacker_dict[cfg.METHOD](
             loss_func=loss_func, norm='L_infty', device=self.device, cfg = cfg, detector_attacker=self)

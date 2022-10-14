@@ -77,7 +77,7 @@ class BaseAttacker(ABC):
             losses.append(float(loss))
 
             # update patch. for optimizer, using optimizer.step(). for PGD or others, using clamp and SGD.
-            self.patch_update(patch_clamp_=self.detector_attacker.patch_obj.clamp_)
+            self.patch_update()
         # print(adv_tensor_batch, bboxes, loss_dict)
         # update training statistics on tensorboard
         self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
@@ -87,6 +87,14 @@ class BaseAttacker(ABC):
     def patch_update(self, **kwargs):
         pass
 
-    @abstractmethod
+    @property
+    def patch_obj(self):
+        return self.detector_attacker.patch_obj
+
     def attack_loss(self, confs):
-        pass
+        obj_loss = self.loss_fn(confs=confs)
+        tv_loss = self.detector_attacker.patch_obj.total_variation()
+        tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.cuda.FloatTensor([0.1]))
+        loss = obj_loss * self.cfg.obj_eta + tv_loss
+        out = {'loss': loss, 'det_loss': obj_loss, 'tv_loss': tv_loss}
+        return out
