@@ -1,33 +1,33 @@
 import torch
 from torch.autograd import Variable
 
+def adapt_device(tensor):
+    if tensor.device == torch.device('cpu'):
+        return torch.FloatTensor
+    return torch.cuda.FloatTensor
+
 
 class ShakeDrop(torch.autograd.Function):
-    '''
-    和普通的shakedrop不同。因为一般模型训练时不带shakedrop，因此不乘以期望0.5.
-    我们可以把这种情况看成期望是1，
-    forward改法：alpha range改成0,2
-    backward改法：不用改。
-    由于我们是在eval状态求导的，所以要把所以 training去掉
+    """
     never modify p_drop!!! Keep 0.5!!! because we always use "eval" mode
     if modified, when gate = 1, the return value is not equal to the expectation of input.
     you can modified alpha range, and keep the mean of alpha range = 1 please
     the reason is same with above
-    '''
+    """
     @staticmethod
     def forward(ctx, x, p_drop=0.5, alpha_range=[0, 2]):
-        '''
+        """
         :param ctx:
         :param x:
-        :param training:
-        :param p_drop: 做的概率
+        :param p_drop: probability to shakedrop the residual block
         :param alpha_range:
         :return:
-        '''
-        gate = torch.cuda.FloatTensor([0]).bernoulli_(1 - p_drop)
+        """
+        createFloatTensor = adapt_device(x)
+        gate = createFloatTensor([0]).bernoulli_(1 - p_drop)
         ctx.save_for_backward(gate)
         if gate.item() == 0:
-            alpha = torch.cuda.FloatTensor(x.size(0)).uniform_(*alpha_range)
+            alpha = createFloatTensor(x.size(0)).uniform_(*alpha_range)
             alpha = alpha.view(alpha.size(0), 1, 1, 1).expand_as(x)
             return alpha * x
         else:

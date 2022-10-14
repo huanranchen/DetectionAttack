@@ -1,6 +1,6 @@
 DATA:
-  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '3'
+  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
+  AUGMENT: '13'
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -11,16 +11,16 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["YOLOV2"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["Faster_RCNN"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
-  MODEL_CONFIG: 'HHDet/yolov2/yolov2/config/yolo.cfg'
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
+  ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
-    GATE: null
+    GATE: 'shakedrop'
 
 ATTACKER:
   METHOD: "optim"
@@ -32,15 +32,15 @@ ATTACKER:
   TARGET_CLASS: 0
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse]
-  tv_eta: 2.5
+  tv_eta: 1
   obj_eta: 1
   START_LEARNING_RATE: 0.03
-  scheduler: 'plateau'
-  topx_conf: 5
+  scheduler: 'ALRS'
+  topx_conf: 10
 
   PATCH_ATTACK:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.2
+    SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1

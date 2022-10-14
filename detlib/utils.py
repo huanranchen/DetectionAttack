@@ -2,12 +2,14 @@ import numpy as np
 import torchvision
 import torch
 import os
-
-from .HHDet import HHYolov2, HHYolov3, HHYolov4, HHYolov5
-from .torchDet import TorchFasterRCNN, TorchSSD
+import sys
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DET_LIB = os.path.join(PROJECT_DIR, 'detlib')
+sys.path.append(PROJECT_DIR)
+from tools.parser import logger_msg
+from detlib.HHDet import HHYolov2, HHYolov3, HHYolov4, HHYolov5
+from detlib.torchDet import TorchFasterRCNN, TorchSSD
 
 
 def init_detectors(detector_names, cfg=None):
@@ -22,7 +24,7 @@ def init_detector(detector_name, cfg):
     detector = None
     detector_name = detector_name.lower()
     model_config = cfg.MODEL_CONFIG if hasattr(cfg, 'MODEL_CONFIG') else None
-    # if cfg.PERTURB.GATE == 'shake_drop':
+    # if cfg.PERTURB.GATE == 'shakedrop':
     #     model_config = cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
     #     print('Self-ensemble! Shakedrop ')
 
@@ -39,7 +41,7 @@ def init_detector(detector_name, cfg):
         detector = HHYolov3(name=detector_name, cfg=cfg)
         if model_config is None:
             model_config = 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3.cfg'
-        if cfg.PERTURB.GATE == 'shake_drop':
+        if cfg.PERTURB.GATE == 'shakedrop':
             print('Self-ensemble! Shakedrop ')
             model_config = 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-chr.cfg'
         detector.load(
@@ -65,11 +67,12 @@ def init_detector(detector_name, cfg):
 
     elif detector_name == "yolov4":
         detector = HHYolov4(name=detector_name, cfg=cfg)
-        if model_config is None:
-            model_config = 'HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4.cfg'
-        if cfg.PERTURB.GATE == 'shake_drop':
+
+        if cfg.PERTURB.GATE == 'shakedrop':
             print('Self-ensemble! Shakedrop v4')
             model_config = 'HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4-shakedrop.cfg'
+        elif model_config is None:
+            model_config = 'HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4.cfg'
 
         detector.load(
             detector_config_file=os.path.join(DET_LIB, model_config),
@@ -78,8 +81,15 @@ def init_detector(detector_name, cfg):
 
     elif detector_name == "yolov5":
         detector = HHYolov5(name=detector_name, cfg=cfg)
+        if cfg.PERTURB.GATE == 'shakedrop':
+            model_config = 'HHDet/yolov5/yolov5/models/yolov5s-shakedrop.yaml'
+        elif model_config is None:
+            model_config = 'HHDet/yolov5/yolov5/models/yolov5s.yaml'
+
         detector.load(
-            model_weights=os.path.join(DET_LIB, 'HHDet/yolov5/yolov5/weight/yolov5s.pt'))
+            model_weights=os.path.join(DET_LIB, 'HHDet/yolov5/yolov5/weight/yolov5s.pt'),
+            model_config=os.path.join(DET_LIB, model_config)
+        )
 
     elif detector_name == "ssd":
         detector = TorchSSD(name=detector_name, cfg=cfg)
@@ -91,7 +101,7 @@ def init_detector(detector_name, cfg):
         detector = TorchFasterRCNN(detector_name, cfg)
         detector.load()
 
-    print('                    model cfg :', model_config)
+    logger_msg('model cfg', model_config)
     return detector
 
 

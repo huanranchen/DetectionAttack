@@ -141,7 +141,10 @@ def logger_cfg(cfg, banner=None):
         else:
             logger_msg(k, v)
 
+
 def logger(cfg, args):
+    logger_banner('Training')
+    logger_msg('cfg', args.cfg)
     localtime = time.asctime(time.localtime(time.time()))
     logger_msg('time', localtime)
     logger_cfg(cfg.DATA, 'DATA')

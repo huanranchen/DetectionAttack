@@ -10,14 +10,6 @@ from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools.parser import logger
 from scripts.dict import scheduler_factory, optim_factory
-# from tools.solver import Cosine_lr_scheduler, Plateau_lr_scheduler, ALRS, warmupALRS
-#
-# scheduler_factory = {
-#     'plateau': Plateau_lr_scheduler,
-#     'cosine': Cosine_lr_scheduler,
-#     'ALRS': ALRS,
-#     'warmupALRS': warmupALRS
-# }
 
 
 def attack(cfg, data_root, detector_attacker, save_name, args=None):
@@ -117,10 +109,6 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     args.cfg = './configs/' + args.cfg
     save_patch_name = args.cfg.split('/')[-1].split('.')[0] if args.board_name is None else args.board_name
-
-    print('-------------------------Training-------------------------')
-    print('                       device : ', device)
-    print('                          cfg :', args.cfg)
 
     cfg = ConfigParser(args.cfg)
     detector_attacker = UniversalAttacker(cfg, device)

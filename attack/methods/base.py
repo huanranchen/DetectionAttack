@@ -36,7 +36,7 @@ class BaseAttacker(ABC):
 
     def logger(self, detector, adv_tensor_batch, bboxes, loss_dict):
         vlogger = self.detector_attacker.vlogger
-        # TODO: this is manually appointed logger iter
+        # TODO: this is a manually appointed logger iter num 77(for INRIA Train)
         if vlogger:
             # print(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
             vlogger.note_loss(loss_dict['loss'], loss_dict['det_loss'], loss_dict['tv_loss'])
@@ -68,6 +68,7 @@ class BaseAttacker(ABC):
                 confs = confs.max(dim=-1, keepdim=True)[0]
 
             detector.zero_grad()
+            # print('confs', confs)
             loss_dict = self.attack_loss(confs=confs)
             loss = loss_dict['loss']
             # print(loss)

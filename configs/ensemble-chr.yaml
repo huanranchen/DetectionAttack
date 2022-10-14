@@ -19,7 +19,7 @@ DETECTOR:
   IOU_THRESH: 0.45
 
   PERTURB:
-    GATE: 'shake_drop'
+    GATE: 'shakedrop'
 
 ATTACKER:
   METHOD: "optim"

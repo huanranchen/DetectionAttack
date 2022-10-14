@@ -76,8 +76,10 @@ class Ensemble(nn.ModuleList):
     # Ensemble of models
     def __init__(self):
         super().__init__()
+        print('experimental Ensemble init.')
 
     def forward(self, x, augment=False, profile=False, visualize=False):
+        print('experimental Ensemble forward.')
         y = []
         for module in self:
             y.append(module(x, augment, profile, visualize)[0])
@@ -90,7 +92,7 @@ class Ensemble(nn.ModuleList):
 def attempt_load(weights, map_location=None, inplace=True, fuse=True):
     from .yolo import Detect, Model
     # print("attempt_load: ", inplace)
-
+    # print('yolov5 attempt load.')
     # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
     model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
@@ -103,13 +105,14 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
     # Compatibility updates
     for m in model.modules():
         if type(m) in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model]:
+            # print(type(m))
             m.inplace = inplace  # pytorch 1.7.0 compatibility
             if type(m) is Detect:
-                print("type Detect")
                 if not isinstance(m.anchor_grid, list):  # new Detect Layer compatibility
                     delattr(m, 'anchor_grid')
                     setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
         elif type(m) is Conv:
+            # print(type(m))
             m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
 
     if len(model) == 1:
