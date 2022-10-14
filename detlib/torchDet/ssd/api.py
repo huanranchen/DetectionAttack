@@ -1,9 +1,9 @@
 import sys
 
 import torch
-from . import ssd300_vgg16
 from ...base import DetectorBase
 from .. import inter_nms
+from torchvision.models.detection import ssd300_vgg16, ssdlite320_mobilenet_v3_large
 
 
 class TorchSSD(DetectorBase):
@@ -14,10 +14,11 @@ class TorchSSD(DetectorBase):
         self.max_conf_num = 200
 
     def load(self, model_weights=None, **args):
-        kwargs = {}
-        # if self.input_tensor_size is not None:
-        #     kwargs['min_size'] = self.input_tensor_size
-        self.detector = ssd300_vgg16(pretrained=True, **kwargs)
+        if self.cfg.PERTURB.GATE is 'shakedrop':
+            from .ssd import ssdlite320_mobilenet_v3_large_shakedrop
+            self.detector = ssdlite320_mobilenet_v3_large_shakedrop(pretrained=True)
+        else:
+            self.detector = ssdlite320_mobilenet_v3_large(pretrained=True)
 
         self.detector = self.detector.to(self.device)
         self.detector.eval()

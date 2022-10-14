@@ -60,9 +60,9 @@ def draw_detection(attacker, img_tensor_batch, model, save_dir, save_name=None):
 
 
 if __name__ == '__main__':
-    class_file = '../configs/namefiles/coco.names'
+    class_file = 'configs/namefiles/coco.names'
     img_dir = './data/INRIAPerson/Test/pos/'
-    patch_path = '../results/inria/gap/aug/v5/patch/1000_v5-aug.png'
+    patch_path = 'results/inria/gap/aug/v5/patch/1000_v5-aug.png'
     cfg = ConfigParser('./configs/cam/v5.yaml')
     print(cfg.DETECTOR.NAME)
     model = init_detector(cfg.DETECTOR.NAME[0], cfg.DETECTOR)
