@@ -23,6 +23,7 @@ DETECTOR:
 
 ATTACKER:
   METHOD: "optim"
+  OPTIMIZER: 'optim-nesterov'
   EPSILON: 255 # 0-255
   MAX_EPOCH: 5000
   ITER_STEP: 1
@@ -40,5 +41,5 @@ ATTACKER:
     WIDTH: 300
     HEIGHT: 300
     SCALE: 0.15
-    INIT: "gray" # ['random', 'gray']
+    INIT: "random" # ['random', 'gray']
     ASPECT_RATIO: 1

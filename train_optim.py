@@ -27,7 +27,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
     if args.random_erase: detector_attacker.gates.append('rerase')
 
     p_obj = detector_attacker.patch_obj.patch
-    optimizer = optim_factory[cfg.ATTACKER.METHOD](p_obj, cfg.ATTACKER.START_LEARNING_RATE)
+    optimizer = optim_factory[cfg.ATTACKER.OPTIMIZER](p_obj, cfg.ATTACKER.START_LEARNING_RATE)
     # optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
     scheduler = scheduler_factory[cfg.ATTACKER.scheduler](optimizer)
     detector_attacker.attacker.set_optimizer(optimizer)
