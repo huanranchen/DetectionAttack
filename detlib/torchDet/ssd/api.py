@@ -48,7 +48,6 @@ class TorchSSD(DetectorBase):
 
             conf = pred['scores']
             if conf.size(0) < self.max_conf_num:
-                print(conf.size(0))
                 conf = torch.cat((conf, torch.zeros(self.max_conf_num - conf.size(0)).to(self.device)), -1)
             confs_array = conf if confs_array is None else torch.vstack((confs_array, conf))
             bbox_array.append(array)
