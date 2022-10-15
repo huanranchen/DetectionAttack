@@ -8,12 +8,13 @@ from tools.loader import dataLoader
 from tools import save_tensor
 from tools.parser import logger
 
+
 def modelDDP(detector_attacker, args):
     for ind, detector in enumerate(detector_attacker.detectors):
         detector_attacker.detectors[ind] = torch.nn.parallel.DistributedDataParallel(detector,
-                                                          device_ids=[args.local_rank],
-                                                          output_device=args.local_rank,
-                                                          find_unused_parameters=True)
+                                                                                     device_ids=[args.local_rank],
+                                                                                     output_device=args.local_rank,
+                                                                                     find_unused_parameters=True)
 
 
 def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
@@ -35,7 +36,7 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
         vlogger = VisualBoard(name=args.board_name, start_iter=start_index, new_process=args.new_process)
         detector_attacker.vlogger = vlogger
     loss_array = []
-    for epoch in range(start_index, cfg.ATTACKER.MAX_EPOCH+1):
+    for epoch in range(start_index, cfg.ATTACKER.MAX_EPOCH + 1):
         et0 = time.time()
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
@@ -60,7 +61,7 @@ def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
         loss_array.append(ep_loss)
         if vlogger:
             vlogger.write_ep_loss(ep_loss)
-            vlogger.write_scalar(et1-et0, 'misc/ep time')
+            vlogger.write_scalar(et1 - et0, 'misc/ep time')
 
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
 
