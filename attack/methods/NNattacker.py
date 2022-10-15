@@ -24,6 +24,7 @@ class BasicDownSample(nn.Module):
             nn.Conv2d(in_channels, out_channels, kernel_size=7, stride=2, padding=3),
             nn.BatchNorm2d(out_channels),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1),
+            # nn.BatchNorm2d(out_channels),
             nn.ReLU() if relu else None,
         )
 
@@ -35,10 +36,10 @@ class BasicUpSample(nn.Module):
     def __init__(self, in_channels, out_channels, relu=True):
         super(BasicUpSample, self).__init__()
         self.model = nn.Sequential(
-            nn.Upsample(nn.Upsample(scale_factor=2, mode='bilinear')),
-            nn.BatchNorm2d(out_channels),
+            nn.Upsample(scale_factor=2, mode='bilinear'),
             nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1),
-            nn.ReLU() if relu else None,
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU() if relu else nn.Identity(),
         )
 
     def forward(self, x):
@@ -46,8 +47,7 @@ class BasicUpSample(nn.Module):
 
 
 class SimpleUNet(nn.Module):
-    def __init__(self, nn_config=[3, 10, 20, 50],
-                 lr=1e-3):
+    def __init__(self, nn_config=[6, 15, 30, 50], lr=1e-3):
         super(SimpleUNet, self).__init__()
         self.down = nn.ModuleList()
         self.up = nn.ModuleList()
@@ -55,7 +55,7 @@ class SimpleUNet(nn.Module):
             self.down.append(BasicDownSample(nn_config[i], nn_config[i + 1], relu=True))
         for i in range(len(nn_config) - 1, 0, -1):
             self.up.append(BasicUpSample(nn_config[i], nn_config[i - 1], relu=True))
-        self.up.append(BasicUpSample(nn_config[0], 3, relu=False))
+        self.up.append(nn.Conv2d(nn_config[0], 3, kernel_size=1, stride=1, padding=0))  # down的地方多了一个映射为3channel的
 
         self.optimizer = torch.optim.AdamW(self.parameters(), lr=lr, amsgrad=True)
 
@@ -64,16 +64,22 @@ class SimpleUNet(nn.Module):
         N. C. H. D
         '''
         forward_cache = [x]
-        for m in self.down():
+        for m in self.down:
             x = m(x)
             forward_cache.append(x)
 
         forward_cache.pop(-1)
         forward_cache.reverse()
-        for m in self.up():
+        for m in self.up[:-1]:
             x = m(x)
-            x += (forward_cache.pop(-1) if forward_cache is not None else 0)
+            if len(forward_cache) != 0:
+                now = forward_cache.pop(0)
+                if now.shape[3] == x.shape[3] - 1:
+                    x = x[:, :, :-1, :-1]
+                x += now
 
+        m = self.up[-1]
+        x = m(x)
         return x
 
     def update(self):
@@ -109,10 +115,11 @@ class NNattacker(BaseAttacker):
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
         for iter in range(self.iter_step):
-            if iter > 0: ori_tensor_batch = ori_tensor_batch.clone()
-            # TODO: modify patch
+            if iter > 0:
+                ori_tensor_batch = ori_tensor_batch.clone()
+
             self.detector_attacker.patch_obj.patch = self.generate_patch()
-            # TODO: NOT DO
+
             adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch)
             # detect adv img batch to get bbox and obj confs
             bboxes, confs, cls_array = detector(adv_tensor_batch).values()
@@ -144,11 +151,13 @@ class NNattacker(BaseAttacker):
         return torch.tensor(losses).mean()
 
     def attack_loss(self, confs):
+        '''
+        SAME with P9 and optim attacker
+        '''
         loss = self.loss_fn(confs=confs, patch=self.detector_attacker.universal_patch[0])
         if 'obj-tv' in self.cfg.LOSS_FUNC:
             tv_loss, obj_loss = loss.values()
             tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.tensor(0.1).to(self.device))
-            # print(obj_loss)
             obj_loss = obj_loss * self.cfg.obj_eta
             loss = tv_loss + obj_loss
         elif self.cfg.LOSS_FUNC == 'obj':
