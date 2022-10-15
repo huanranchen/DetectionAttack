@@ -3,7 +3,8 @@ import sys
 import torch
 from ...base import DetectorBase
 from .. import inter_nms
-from torchvision.models.detection import ssd300_vgg16, ssdlite320_mobilenet_v3_large
+from .ssd import ssd300_vgg16
+from .ssdlite import ssdlite320_mobilenet_v3_large
 
 
 class TorchSSD(DetectorBase):
@@ -18,6 +19,7 @@ class TorchSSD(DetectorBase):
             from .ssd import ssdlite320_mobilenet_v3_large_shakedrop
             self.detector = ssdlite320_mobilenet_v3_large_shakedrop(pretrained=True)
         else:
+            print('ssdlite320_mobilenet_v3_large')
             self.detector = ssdlite320_mobilenet_v3_large(pretrained=True)
 
         self.detector = self.detector.to(self.device)
@@ -42,6 +44,7 @@ class TorchSSD(DetectorBase):
 
             conf = pred['scores']
             if conf.size(0) < self.max_conf_num:
+                print(conf.size(0))
                 conf = torch.cat((conf, torch.zeros(self.max_conf_num - conf.size(0)).to(self.device)), -1)
             confs_array = conf if confs_array is None else torch.vstack((confs_array, conf))
             bbox_array.append(array)
