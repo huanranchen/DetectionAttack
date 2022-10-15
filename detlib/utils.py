@@ -91,7 +91,7 @@ def init_detector(detector_name, cfg):
             model_config=os.path.join(DET_LIB, model_config)
         )
 
-    elif detector_name == "ssd":
+    elif detector_name == "ssd" or detector_name == 'ssdlite':
         detector = TorchSSD(name=detector_name, cfg=cfg)
         detector.load()
         # detector.load('./checkpoints/ssd300_coco_20210803_015428-d231a06e.pth')
