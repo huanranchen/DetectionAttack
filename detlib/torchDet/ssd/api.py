@@ -6,6 +6,11 @@ from .. import inter_nms
 from .ssd import ssd300_vgg16
 from .ssdlite import ssdlite320_mobilenet_v3_large
 
+model_dict = {
+    'ssd': ssd300_vgg16, # with no ResBlock in the backbone
+    'ssdlite': ssdlite320_mobilenet_v3_large # with ResBlock in the backbone
+}
+
 
 class TorchSSD(DetectorBase):
     def __init__(self, name, cfg,
@@ -14,13 +19,12 @@ class TorchSSD(DetectorBase):
         super().__init__(name, cfg, input_tensor_size, device)
         self.max_conf_num = 200
 
-    def load(self, model_weights=None, **args):
+    def load(self, model_weights=None, **kargs):
         if self.cfg.PERTURB.GATE is 'shakedrop':
             from .ssd import ssdlite320_mobilenet_v3_large_shakedrop
             self.detector = ssdlite320_mobilenet_v3_large_shakedrop(pretrained=True)
         else:
-            print('ssdlite320_mobilenet_v3_large')
-            self.detector = ssdlite320_mobilenet_v3_large(pretrained=True)
+            self.detector = model_dict[self.name](pretrained=True)
 
         self.detector = self.detector.to(self.device)
         self.detector.eval()
