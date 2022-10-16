@@ -34,7 +34,6 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 1
   LR_SCHEDULER: 'ALRS'
-  START_LEARNING_RATE: 0.03
 
   PATCH:
     WIDTH: 300

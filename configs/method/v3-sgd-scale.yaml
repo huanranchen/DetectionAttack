@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '3'
+  AUGMENT: ''
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -16,7 +16,6 @@ DETECTOR:
   BATCH_SIZE: 8
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
-  ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
     GATE: null
@@ -33,7 +32,6 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 1
   LR_SCHEDULER: 'ALRS'
-  START_LEARNING_RATE: 0.03
 
   PATCH:
     WIDTH: 300
@@ -41,3 +39,4 @@ ATTACKER:
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1
+    TRANSFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale']
