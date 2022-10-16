@@ -119,7 +119,7 @@ def ignore_class(args, cfg):
 
 def generate_labels(evaluator, cfg, args, save_label=False):
     from tools.loader import dataLoader
-    gates = ['median_pool', 'p9_scale'] #
+    gates = ['median_pool', 'p9_scale']
     dir_check(args.save, cfg.DETECTOR.NAME, rebuild=False)
     utils = Utils(cfg)
     batch_size = 1
@@ -150,7 +150,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 utils.save_label(all_preds[0], fp, img_name, save_conf=True, rescale=True)
 
             target_nums_clean = evaluator.get_patch_pos_batch(all_preds)[0]
-            adv_img_tensor = evaluator.uap_apply(img_tensor_batch, gates=gates)
+            adv_img_tensor = evaluator.uap_apply(img_tensor_batch)
 
             preds = detector(adv_img_tensor)['bbox_array']
             if hasattr(args, 'save_imgs') and args.save_imgs:

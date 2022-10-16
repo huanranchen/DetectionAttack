@@ -19,6 +19,7 @@ optim_factory = {
 }
 
 attack_method_dict = {
+    "": None,
     "bim": LinfBIMAttack,
     "mim": LinfMIMAttack,
     "pgd": LinfPGDAttack,

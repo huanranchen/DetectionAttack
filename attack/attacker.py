@@ -78,18 +78,16 @@ class UniversalAttacker(object):
         self.all_preds = batch_boxes
         return np.array(target_nums)
 
-    def uap_apply(self, img_tensor, adv_patch=None, gates=None):
+    def uap_apply(self, img_tensor, adv_patch=None):
         """
         UAP: universal adversarial patch
         :param img_tensor:
         :param adv_patch:
-        :param gates: The patch augmentation gates(dict: True or False).
         :return:
         """
         if adv_patch is None: adv_patch = self.universal_patch
-        if gates is None: gates = self.transform_gates
 
-        img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=gates)
+        img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=self.transform_gates)
 
         if '2' in self.cfg.DATA.AUGMENT:
             img_tensor = self.data_transformer(img_tensor)
