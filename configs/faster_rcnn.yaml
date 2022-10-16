@@ -35,7 +35,7 @@ ATTACKER:
   obj_eta: 1
   STEP_LR: 0.03
   LR_SCHEDULER: 'ALRS'
-  topx_conf: 1
+  topx_conf: 10
 
   PATCH:
     WIDTH: 300

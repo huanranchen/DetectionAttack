@@ -41,8 +41,9 @@ class TorchFasterRCNN(DetectorBase):
 
             if now_conf.size(0) < self.max_conf_num:
                 now_conf = torch.cat((now_conf, torch.zeros(self.max_conf_num - now_conf.size(0)).to(self.device)), -1)
-            now_conf[now_conf < 0.5] = 0
-            confs[ind] = torch.mean(now_conf[now_conf > 0])
+                confs[ind] = now_conf
+            # now_conf[now_conf < 0.5] = 0
+            # confs[ind] = torch.mean(now_conf[now_conf > 0])
 
         confs_array = torch.vstack((confs))
         # print(confs_array.size())
