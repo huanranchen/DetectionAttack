@@ -264,16 +264,15 @@ if __name__ == '__main__':
 
     args, cfg = handle_input()
     args = get_save(args)
-    order = ['yolov3', 'yolov3-tiny', 'yolov4', 'yolov4-tiny', 'yolov5', 'faster_rcnn', 'ssd']
     # args, evaluator = init(args, cfg)
     det_mAPs, gt_mAPs, ori_mAPs, accs_dict = eva(args, cfg)
 
     det_mAP_file = os.path.join(args.save, 'det-mAP.txt')
     if not os.path.exists(det_mAP_file):
         with open(det_mAP_file, 'a') as f:
-            where = cfg.ATTACKER.PATCH_ATTACK.ASPECT_RATIO
+            where = cfg.ATTACKER.PATCH.ASPECT_RATIO
             f.write('aspect ratio   : '+str(where)+'\n')
-            f.write('scale          : ' + str(cfg.ATTACKER.PATCH_ATTACK.SCALE) + '\n')
+            f.write('scale          : ' + str(cfg.ATTACKER.PATCH.SCALE) + '\n')
             f.write('--------------------------\n')
 
     det_dict = det_mAPs

@@ -5,38 +5,43 @@ import numpy as np
 from tqdm import tqdm
 
 from tools import save_tensor
-from tools.transformer import mixup_transform, mosaic_transform
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools.parser import logger
 from scripts.dict import scheduler_factory, optim_factory
 
 
-def attack(cfg, data_root, detector_attacker, save_name, args=None):
-    def get_iter():
-        return (epoch - 1) * len(data_loader) + index
-
-    logger(cfg, args)
+def init(detector_attacker, cfg, args=None, data_root=None):
     data_sampler = None
-    detector_attacker.init_universal_patch(args.patch)
+    if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
     data_loader = dataLoader(data_root,
                              input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
 
-    detector_attacker.gates = ['jitter', 'median_pool', 'rotate', 'p9_scale']
-    if args.random_erase: detector_attacker.gates.append('rerase')
+    detector_attacker.init_universal_patch(args.patch)
+    if args.random_erase: detector_attacker.gates.append('cutout')
 
-    p_obj = detector_attacker.patch_obj.patch
-    optimizer = optim_factory[cfg.ATTACKER.OPTIMIZER](p_obj, cfg.ATTACKER.START_LEARNING_RATE)
-    # optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
-    scheduler = scheduler_factory[cfg.ATTACKER.scheduler](optimizer)
+    optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
     detector_attacker.attacker.set_optimizer(optimizer)
-    loss_array = []
-    save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)
+
     vlogger = None
-    if not args.debugging:
+    if args and not args.debugging:
         vlogger = VisualBoard(optimizer, name=args.board_name, new_process=args.new_process)
         detector_attacker.vlogger = vlogger
+
+    detector_attacker.attacker.set_optimizer(optimizer)
+    return optimizer, data_loader, vlogger
+
+
+def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
+    def get_iter():
+        return (epoch - 1) * len(data_loader) + index
+
+    logger(cfg, args)
+    optimizer, data_loader, vlogger = init(detector_attacker, cfg, args, data_root=data_root)
+    scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](optimizer)
+    loss_array = []
+    save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)
     ten_epoch_loss = 0
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
         et0 = time.time()
@@ -45,10 +50,6 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             # for index, (img_tensor_batch, img_tensor_batch2) in enumerate(tqdm(zip(data_loader, data_loader2), desc=f'Epoch {epoch}')):
             if vlogger: vlogger(epoch, get_iter())
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
-            if args.mixup:
-                img_tensor_batch = mixup_transform(x1=img_tensor_batch)
-            # if args.mosaic:
-            #     img_tensor_batch = mosaic_transform(img_tensor_batch)
 
             all_preds = detector_attacker.detect_bbox(img_tensor_batch)
             # get position of adversarial patches
@@ -64,7 +65,7 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
             print('Saving patch to ', os.path.join(args.save_path, patch_name))
 
-            if cfg.ATTACKER.scheduler == 'ALRS':
+            if cfg.ATTACKER.LR_SCHEDULER == 'ALRS':
                 ten_epoch_loss /= 10
                 scheduler.step(ten_epoch_loss)
                 ten_epoch_loss = 0
@@ -72,11 +73,11 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
         et1 = time.time()
         ep_loss /= len(data_loader)
         ten_epoch_loss += ep_loss
-        if cfg.ATTACKER.scheduler == 'plateau':
+        if cfg.ATTACKER.LR_SCHEDULER == 'plateau':
             scheduler.step(ep_loss)
-        elif 'warmup' in cfg.ATTACKER.scheduler:
+        elif 'warmup' in cfg.ATTACKER.LR_SCHEDULER:
             scheduler.step(loss=ep_loss, epoch=epoch)
-        elif cfg.ATTACKER.scheduler != 'ALRS':
+        elif cfg.ATTACKER.LR_SCHEDULER != 'ALRS':
             scheduler.step()
         if vlogger:
             vlogger.write_ep_loss(ep_loss)
@@ -102,7 +103,6 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--debugging', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
     parser.add_argument('-re', '--random_erase', action='store_true', default=False)
-    parser.add_argument('-mu', '--mixup', action='store_true', default=False)
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 
@@ -113,6 +113,4 @@ if __name__ == '__main__':
     cfg = ConfigParser(args.cfg)
     detector_attacker = UniversalAttacker(cfg, device)
     cfg.show_class_label(cfg.attack_list)
-    data_root = cfg.DATA.TRAIN.IMG_DIR
-    img_names = [os.path.join(data_root, i) for i in os.listdir(data_root)]
-    attack(cfg, data_root, detector_attacker, save_patch_name, args)
+    attack(cfg, detector_attacker, save_patch_name, args)

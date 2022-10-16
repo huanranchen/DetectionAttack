@@ -21,9 +21,6 @@ DETECTOR:
 
   PERTURB:
     GATE: 'shakedrop' # ['shakedrop', 'grad_descend', 'random', null]
-    SHAKE_DROP:
-      MODEL_CONFIG: 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-chr.cfg' # rewrite model cfg when shake drop
-
 
 ATTACKER:
   METHOD: "optim"
@@ -31,17 +28,17 @@ ATTACKER:
   MAX_EPOCH: 1000
   ITER_STEP: 1
 
-  STEP_SIZE: 0.005
+  STEP_LR: 0.005
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv']
   tv_eta: 2.5
   obj_eta: 1
   START_LEARNING_RATE: 0.03
-  scheduler: 'ALRS'
+  LR_SCHEDULER: 'ALRS'
   topx_conf: 3
 
-  PATCH_ATTACK:
+  PATCH:
     WIDTH: 300
     HEIGHT: 300
     SCALE: 0.15

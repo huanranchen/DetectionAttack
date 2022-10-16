@@ -79,7 +79,7 @@ class PatchRandomApplier(nn.Module):
         if gates['jitter']:
             adv_batch = self.patch_transformer.random_jitter(adv_batch)
         adv_batch = torch.clamp(adv_batch, 0.000001, 0.99999)
-        if gates['rerase']:
+        if gates['cutout']:
             adv_batch = self.patch_transformer.random_erase(adv_batch)
         adv_batch = padding(adv_batch)
 
@@ -110,7 +110,7 @@ class PatchApplier(nn.Module):
 
 
 def patch_aug_gates(aug_list):
-    gates = {'jitter': False, 'median_pool': False, 'rotate': False, 'shift': False, 'p9_scale': False, 'rdrop': False, 'rerase': False}
+    gates = {'jitter': False, 'median_pool': False, 'rotate': False, 'shift': False, 'p9_scale': False, 'rdrop': False, 'cutout': False}
     for aug in aug_list:
         gates[aug] = True
     return gates

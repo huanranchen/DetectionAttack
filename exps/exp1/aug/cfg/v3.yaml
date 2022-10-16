@@ -27,12 +27,12 @@ ATTACKER:
   MAX_EPOCH: 500
   ITER_STEP: 5
 
-  STEP_SIZE: 0.005
+  STEP_LR: 0.005
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "ascend-mse" # [null, 'descend-mse', 'ascend-mse', 'optim']
 
-  PATCH_ATTACK:
+  PATCH:
     WIDTH: 300
     HEIGHT: 300
     SCALE: 0.15

@@ -25,7 +25,7 @@ class LinfMIMAttack(BaseAttacker):
             self.grad = now_grad
         else:
             self.grad = self.grad * self.momentum + now_grad / torch.norm(now_grad, p=1)
-        update = self.step_size * self.grad.sign()
+        update = self.step_lr * self.grad.sign()
 
         if "descend" in self.cfg.LOSS_FUNC:
             update *= -1

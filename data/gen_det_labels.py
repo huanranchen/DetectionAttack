@@ -43,7 +43,7 @@ class Utils:
 
 if __name__ == "__main__":
 
-    source = 'Train'
+    source = 'Test'
     parser = argparse.ArgumentParser()
     parser.add_argument('-dr', '--data_root', type=str, default=f"{PROJECT_DIR}/data/INRIAPerson/{source}/pos")
     parser.add_argument('-sr', '--save_root', type=str, default=f'{PROJECT_DIR}/data/INRIAPerson/{source}/labels/')

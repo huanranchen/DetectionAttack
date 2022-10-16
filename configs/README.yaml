@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names' # a relative path
-  AUGMENT: '13' # '1' contained: augment image when loading; '2' contained: augment the adv image in the second detection inference; '3' contained: augment adv patch
+  AUGMENT: '1' # '1' contained: augment image when loading; '2' contained: augment the adv image in the second detection inference
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -19,26 +19,26 @@ DETECTOR:
   IOU_THRESH: 0.45        # iou thresh in NMS
 
   PERTURB:
-    GATE: null
+    GATE: null # ['shakedrop', 'grad_descend', 'random', null]
 
 ATTACKER:
-  METHOD: "pgd" # attack algorithm: ['bim', 'pgd', 'mim']
+  METHOD: "pgd" # attack algorithm: ['bim', 'pgd', 'mim', 'optim', 'optim-sgd', 'optim-adam', 'optim-nesterov']
   EPSILON: 255 # 0-255
   MAX_EPOCH: 1000 # N Epoches
   ITER_STEP: 5 # Attack steps in every mini-batch
-  STEP_SIZE: 0.005 # update rate. e.g. FGSM: step size * grad sign
-  TARGET_CLASS: 0 # targeted attack
-  ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id (corresponds to the namefile)
+  STEP_LR: 0.03 # update learning rate for every (mini-batch)step. e.g. FGSM: STEP_LEARNING_RATE * grad.sign
+  TARGET_CLASS: 0 # targeted attack class
+  ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id (corresponds to the namesfile)
 
-  LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv]
+  LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj-tv']
   tv_eta: 2.5
   obj_eta: 1
-  START_LEARNING_RATE: 0.03
+  LR_SCHEDULER: 'ALRS'
 
-  PATCH_ATTACK:
+  PATCH:
     WIDTH: 128 # Patch width
     HEIGHT: 128 # Patch height
     SCALE: 0.2 # patch scale when attaching patch on bbox (the SCALE is default as P9's scale)
     INIT: "gray" # ['random', 'gray']
     AREA_RATIO: 1 # 1: square
-    AUGMENT: [] # ['jitter', 'median_pool', 'rotate', 'shift', 'p9_scale', 'rdrop', 'rerase']
+    TRASFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale'] # ['jitter', 'median_pool', 'rotate', 'shift', 'p9_scale', 'rdrop', 'cutout']

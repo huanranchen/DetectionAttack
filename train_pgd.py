@@ -19,7 +19,7 @@ def modelDDP(detector_attacker, args):
 
 def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
     detector_attacker.gates = ['rotate', 'p9_scale']
-    if args.random_erase: detector_attacker.gates.append('rerase')
+    if args.random_erase: detector_attacker.gates.append('cutout')
 
     data_loader = dataLoader(cfg.DATA.TRAIN.IMG_DIR,
                              input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,

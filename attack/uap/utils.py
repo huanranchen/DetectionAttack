@@ -6,8 +6,8 @@ TODO: This file is not used now.
 """
 def attach_patch(img_tensor, adv_patch, all_preds, cfg):
     height, width = cfg.DETECTOR.INPUT_SIZE
-    scale = cfg.ATTACKER.PATCH_ATTACK.SCALE
-    aspect_ratio = cfg.ATTACKER.PATCH_ATTACK.ASPECT_RATIO
+    scale = cfg.ATTACKER.PATCH.SCALE
+    aspect_ratio = cfg.ATTACKER.PATCH.ASPECT_RATIO
     for i in range(img_tensor.shape[0]):
         boxes = rescale_patches(all_preds[i], height, width, scale, aspect_ratio)
         for j, bbox in enumerate(boxes):

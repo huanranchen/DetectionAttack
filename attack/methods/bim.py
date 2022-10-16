@@ -19,7 +19,7 @@ class LinfBIMAttack(BaseAttacker):
 
     def patch_update(self, **kwargs):
         grad = self.patch_obj.patch.grad
-        update = self.step_size * grad.sign()
+        update = self.step_lr * grad.sign()
 
         if "descend" in self.cfg.LOSS_FUNC:
             update *= -1

@@ -18,7 +18,7 @@ class BaseAttacker(ABC):
             norm (str, optional): [the attack norm and the choices are [L0, L1, L2, L_infty]]. Defaults to 'L_infty'.
             epsilons (float, optional): [the upper bound of perturbation]. Defaults to 0.05.
             max_iters (int, optional): [the maximum iteration number]. Defaults to 10.
-            step_size (float, optional): [the step size of attack]. Defaults to 0.01.
+            step_lr (float, optional): [the step size of attack]. Defaults to 0.01.
             device ([type], optional): ['cpu' or 'cuda']. Defaults to None.
         """
         self.loss_fn = loss_func
@@ -30,7 +30,7 @@ class BaseAttacker(ABC):
         self.max_epsilon = cfg.EPSILON / 255.
         self.max_iters = cfg.MAX_EPOCH
         self.iter_step = cfg.ITER_STEP
-        self.step_size = cfg.STEP_SIZE
+        self.step_lr = cfg.STEP_LR
         self.class_id = cfg.TARGET_CLASS
         self.attack_class = cfg.ATTACK_CLASS
 

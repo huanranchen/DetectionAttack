@@ -1,29 +1,54 @@
 import torch
 import numpy as np
+import os
 
-from attack.base import BaseAttacker
+from detlib.utils import init_detectors
+from tools.det_utils import plot_boxes_cv2, scale_area_ratio
+from tools import FormatConverter
+from scripts.dict import scheduler_factory, optim_factory, get_attack_method, loss_dict
 from tools import DataTransformer, pad_lab
 from attack.uap import PatchManager, PatchRandomApplier
 from tools.det_utils import inter_nms
 
 
-class UniversalAttacker(BaseAttacker):
-    """
-    An attacker agent to coordinate the detect & base attack methods for universal attacks.
-    """
+class UniversalAttacker(object):
+    """An attacker agent to coordinate the detect & base attack methods for universal attacks."""
     def __init__(self, cfg, device):
-        super().__init__(cfg, device)
-        self.vlogger = None
-        self.gates = {'jitter': False, 'median_pool': False, 'rotate': True, 'shift': False, 'p9_scale': False}
-        self.patch_obj = PatchManager(cfg.ATTACKER.PATCH_ATTACK, device)
-        self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH_ATTACK.SCALE)
+        self.cfg = cfg
+        self.device = device
         self.max_boxes = 15
-        if '3' in cfg.DATA.AUGMENT:
-            self.data_transformer = DataTransformer(device, rand_rotate=0)
+        self.patch_boxes = []
+
+        self.detectors = init_detectors(self.cfg.DETECTOR.NAME, cfg)
+        self.class_names = cfg.all_class_names  # class names reference: labels of all the classes
+        self.attack_list = cfg.attack_list  # int list: classes index to be attacked, [40, 41, 42, ...]
+        self.patch_obj = PatchManager(cfg.ATTACKER.PATCH, device)
+        self.vlogger = None
+        self.init_attaker()
+
+        self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH.SCALE)
+        self.data_transformer = DataTransformer(device, rand_rotate=0)
 
     @property
     def universal_patch(self):
         return self.patch_obj.patch
+
+    def init_attaker(self):
+        cfg = self.cfg.ATTACKER
+        loss_fn = loss_dict[cfg.LOSS_FUNC]
+        self.transform_gates = cfg.PATCH.TRANSFORM
+        self.attacker = get_attack_method(cfg.METHOD)(
+            loss_func=loss_fn, norm='L_infty', device=self.device, cfg=cfg, detector_attacker=self)
+
+    def plot_boxes(self, img_tensor, boxes, save_path=None, save_name=None):
+        # print(img.dtype, isinstance(img, np.ndarray))
+        if save_path:
+            os.makedirs(save_path, exist_ok=True)
+            save_name = os.path.join(save_path, save_name)
+        img = FormatConverter.tensor2numpy_cv2(img_tensor.cpu().detach())
+        plot_box = plot_boxes_cv2(img, boxes.cpu().detach().numpy(), self.class_names,
+                                  savename=save_name)
+        return plot_box
 
     def init_universal_patch(self, patch_file=None):
         self.patch_obj.init(patch_file)
@@ -31,8 +56,7 @@ class UniversalAttacker(BaseAttacker):
 
     def filter_bbox(self, preds, target_cls=None):
         # FIXME: To be a more universal op fn
-        if len(preds) == 0:
-            return preds
+        if len(preds) == 0: return preds
         # if cls_array is None: cls_array = preds[:, -1]
         # filt = [cls in self.cfg.attack_list for cls in cls_array]
         # preds = preds[filt]
@@ -63,7 +87,7 @@ class UniversalAttacker(BaseAttacker):
         :return:
         """
         if adv_patch is None: adv_patch = self.universal_patch
-        if gates is None: gates = self.gates
+        if gates is None: gates = self.transform_gates
 
         img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=gates)
 

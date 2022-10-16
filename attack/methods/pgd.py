@@ -22,10 +22,9 @@ class LinfPGDAttack(BaseAttacker):
     """PGD attacks (arxiv: https://arxiv.org/pdf/1706.06083.pdf)"""
     def __init__(self, loss_func, cfg, device, detector_attacker, norm='L_infty'):
         super().__init__(loss_func, norm, cfg, device, detector_attacker)
-        self.learning_rate = cfg.STEP_SIZE
 
     def patch_update(self, **kwargs):
-        update = self.step_size * self.patch_obj.patch.grad.sign()
+        update = self.step_lr * self.patch_obj.patch.grad.sign()
         if "descend" in self.cfg.LOSS_FUNC:
             update *= -1
 
@@ -37,7 +36,7 @@ class LinfPGDAttack(BaseAttacker):
     def parallel_non_targeted_attack(self, ori_tensor_batch, detector_attacker, detector):
         adv_tensor_batch, patch_tmp = detector_attacker.uap_apply(ori_tensor_batch)
         loss = []
-        for iter in range(detector_attacker.cfg.ATTACKER.ITER_STEP):
+        for iter in range(self.iter_step):
             preds, confs = detector(adv_tensor_batch)
             disappear_loss = self.attack_loss(confs)
             loss.append(float(disappear_loss))
