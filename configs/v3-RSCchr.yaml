@@ -27,14 +27,13 @@ ATTACKER:
   MAX_EPOCH: 5000
   ITER_STEP: 2
 
-  STEP_LR: 0.005
+  STEP_LR: 0.03
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv']
   tv_eta: 2.5
   obj_eta: 1
   LR_SCHEDULER: 'ALRS'
-  START_LEARNING_RATE: 0.03
 
   PATCH:
     WIDTH: 300

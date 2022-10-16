@@ -35,7 +35,7 @@ ATTACKER:
   obj_eta: 1
   STEP_LR: 0.03
   LR_SCHEDULER: 'ALRS'
-  topx_conf: 10
+  topx_conf: 300
 
   PATCH:
     WIDTH: 300
@@ -43,4 +43,4 @@ ATTACKER:
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1
-    TRANSFORM: ['jitter', 'median_pool', 'p9_scale']
+    TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']

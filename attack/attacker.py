@@ -35,7 +35,6 @@ class UniversalAttacker(object):
     def init_attaker(self):
         cfg = self.cfg.ATTACKER
         loss_fn = loss_dict[cfg.LOSS_FUNC]
-        self.transform_gates = cfg.PATCH.TRANSFORM
         self.attacker = get_attack_method(cfg.METHOD)(
             loss_func=loss_fn, norm='L_infty', device=self.device, cfg=cfg, detector_attacker=self)
 
@@ -86,10 +85,9 @@ class UniversalAttacker(object):
         """
         if adv_patch is None: adv_patch = self.universal_patch
 
-        img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=self.transform_gates)
+        img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=self.cfg.ATTACKER.PATCH.TRANSFORM)
 
-        if '2' in self.cfg.DATA.AUGMENT:
-            img_tensor = self.data_transformer(img_tensor)
+        if '2' in self.cfg.DATA.AUGMENT: img_tensor = self.data_transformer(img_tensor)
 
         return img_tensor
 
