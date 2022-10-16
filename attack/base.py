@@ -14,7 +14,7 @@ attacker_dict = {
     "bim": LinfBIMAttack,
     "mim": LinfMIMAttack,
     "pgd": LinfPGDAttack,
-    "optim": OptimAttacker
+    "optim": OptimAttacker,
 }
 
 loss_dict = {
@@ -28,15 +28,16 @@ loss_dict = {
 class BaseAttacker(object):
     """
     A base attacker agent to coordinate the detect & base attack methods for single instance attacks.
-    TODO: The base class of the attacker. But most of the functions in this file is useless.
+
     """
+
     def __init__(self, cfg, device):
         self.cfg = cfg
         self.device = device
         self.detectors = init_detectors(self.cfg.DETECTOR.NAME, cfg)
         self.patch_boxes = []
-        self.class_names = cfg.all_class_names # class names reference: labels of all the classes
-        self.attack_list = cfg.attack_list # int list: classes index to be attacked, [40, 41, 42, ...]
+        self.class_names = cfg.all_class_names  # class names reference: labels of all the classes
+        self.attack_list = cfg.attack_list  # int list: classes index to be attacked, [40, 41, 42, ...]
 
         self.init_attaker()
 
@@ -44,7 +45,7 @@ class BaseAttacker(object):
         cfg = self.cfg.ATTACKER
         loss_func = loss_dict[cfg.LOSS_FUNC]
         self.attacker = attacker_dict[cfg.METHOD](
-            loss_func=loss_func, norm='L_infty', device=self.device, cfg = cfg, detector_attacker=self)
+            loss_func=loss_func, norm='L_infty', device=self.device, cfg=cfg, detector_attacker=self)
 
     def plot_boxes(self, img_tensor, boxes, save_path=None, save_name=None):
         # print(img.dtype, isinstance(img, np.ndarray))
