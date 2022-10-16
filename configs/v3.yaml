@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '3'
+  AUGMENT: ''
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -23,19 +23,17 @@ DETECTOR:
 
 ATTACKER:
   METHOD: "optim"
-  OPTIMIZER: 'optim-nesterov'
   EPSILON: 255 # 0-255
   MAX_EPOCH: 5000
   ITER_STEP: 1
 
-  STEP_LR: 0.005
+  STEP_LR: 0.03
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv']
   tv_eta: 2.5
   obj_eta: 1
   LR_SCHEDULER: 'ALRS'
-  START_LEARNING_RATE: 0.03
 
   PATCH:
     WIDTH: 300
@@ -43,3 +41,4 @@ ATTACKER:
     SCALE: 0.15
     INIT: "random" # ['random', 'gray']
     ASPECT_RATIO: 1
+    TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']

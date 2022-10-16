@@ -116,20 +116,14 @@ class DetDataset(Dataset):
         gate = torch.tensor([0]).bernoulli_(p_aug)
         if gate.item() == 0: return im
         subpolicy = [
-            # transforms.RandomPerspective(distortion_scale=0.8, p=0.6),
-            transforms.Pad(int(torch.FloatTensor([0]).uniform_(60, 120))),
-            transforms.RandomResizedCrop((512, 512), scale=(0.4, 1.0)),
-            # transforms.RandomRotation(5),
-            # transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-            # transforms.GaussianBlur(kernel_size=(9, 9), sigma=(0.1, 5)),
-            # transforms.Grayscale(), # RGB to Gray
-            # transforms.RandomEqualize(p=0.3),
+            transforms.GaussianBlur(kernel_size=(9, 9), sigma=(0.1, 5)),
+            transforms.Grayscale(), # RGB to Gray
         ]
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-            transforms.RandomResizedCrop((416, 416), scale=(0.6, 0.9)),
-            # transforms.RandomChoice(subpolicy),
+            transforms.RandomResizedCrop((416, 416), scale=(0.3, 0.9)),
+            transforms.RandomChoice(subpolicy),
             transforms.RandomRotation(5),
         ])(im)
         return im_t

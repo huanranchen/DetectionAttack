@@ -20,7 +20,6 @@ def init(detector_attacker, cfg, args=None, data_root=None):
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
 
     detector_attacker.init_universal_patch(args.patch)
-    if args.random_erase: detector_attacker.transform_gates.append('cutout')
     detector_attacker.init_attaker()
 
     vlogger = None
@@ -102,7 +101,6 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
-    parser.add_argument('-re', '--random_erase', action='store_true', default=False)
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 
