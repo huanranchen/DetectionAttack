@@ -109,7 +109,7 @@ class NNattacker(BaseAttacker):
         self.patch = torch.cat(patch, dim=0)  # N*C, H, D
 
     def generate_patch(self):
-        x = self.model(self.patch)
+        x = self.model(self.patch.unsqueeze(0))
         return x.squeeze()
 
     def non_targeted_attack(self, ori_tensor_batch, detector):
@@ -129,11 +129,9 @@ class NNattacker(BaseAttacker):
                 confs = torch.cat(
                     ([conf[cls == attack_cls].max(dim=-1, keepdim=True)[0] for conf, cls in zip(confs, cls_array)]))
             elif hasattr(self.cfg, 'topx_conf'):
-                # attack top x confidence
                 confs = torch.sort(confs, dim=-1, descending=True)[0][:, :self.cfg.topx_conf]
                 confs = torch.mean(confs, dim=-1)
             else:
-                # only attack the max confidence
                 confs = confs.max(dim=-1, keepdim=True)[0]
 
             detector.zero_grad()
