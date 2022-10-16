@@ -19,7 +19,7 @@ def init(detector_attacker, cfg, args=None, data_root=None):
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
 
     detector_attacker.init_universal_patch(args.patch)
-    if args.random_erase: detector_attacker.gates.append('cutout')
+    if args.random_erase: detector_attacker.transform_gates.append('cutout')
 
     optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
     detector_attacker.attacker.set_optimizer(optimizer)
