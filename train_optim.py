@@ -12,6 +12,7 @@ from scripts.dict import scheduler_factory, optim_factory
 
 
 def init(detector_attacker, cfg, args=None, data_root=None):
+    logger(cfg, args)
     data_sampler = None
     if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
     data_loader = dataLoader(data_root,
@@ -20,26 +21,25 @@ def init(detector_attacker, cfg, args=None, data_root=None):
 
     detector_attacker.init_universal_patch(args.patch)
     if args.random_erase: detector_attacker.transform_gates.append('cutout')
-
-    optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
-    detector_attacker.attacker.set_optimizer(optimizer)
+    detector_attacker.init_attaker()
 
     vlogger = None
     if args and not args.debugging:
-        vlogger = VisualBoard(optimizer, name=args.board_name, new_process=args.new_process)
+        vlogger = VisualBoard(name=args.board_name, new_process=args.new_process)
         detector_attacker.vlogger = vlogger
 
-    detector_attacker.attacker.set_optimizer(optimizer)
-    return optimizer, data_loader, vlogger
+    return data_loader, vlogger
 
 
 def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
     def get_iter():
         return (epoch - 1) * len(data_loader) + index
 
-    logger(cfg, args)
-    optimizer, data_loader, vlogger = init(detector_attacker, cfg, args, data_root=data_root)
+    data_loader, vlogger = init(detector_attacker, cfg, args, data_root=data_root)
+    optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
+    detector_attacker.attacker.set_optimizer(optimizer)
     scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](optimizer)
+
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)
     ten_epoch_loss = 0

@@ -7,7 +7,7 @@ from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools import save_tensor
 from tools.parser import logger
-
+from train_optim import init
 
 def modelDDP(detector_attacker, args):
     for ind, detector in enumerate(detector_attacker.detectors):
@@ -17,26 +17,13 @@ def modelDDP(detector_attacker, args):
                                                                                      find_unused_parameters=True)
 
 
-def attack(cfg, detector_attacker, save_name, args=None, save_step=5000):
-    detector_attacker.gates = ['rotate', 'p9_scale']
-    if args.random_erase: detector_attacker.gates.append('cutout')
-
-    data_loader = dataLoader(cfg.DATA.TRAIN.IMG_DIR,
-                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
-                             batch_size=cfg.DETECTOR.BATCH_SIZE, shuffle=True)
+def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
     get_iter = lambda epoch, index: (epoch - 1) * len(data_loader) + index
-    logger(cfg, args)
-    start_index = int(args.patch.split('/')[-1].split('_')[0]) if args.patch is not None else 1
-    detector_attacker.init_universal_patch(args.patch)
+    data_loader, vlogger = init(detector_attacker, cfg, args, data_root=data_root)
 
-    losses = []
     save_tensor(detector_attacker.universal_patch, save_name + '.png', args.save_path)
-    vlogger = None
-    if not args.debugging:
-        vlogger = VisualBoard(name=args.board_name, start_iter=start_index, new_process=args.new_process)
-        detector_attacker.vlogger = vlogger
     loss_array = []
-    for epoch in range(start_index, cfg.ATTACKER.MAX_EPOCH + 1):
+    for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
         et0 = time.time()
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):

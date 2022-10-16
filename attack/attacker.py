@@ -24,7 +24,6 @@ class UniversalAttacker(object):
         self.attack_list = cfg.attack_list  # int list: classes index to be attacked, [40, 41, 42, ...]
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH, device)
         self.vlogger = None
-        self.init_attaker()
 
         self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH.SCALE)
         self.data_transformer = DataTransformer(device, rand_rotate=0)

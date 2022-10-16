@@ -6,7 +6,7 @@ from .. import FormatConverter
 
 
 class VisualBoard:
-    def __init__(self, optimizer=None, name=None, start_iter=0, new_process=False):
+    def __init__(self, name=None, start_iter=0, new_process=False):
         if new_process:
             subprocess.Popen(['tensorboard', '--logdir=runs'])
         time_str = time.strftime("%m-%d-%H%M%S")
@@ -16,8 +16,7 @@ class VisualBoard:
             self.writer = SummaryWriter(f'runs/{time_str}')
 
         self.iter = start_iter
-        self.optimizer = optimizer
-
+        self.optimizer = None
         self.init_loss()
 
     def __call__(self, epoch, iter):

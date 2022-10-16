@@ -9,6 +9,8 @@ class OptimAttacker(BaseAttacker):
 
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
+        if self.detector_attacker.vlogger is not None:
+            self.detector_attacker.vlogger.optimizer = optimizer
 
     def patch_update(self, **kwargs):
         self.optimizer.step()
