@@ -17,7 +17,6 @@ DETECTOR:
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
-  ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
     GATE: 'shakedrop'
