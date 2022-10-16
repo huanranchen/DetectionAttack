@@ -41,4 +41,4 @@ ATTACKER:
     SCALE: 0.2 # patch scale when attaching patch on bbox (the SCALE is default as P9's scale)
     INIT: "gray" # ['random', 'gray']
     AREA_RATIO: 1 # 1: square
-    TRASFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale'] # ['jitter', 'median_pool', 'rotate', 'shift', 'p9_scale', 'rdrop', 'cutout']
+    TRANSFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale'] # ['jitter', 'median_pool', 'rotate', 'shift', 'p9_scale', 'rdrop', 'cutout']

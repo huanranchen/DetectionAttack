@@ -10,6 +10,7 @@ class TorchFasterRCNN(DetectorBase):
                  input_tensor_size=None,
                  device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
         super().__init__(name, cfg, input_tensor_size, device)
+        self.max_conf_num = 1000
 
     def load(self, model_weights=None, **args):
         kwargs = {}
@@ -37,6 +38,11 @@ class TorchFasterRCNN(DetectorBase):
                 (pred['labels'] - 1).view(nums, 1)
             ), 1) if nums else torch.cuda.FloatTensor([])
             bbox_array.append(array)
+
+            if now_conf.size(0) < self.max_conf_num:
+                now_conf = torch.cat((now_conf, torch.zeros(self.max_conf_num - now_conf.size(0)).to(self.device)), -1)
+            now_conf[now_conf < 0.5] = 0
+            confs[ind] = torch.mean(now_conf[now_conf > 0])
 
         confs_array = torch.vstack((confs))
         # print(confs_array.size())

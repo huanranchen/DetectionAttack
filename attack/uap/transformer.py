@@ -167,7 +167,6 @@ class PatchTransformer(nn.Module):
         if p9_scale:
             # print(target_cy.size(), bh.size())
             target_cy -= bh.view(bboxes_size) * 0.1
-            # target_cy -= 0.05
         tx = (0.5 - target_cx) * 2
         ty = (0.5 - target_cy) * 2
         # print("tx, ty: ", tx, ty)
@@ -181,8 +180,8 @@ class PatchTransformer(nn.Module):
         else:
             target_size = torch.sqrt(bw * bh * self.scale_rate).view(bboxes_size)  # [0, 1]
         scale = target_size / patch_ori_size
+        # scale = torch.clamp(scale, max=0.15, min=0)
         # print('scale shape: ', scale)
-
         # ----------------Random Rotate-------------------------
         angle = torch.cuda.FloatTensor(bboxes_size).fill_(0)
         if rand_rotate_gate:
