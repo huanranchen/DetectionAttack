@@ -10,9 +10,11 @@ class FishAttacker(OptimAttacker):
     def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty'):
         super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
 
+    @torch.no_grad()
     def begin_attack(self):
         self.original_patch = self.optimizer.param_groups[0]['params'][0].detach().clone()
 
+    @torch.no_grad()
     def end_attack(self, ksi=0.1):
         '''
         theta: original_patch
