@@ -18,7 +18,7 @@ DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
   NAME: ["YOLOV3", "FASTER_RCNN"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
-  BATCH_SIZE: 16
+  BATCH_SIZE: 8
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
@@ -47,3 +47,5 @@ ATTACKER:
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1
     TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']
+
+DISTRIBUTED: True

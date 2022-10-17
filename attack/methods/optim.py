@@ -26,6 +26,6 @@ class OptimAttacker(BaseAttacker):
         tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.tensor(0.1).to(self.device))
         # print(obj_loss)
         obj_loss = obj_loss * self.cfg.obj_eta
-        loss = tv_loss + obj_loss
+        loss = tv_loss.to(obj_loss.device) + obj_loss
         out = {'loss': loss, 'det_loss': obj_loss, 'tv_loss': tv_loss}
         return out

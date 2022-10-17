@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import os
 
-from detlib.utils import init_detectors
+from detlib.utils import init_detectors, distribute_init_detectors
 from tools.det_utils import plot_boxes_cv2, scale_area_ratio
 from tools import FormatConverter
 from scripts.dict import scheduler_factory, optim_factory, get_attack_method, loss_dict
@@ -20,7 +20,10 @@ class UniversalAttacker(object):
         self.max_boxes = 15
         self.patch_boxes = []
 
-        self.detectors = init_detectors(self.cfg.DETECTOR.NAME, cfg)
+        if cfg.DISTRIBUTED:
+            self.detectors = distribute_init_detectors(self.cfg.DETECTOR.NAME, cfg)
+        else:
+            self.detectors = init_detectors(self.cfg.DETECTOR.NAME, cfg)
         self.class_names = cfg.all_class_names  # class names reference: labels of all the classes
         self.attack_list = cfg.attack_list  # int list: classes index to be attacked, [40, 41, 42, ...]
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH, device)
@@ -38,15 +41,6 @@ class UniversalAttacker(object):
         loss_fn = loss_dict[cfg.LOSS_FUNC]
         self.attacker = get_attack_method(cfg.METHOD)(
             loss_func=loss_fn, norm='L_infty', device=self.device, cfg=cfg, detector_attacker=self)
-
-    def distribute_detectors(self):
-        '''
-        distributed detectors into different device
-        '''
-        assert torch.cuda.device_count() > len(self.detectors), \
-            'if you use distributed attack, you need to have more gpu than your ensemble model'
-        for i, detector in enumerate(self.detectors):
-            detector.to(torch.device(f'cuda:{i}'))
 
     def plot_boxes(self, img_tensor, boxes, save_path=None, save_name=None):
         # print(img.dtype, isinstance(img, np.ndarray))
@@ -106,6 +100,7 @@ class UniversalAttacker(object):
             return preds
         for i, (all_pred, pred) in enumerate(zip(all_preds, preds)):
             if pred.shape[0]:
+                pred = pred.to(all_pred.device)
                 all_preds[i] = torch.cat((all_pred, pred), dim=0)
                 continue
             all_preds[i] = all_pred if all_pred.shape[0] else pred
@@ -117,7 +112,7 @@ class UniversalAttacker(object):
 
         all_preds = None
         for detector in detectors:
-            preds = detector(img_batch)['bbox_array']
+            preds = detector(img_batch.to(detector.device))['bbox_array']
             all_preds = self.merge_batch(all_preds, preds)
 
         # nms among detectors
@@ -132,7 +127,7 @@ class UniversalAttacker(object):
         self.attacker.begin_attack()
         if mode == 'optim' or mode == 'sequential':
             for detector in self.detectors:
-                loss = self.attacker.non_targeted_attack(img_tensor_batch.to(detector.device), detector)
+                loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
                 detectors_loss.append(loss)
         elif mode == 'parallel':
             detectors_loss = self.parallel_attack(img_tensor_batch)

@@ -20,7 +20,17 @@ def init_detectors(detector_names, cfg=None):
     return detectors
 
 
-def init_detector(detector_name, cfg):
+def distribute_init_detectors(detector_names, cfg=None):
+    assert torch.cuda.device_count() >= len(detector_names), \
+        'available device should bigger than num_detectors'
+    detectors = []
+    for i, detector_name in enumerate(detector_names):
+        detector = init_detector(detector_name, cfg.DETECTOR, device=torch.device(f'cuda:{i}'))
+        detectors.append(detector)
+    return detectors
+
+
+def init_detector(detector_name, cfg, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
     detector = None
     detector_name = detector_name.lower()
     model_config = cfg.MODEL_CONFIG if hasattr(cfg, 'MODEL_CONFIG') else None
@@ -29,7 +39,7 @@ def init_detector(detector_name, cfg):
     #     print('Self-ensemble! Shakedrop ')
 
     if detector_name == "yolov2":
-        detector = HHYolov2(name=detector_name, cfg=cfg)
+        detector = HHYolov2(name=detector_name, cfg=cfg, device=device)
         if model_config is None:
             model_config = 'HHDet/yolov2/yolov2/config/yolo.cfg'
         detector.load(
@@ -38,7 +48,7 @@ def init_detector(detector_name, cfg):
         )
 
     elif detector_name == "yolov3":
-        detector = HHYolov3(name=detector_name, cfg=cfg)
+        detector = HHYolov3(name=detector_name, cfg=cfg, device=device)
         if model_config is None:
             model_config = 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3.cfg'
         if cfg.PERTURB.GATE == 'shakedrop':
@@ -50,7 +60,7 @@ def init_detector(detector_name, cfg):
         )
 
     elif detector_name == "yolov3-tiny":
-        detector = HHYolov3(name=detector_name, cfg=cfg)
+        detector = HHYolov3(name=detector_name, cfg=cfg, device=device)
         if model_config is None:
             model_config = 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-tiny.cfg'
         detector.load(
@@ -58,7 +68,7 @@ def init_detector(detector_name, cfg):
             model_weights=os.path.join(DET_LIB, 'weights/yolov3-tiny.weights'))
 
     elif detector_name == "yolov4-tiny":
-        detector = HHYolov4(name=detector_name, cfg=cfg)
+        detector = HHYolov4(name=detector_name, cfg=cfg, device=device)
         if model_config is None:
             model_config = 'HHDet/yolov4/Pytorch_YOLOv4/cfg/yolov4-tiny.cfg'
         detector.load(
@@ -66,7 +76,7 @@ def init_detector(detector_name, cfg):
             model_weights=os.path.join(DET_LIB, 'weights/yolov4-tiny.weights'))
 
     elif detector_name == "yolov4":
-        detector = HHYolov4(name=detector_name, cfg=cfg)
+        detector = HHYolov4(name=detector_name, cfg=cfg, device=device)
 
         if cfg.PERTURB.GATE == 'shakedrop':
             print('Self-ensemble! Shakedrop v4')
@@ -80,7 +90,7 @@ def init_detector(detector_name, cfg):
         )
 
     elif detector_name == "yolov5":
-        detector = HHYolov5(name=detector_name, cfg=cfg)
+        detector = HHYolov5(name=detector_name, cfg=cfg, device=device)
         if cfg.PERTURB.GATE == 'shakedrop':
             model_config = 'HHDet/yolov5/yolov5/models/yolov5s-shakedrop.yaml'
         elif model_config is None:
@@ -92,13 +102,13 @@ def init_detector(detector_name, cfg):
         )
 
     elif detector_name == "ssd" or detector_name == 'ssdlite':
-        detector = TorchSSD(name=detector_name, cfg=cfg)
+        detector = TorchSSD(name=detector_name, cfg=cfg, device=device)
         detector.load()
         # detector.load('./checkpoints/ssd300_coco_20210803_015428-d231a06e.pth')
         # detector.load(os.path.join(DET_LIB, 'HHDet/ssd/ssd_pytorch/weights/vgg16_reducedfc.pth'))
 
     elif detector_name == "faster_rcnn":
-        detector = TorchFasterRCNN(detector_name, cfg)
+        detector = TorchFasterRCNN(detector_name, cfg, device=device)
         detector.load()
 
     logger_msg('model cfg', model_config)
@@ -125,7 +135,7 @@ def inter_nms(all_predictions, conf_thres=0.25, iou_thres=0.45):
             scores = predictions[:, 4]
         except Exception as e:
             print(predictions.shape)
-            assert 0==1
+            assert 0 == 1
         i = scores > conf_thres
 
         # filter with conf threshhold
