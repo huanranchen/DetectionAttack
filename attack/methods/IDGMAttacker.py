@@ -8,7 +8,7 @@ class FishAttacker(OptimAttacker):
     '''
 
     def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty'):
-        super().__init__(loss_func, norm, cfg, device, detector_attacker)
+        super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
 
     def begin_attack(self):
         self.original_patch = self.optimizer.param_groups[0]['params'][0].detach().clone()
