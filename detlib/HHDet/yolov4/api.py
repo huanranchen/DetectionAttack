@@ -40,7 +40,6 @@ class HHYolov4(DetectorBase):
         # print(confs.shape)
         # cls_max_ids = torch.argmax(confs, dim=2)
         # print(cls_max_ids.shape)
-        print(confs.size())
         max_confs = torch.max(confs, dim=2)[0]
         output = {'bbox_array': bbox_array, 'obj_confs': max_confs, "cls_max_ids": None}
         return output

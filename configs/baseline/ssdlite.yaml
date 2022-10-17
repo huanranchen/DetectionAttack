@@ -1,5 +1,5 @@
 DATA:
-  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
   AUGMENT: ''
 
   TRAIN:
@@ -11,14 +11,12 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["YOLOV3-tiny"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["ssdlite"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
-  MODEL_CONFIG: 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-tiny.cfg'
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
-  ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
     GATE: null
@@ -40,7 +38,7 @@ ATTACKER:
   PATCH:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.2
+    SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1
     TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']

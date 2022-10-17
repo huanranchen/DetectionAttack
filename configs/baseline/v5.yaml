@@ -1,6 +1,6 @@
 DATA:
-  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
-  AUGMENT: ''
+  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  AUGMENT: '3'
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -11,13 +11,12 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["ssdlite"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV5"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
-  ATTACK_CONF_THRESH: 0.3
 
   PERTURB:
     GATE: null

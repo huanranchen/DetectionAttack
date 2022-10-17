@@ -46,7 +46,6 @@ class TorchFasterRCNN(DetectorBase):
             # confs[ind] = torch.mean(now_conf[now_conf > 0])
 
         confs_array = torch.vstack((confs))
-        # print(confs_array.size())
         cls_max_ids = None
         bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
         output = {'bbox_array': bbox_array, 'obj_confs': confs_array, "cls_max_ids": cls_max_ids}

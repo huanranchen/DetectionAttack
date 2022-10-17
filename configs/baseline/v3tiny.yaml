@@ -11,10 +11,11 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["YOLOV3"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV3-tiny"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
-  MODEL_CONFIG: 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3.cfg'
+  MODEL_CONFIG: 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-tiny.cfg'
+
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
 
@@ -24,13 +25,13 @@ DETECTOR:
 ATTACKER:
   METHOD: "optim"
   EPSILON: 255 # 0-255
-  MAX_EPOCH: 5000
+  MAX_EPOCH: 1000
   ITER_STEP: 1
 
   STEP_LR: 0.03
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
-  LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv']
+  LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse]
   tv_eta: 2.5
   obj_eta: 1
   LR_SCHEDULER: 'ALRS'
@@ -39,6 +40,6 @@ ATTACKER:
     WIDTH: 300
     HEIGHT: 300
     SCALE: 0.15
-    INIT: "random" # ['random', 'gray']
+    INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1
     TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']

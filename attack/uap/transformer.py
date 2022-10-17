@@ -134,7 +134,7 @@ class PatchTransformer(nn.Module):
         # x = torch.clamp(x, 0.000001, 0.99999)
         return x
 
-    def forward(self, adv_patch_batch, bboxes_batch, patch_ori_size, rand_rotate_gate=True, rand_shift_gate=False, p9_scale=True, rdrop=False):
+    def forward(self, adv_patch_batch, bboxes_batch, patch_ori_size, scale_max=0.15, rand_rotate_gate=True, rand_shift_gate=False, p9_scale=True, rdrop=False):
         """
         apply patches.
         : param bboxes_batch: batchsize, num_bboxes_in_each_image, size6([x1, y1, x2, y2, conf, cls_id])
@@ -180,7 +180,8 @@ class PatchTransformer(nn.Module):
         else:
             target_size = torch.sqrt(bw * bh * self.scale_rate).view(bboxes_size)  # [0, 1]
         scale = target_size / patch_ori_size
-        # scale = torch.clamp(scale, max=0.15, min=0)
+        if scale_max:
+            scale = torch.clamp(scale, max=scale_max, min=0)
         # print('scale shape: ', scale)
         # ----------------Random Rotate-------------------------
         angle = torch.cuda.FloatTensor(bboxes_size).fill_(0)

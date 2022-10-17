@@ -13,6 +13,80 @@ from .transformer import mixup_transform
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+
+class DetDataset(Dataset):
+    def __init__(self, images_path, input_size, is_augment=False):
+        self.imgs = [os.path.join(images_path, i) for i in os.listdir(images_path)]
+        self.input_size = input_size
+        self.n_samples = len(self.imgs)
+        # is_augment = False
+        self.transform = transforms.Compose([])
+        if is_augment:
+            self.transform = self.transform_fn
+        self.ToTensor = transforms.Compose([
+            transforms.Resize(self.input_size),
+            transforms.ToTensor()
+        ])
+
+    def transform_fn(self, im, p_aug=0.6):
+        """This is for random data augmentation of p_aug probability
+
+        :param im:
+        :param p_aug: probability to augment data.
+        :return:
+        """
+        gate = torch.tensor([0]).bernoulli_(p_aug)
+        if gate.item() == 0: return im
+        blur_subpolicy = [
+            transforms.GaussianBlur(kernel_size=(9, 9), sigma=(0.1, 5)),
+            transforms.GaussianBlur(kernel_size=(3, 3), sigma=(1, 1)),
+            transforms.RandomRotation(5),
+        ]
+        crop_policy = [
+            transforms.RandomResizedCrop((416, 416), scale=(0.2, 0.9)),
+            transforms.RandomResizedCrop((416, 416), scale=(0.4, 0.9))
+        ]
+        im_t = transforms.Compose([
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+            transforms.RandomChoice(crop_policy),
+            transforms.RandomChoice(blur_subpolicy)
+        ])(im)
+        return im_t
+
+    def pad_scale(self, img):
+        """Padding the img to a square-shape to avoid stretch from the Resize op.
+
+        :param img:
+        :return:
+        """
+        w, h = img.size
+        if w == h:
+            return img
+
+        pad_size = int((w - h) / 2)
+        if pad_size < 0:
+            pad = (abs(pad_size), 0)
+            side_len = h
+        else:
+            side_len = w
+            pad = (0, pad_size)
+
+        padded_img = Image.new('RGB', (side_len, side_len), color=(127, 127, 127))
+        padded_img.paste(img, pad)
+        return padded_img
+
+    def __getitem__(self, index):
+        # print(self.imgs[index], index)
+        image = Image.open(self.imgs[index]).convert('RGB')
+        image = self.transform(image)
+        image = self.pad_scale(image)
+
+        return self.ToTensor(image)
+
+    def __len__(self):
+        return self.n_samples
+
 class DetDatasetLab(Dataset):
     """This is a Dataset with data label loaded."""
 
@@ -90,80 +164,6 @@ class DetDatasetLab(Dataset):
 
     def __len__(self):
         return len(self.labs)
-
-
-class DetDataset(Dataset):
-    def __init__(self, images_path, input_size, is_augment=False):
-        self.imgs = [os.path.join(images_path, i) for i in os.listdir(images_path)]
-        self.input_size = input_size
-        self.n_samples = len(self.imgs)
-        # is_augment = False
-        self.transform = transforms.Compose([])
-        if is_augment:
-            self.transform = self.transform_fn
-        self.ToTensor = transforms.Compose([
-            transforms.Resize(self.input_size),
-            transforms.ToTensor()
-        ])
-
-    def transform_fn(self, im, p_aug=0.6):
-        """This is for random data augmentation of p_aug probability
-
-        :param im:
-        :param p_aug: probability to augment data.
-        :return:
-        """
-        gate = torch.tensor([0]).bernoulli_(p_aug)
-        if gate.item() == 0: return im
-        blur_subpolicy = [
-            transforms.GaussianBlur(kernel_size=(9, 9), sigma=(0.1, 5)),
-            transforms.GaussianBlur(kernel_size=(3, 3), sigma=(1, 1)),
-        ]
-        crop_policy = [
-            transforms.RandomResizedCrop((416, 416), scale=(0.3, 0.9)),
-            transforms.RandomResizedCrop((416, 416), scale=(0.4, 0.9))
-        ]
-        im_t = transforms.Compose([
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-            transforms.RandomChoice(crop_policy),
-            transforms.RandomChoice(blur_subpolicy),
-            transforms.RandomRotation(5),
-        ])(im)
-        return im_t
-
-    def pad_scale(self, img):
-        """Padding the img to a square-shape to avoid stretch from the Resize op.
-
-        :param img:
-        :return:
-        """
-        w, h = img.size
-        if w == h:
-            return img
-
-        pad_size = int((w - h) / 2)
-        if pad_size < 0:
-            pad = (abs(pad_size), 0)
-            side_len = h
-        else:
-            side_len = w
-            pad = (0, pad_size)
-
-        padded_img = Image.new('RGB', (side_len, side_len), color=(127, 127, 127))
-        padded_img.paste(img, pad)
-        return padded_img
-
-    def __getitem__(self, index):
-        # print(self.imgs[index], index)
-        image = Image.open(self.imgs[index]).convert('RGB')
-        image = self.transform(image)
-        image = self.pad_scale(image)
-
-        return self.ToTensor(image)
-
-    def __len__(self):
-        return self.n_samples
 
 
 def check_valid(name: str):
