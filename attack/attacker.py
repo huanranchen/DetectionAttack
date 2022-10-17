@@ -13,6 +13,7 @@ from tools.det_utils import inter_nms
 
 class UniversalAttacker(object):
     """An attacker agent to coordinate the detect & base attack methods for universal attacks."""
+
     def __init__(self, cfg, device):
         self.cfg = cfg
         self.device = device
@@ -37,6 +38,15 @@ class UniversalAttacker(object):
         loss_fn = loss_dict[cfg.LOSS_FUNC]
         self.attacker = get_attack_method(cfg.METHOD)(
             loss_func=loss_fn, norm='L_infty', device=self.device, cfg=cfg, detector_attacker=self)
+
+    def distribute_detectors(self):
+        '''
+        distributed detectors into different device
+        '''
+        assert torch.cuda.device_count() > len(self.detectors), \
+            'if you use distributed attack, you need to have more gpu than your ensemble model'
+        for i, detector in enumerate(self.detectors):
+            detector.to(torch.device(f'cuda:{i}'))
 
     def plot_boxes(self, img_tensor, boxes, save_path=None, save_name=None):
         # print(img.dtype, isinstance(img, np.ndarray))
@@ -119,12 +129,14 @@ class UniversalAttacker(object):
         given batch input, return loss, and optimize patch
         '''
         detectors_loss = []
+        self.attacker.begin_attack()
         if mode == 'optim' or mode == 'sequential':
             for detector in self.detectors:
                 loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
                 detectors_loss.append(loss)
         elif mode == 'parallel':
             detectors_loss = self.parallel_attack(img_tensor_batch)
+        self.attacker.end_attack()
         return torch.tensor(detectors_loss).mean()
 
     def parallel_attack(self, img_tensor_batch):
