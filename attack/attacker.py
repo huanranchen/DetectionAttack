@@ -132,7 +132,7 @@ class UniversalAttacker(object):
         self.attacker.begin_attack()
         if mode == 'optim' or mode == 'sequential':
             for detector in self.detectors:
-                loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
+                loss = self.attacker.non_targeted_attack(img_tensor_batch.to(detector.device), detector)
                 detectors_loss.append(loss)
         elif mode == 'parallel':
             detectors_loss = self.parallel_attack(img_tensor_batch)
