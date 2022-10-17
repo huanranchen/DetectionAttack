@@ -15,7 +15,7 @@ class ShakeDrop(torch.autograd.Function):
     the reason is same with above
     '''
     @staticmethod
-    def forward(ctx, x, p_drop=0.5, alpha_range=[0, 2]):
+    def forward(ctx, x, p_drop=0.5, alpha_range=[0.5, 1.5]):
         '''
         :param ctx:
         :param x:

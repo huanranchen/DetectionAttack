@@ -28,7 +28,7 @@ class DetDataset(Dataset):
             transforms.ToTensor()
         ])
 
-    def transform_fn(self, im, p_aug=0.6):
+    def transform_fn(self, im, p_aug=0.5):
         """This is for random data augmentation of p_aug probability
 
         :param im:
@@ -37,20 +37,11 @@ class DetDataset(Dataset):
         """
         gate = torch.tensor([0]).bernoulli_(p_aug)
         if gate.item() == 0: return im
-        blur_subpolicy = [
-            transforms.GaussianBlur(kernel_size=(9, 9), sigma=(0.1, 5)),
-            transforms.GaussianBlur(kernel_size=(3, 3), sigma=(1, 1)),
-            transforms.RandomRotation(5),
-        ]
-        crop_policy = [
-            transforms.RandomResizedCrop((416, 416), scale=(0.2, 0.9)),
-            transforms.RandomResizedCrop((416, 416), scale=(0.4, 0.9))
-        ]
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-            transforms.RandomChoice(crop_policy),
-            transforms.RandomChoice(blur_subpolicy)
+            transforms.RandomResizedCrop((416, 416), scale=(0.2, 0.9)),
+            transforms.RandomRotation(5),
         ])(im)
         return im_t
 
