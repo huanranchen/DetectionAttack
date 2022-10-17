@@ -27,7 +27,7 @@ DETECTOR:
     GATE: ''
 
 ATTACKER:
-  METHOD: "optim"
+  METHOD: "IDGM-fish"
   EPSILON: 255 # 0-255
   MAX_EPOCH: 1000
   ITER_STEP: 1
