@@ -8,11 +8,14 @@ def cosine_similarity(x: list):
     input a list of tensor with same shape. return the mean cosine_similarity
     '''
     x = torch.stack(x, dim=0)
-    x = x.reshape(x.shape[0], -1)
+    N = x.shape[0]
+    x = x.reshape(N, -1)
 
     norm = torch.norm(x, p=2, dim=1)
-    x /= norm  # N, D
+    x /= norm.reshape(-1, 1)  # N, D
     similarity = x @ x.T  # N, N
+    mask = torch.triu(torch.ones(N, N, device=x.device), diagonal=0).to(torch.bool)  # 只取上三角
+    similarity = similarity[mask]
     return torch.mean(similarity).item()
 
 
@@ -68,7 +71,7 @@ class FishAttacker(OptimAttacker):
         self.grad_record = []
 
     @torch.no_grad()
-    def end_attack(self, ksi=10):
+    def end_attack(self, ksi=0.1):
         '''
         theta: original_patch
         theta_hat: now patch in optimizer
