@@ -1,7 +1,7 @@
 
-cuda=7
-model=v4tiny
-target=baseline
+cuda=$1
+target=$2
+model=$3
 
 mkdir ./results/exp4/$target/$model
 CUDA_VISIBLE_DEVICES=$cuda nohup python train_optim.py \

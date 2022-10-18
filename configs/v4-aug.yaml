@@ -1,5 +1,5 @@
 DATA:
-  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
+  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
   AUGMENT: '1'
 
   TRAIN:
@@ -11,7 +11,7 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["Faster_RCNN"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV4"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
 
@@ -19,7 +19,7 @@ DETECTOR:
   IOU_THRESH: 0.45
 
   PERTURB:
-    GATE: 'shakedrop'
+    GATE: null
 
 ATTACKER:
   METHOD: "optim"
@@ -34,7 +34,6 @@ ATTACKER:
   tv_eta: 2.5
   obj_eta: 1
   LR_SCHEDULER: 'ALRS'
-  topx_conf: 10
 
   PATCH:
     WIDTH: 300
@@ -42,4 +41,4 @@ ATTACKER:
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1
-    TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale', 'cutout']
+    TRANSFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale']
