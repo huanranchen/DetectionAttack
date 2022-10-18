@@ -51,13 +51,15 @@ class BaseAttacker(ABC):
         for iter in range(self.iter_step):
             if iter > 0: ori_tensor_batch = ori_tensor_batch.clone()
             adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch)
+            adv_tensor_batch = adv_tensor_batch.to(detector.device)
             # detect adv img batch to get bbox and obj confs
             bboxes, confs, cls_array = detector(adv_tensor_batch).values()
 
             if hasattr(self.cfg, 'class_specify'):
                 # TODO: only support filtering a single cls now
                 attack_cls = int(self.cfg.ATTACK_CLASS)
-                confs = torch.cat(([conf[cls==attack_cls].max(dim=-1, keepdim=True)[0] for conf, cls in zip(confs, cls_array)]))
+                confs = torch.cat(
+                    ([conf[cls == attack_cls].max(dim=-1, keepdim=True)[0] for conf, cls in zip(confs, cls_array)]))
             elif hasattr(self.cfg, 'topx_conf'):
                 # attack top x confidence
                 # print(confs.size())
@@ -95,6 +97,18 @@ class BaseAttacker(ABC):
         obj_loss = self.loss_fn(confs=confs)
         tv_loss = self.detector_attacker.patch_obj.total_variation()
         tv_loss = torch.max(self.cfg.tv_eta * tv_loss, torch.cuda.FloatTensor([0.1]))
-        loss = obj_loss * self.cfg.obj_eta + tv_loss
+        loss = obj_loss * self.cfg.obj_eta + tv_loss.to(obj_loss.device)
         out = {'loss': loss, 'det_loss': obj_loss, 'tv_loss': tv_loss}
         return out
+
+    def begin_attack(self):
+        '''
+        to tell attackers: now, i'm begin attacking!
+        '''
+        pass
+
+    def end_attack(self):
+        '''
+        to tell attackers: now, i'm stop attacking!
+        '''
+        pass

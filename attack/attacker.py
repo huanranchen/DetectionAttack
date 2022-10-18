@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import os
 
-from detlib.utils import init_detectors
+from detlib.utils import init_detectors, distribute_init_detectors
 from tools.det_utils import plot_boxes_cv2, scale_area_ratio
 from tools import FormatConverter
 from scripts.dict import scheduler_factory, optim_factory, get_attack_method, loss_dict
@@ -13,13 +13,17 @@ from tools.det_utils import inter_nms
 
 class UniversalAttacker(object):
     """An attacker agent to coordinate the detect & base attack methods for universal attacks."""
+
     def __init__(self, cfg, device):
         self.cfg = cfg
         self.device = device
         self.max_boxes = 15
         self.patch_boxes = []
 
-        self.detectors = init_detectors(self.cfg.DETECTOR.NAME, cfg)
+        if cfg.DISTRIBUTED:
+            self.detectors = distribute_init_detectors(self.cfg.DETECTOR.NAME, cfg)
+        else:
+            self.detectors = init_detectors(self.cfg.DETECTOR.NAME, cfg)
         self.class_names = cfg.all_class_names  # class names reference: labels of all the classes
         self.attack_list = cfg.attack_list  # int list: classes index to be attacked, [40, 41, 42, ...]
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH, device)
@@ -96,6 +100,7 @@ class UniversalAttacker(object):
             return preds
         for i, (all_pred, pred) in enumerate(zip(all_preds, preds)):
             if pred.shape[0]:
+                pred = pred.to(all_pred.device)
                 all_preds[i] = torch.cat((all_pred, pred), dim=0)
                 continue
             all_preds[i] = all_pred if all_pred.shape[0] else pred
@@ -107,7 +112,7 @@ class UniversalAttacker(object):
 
         all_preds = None
         for detector in detectors:
-            preds = detector(img_batch)['bbox_array']
+            preds = detector(img_batch.to(detector.device))['bbox_array']
             all_preds = self.merge_batch(all_preds, preds)
 
         # nms among detectors
@@ -119,12 +124,14 @@ class UniversalAttacker(object):
         given batch input, return loss, and optimize patch
         '''
         detectors_loss = []
+        self.attacker.begin_attack()
         if mode == 'optim' or mode == 'sequential':
             for detector in self.detectors:
                 loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
                 detectors_loss.append(loss)
         elif mode == 'parallel':
             detectors_loss = self.parallel_attack(img_tensor_batch)
+        self.attacker.end_attack()
         return torch.tensor(detectors_loss).mean()
 
     def parallel_attack(self, img_tensor_batch):
