@@ -20,7 +20,7 @@ class UniversalAttacker(object):
         self.max_boxes = 15
         self.patch_boxes = []
 
-        if cfg.DISTRIBUTED:
+        if hasattr(cfg, 'DISTRIBUTED') and cfg.DISTRIBUTED:
             self.detectors = distribute_init_detectors(self.cfg.DETECTOR.NAME, cfg)
         else:
             self.detectors = init_detectors(self.cfg.DETECTOR.NAME, cfg)
