@@ -43,7 +43,6 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
     save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)
     ten_epoch_loss = 0
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
-        et0 = time.time()
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
             # for index, (img_tensor_batch, img_tensor_batch2) in enumerate(tqdm(zip(data_loader, data_loader2), desc=f'Epoch {epoch}')):
@@ -69,7 +68,6 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
                 scheduler.step(ten_epoch_loss)
                 ten_epoch_loss = 0
 
-        et1 = time.time()
         ep_loss /= len(data_loader)
         ten_epoch_loss += ep_loss
         if cfg.ATTACKER.LR_SCHEDULER == 'plateau':
@@ -78,9 +76,6 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
             scheduler.step(loss=ep_loss, epoch=epoch)
         elif cfg.ATTACKER.LR_SCHEDULER != 'ALRS':
             scheduler.step()
-        if vlogger:
-            vlogger.write_ep_loss(ep_loss)
-            vlogger.write_scalar(et1 - et0, 'misc/ep time')
         # print('           ep loss : ', ep_loss)
         loss_array.append(float(ep_loss))
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
