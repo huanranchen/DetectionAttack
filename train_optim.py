@@ -76,6 +76,8 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
             scheduler.step(loss=ep_loss, epoch=epoch)
         elif cfg.ATTACKER.LR_SCHEDULER != 'ALRS':
             scheduler.step()
+
+        if vlogger: vlogger.write_ep_loss(ep_loss)
         # print('           ep loss : ', ep_loss)
         loss_array.append(float(ep_loss))
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
