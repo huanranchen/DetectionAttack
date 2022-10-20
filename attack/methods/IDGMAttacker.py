@@ -182,7 +182,7 @@ class SmoothFishAttacker(OptimAttacker):
         self.theta_grad_record = []
 
     @torch.no_grad()
-    def end_attack(self, ksi=0.1, gamma=1):
+    def end_attack(self, ksi=10, gamma=5):
         '''
         grad_mean = mean(d theta)
         grad_sm = alpha*num_detectors*grad_mean + gamma*( (theta_hat - theta) - alpha*num_detectors*grad_mean )
