@@ -235,6 +235,7 @@ class StrengthenWeakPointAttacker(OptimAttacker):
         iou = torch.sum(intersection) / torch.sum(union)
         return iou
 
+    @torch.no_grad()
     def end_attack(self, strengthen_time=1):
         self.masks = []
         for grad in self.grad_record:
