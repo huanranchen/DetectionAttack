@@ -38,4 +38,4 @@ ATTACKER:
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
     ASPECT_RATIO: 1
-    TRANSFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale']
+    TRANSFORM: ['median_pool', 'rotate', 'p9_scale']

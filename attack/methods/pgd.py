@@ -29,7 +29,7 @@ class LinfPGDAttack(BaseAttacker):
             update *= -1
 
         patch_tmp = self.patch_obj.patch + update
-        patch_tmp = torch.clamp(patch_tmp, min=self.min_epsilon, max=self.max_epsilon)
+        torch.clamp_(patch_tmp.data, min=self.min_epsilon, max=self.max_epsilon)
         self.patch_obj.update_(patch_tmp)
         return patch_tmp
 

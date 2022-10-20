@@ -70,7 +70,7 @@ class FishAttacker(OptimAttacker):
         self.grad_record = []
 
     @torch.no_grad()
-    def end_attack(self, ksi=0.1):
+    def end_attack(self, ksi=10):
         '''
         theta: original_patch
         theta_hat: now patch in optimizer
@@ -207,3 +207,57 @@ class SmoothFishAttacker(OptimAttacker):
         self.detector_attacker.vlogger.write_scalar(grad_similarity, 'grad_similarity')
         del self.theta_grad_record
         del self.theta_hat_grad_record
+
+
+class OptimAttackerWithRecord(OptimAttacker):
+    def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty'):
+        super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
+
+    def non_targeted_attack(self, ori_tensor_batch, detector):
+        losses = []
+        for iter in range(self.iter_step):
+            if iter > 0: ori_tensor_batch = ori_tensor_batch.clone()
+            adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch)
+            adv_tensor_batch = adv_tensor_batch.to(detector.device)
+            # detect adv img batch to get bbox and obj confs
+            bboxes, confs, cls_array = detector(adv_tensor_batch).values()
+
+            if hasattr(self.cfg, 'class_specify'):
+                attack_cls = int(self.cfg.ATTACK_CLASS)
+                confs = torch.cat(
+                    ([conf[cls == attack_cls].max(dim=-1, keepdim=True)[0] for conf, cls in zip(confs, cls_array)]))
+            elif hasattr(self.cfg, 'topx_conf'):
+                # attack top x confidence
+                # print(confs.size())
+                confs = torch.sort(confs, dim=-1, descending=True)[0][:, :self.cfg.topx_conf]
+                confs = torch.mean(confs, dim=-1)
+            else:
+                # only attack the max confidence
+                confs = confs.max(dim=-1, keepdim=True)[0]
+
+            detector.zero_grad()
+            loss_dict = self.attack_loss(confs=confs)
+            loss = loss_dict['loss']
+            loss.backward()
+            self.grad_record.append(self.optimizer.param_groups[0]['params'][0].grad.clone())
+            losses.append(float(loss))
+
+            # update patch. for optimizer, using optimizer.step(). for PGD or others, using clamp and SGD.
+            self.patch_update()
+        # print(adv_tensor_batch, bboxes, loss_dict)
+        # update training statistics on tensorboard
+        self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
+        return torch.tensor(losses).mean()
+
+    @torch.no_grad()
+    def begin_attack(self):
+        self.grad_record = []
+
+    @torch.no_grad()
+    def end_attack(self):
+        '''
+        set to tensorboard
+        '''
+        grad_similarity = cosine_similarity(self.grad_record)
+        self.detector_attacker.vlogger.write_scalar(grad_similarity, 'grad_similarity')
+        del self.grad_record

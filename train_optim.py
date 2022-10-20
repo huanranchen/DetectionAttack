@@ -80,6 +80,9 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
         if vlogger: vlogger.write_ep_loss(ep_loss)
         # print('           ep loss : ', ep_loss)
         loss_array.append(float(ep_loss))
+
+        if vlogger:
+            vlogger.write_ep_loss(ep_loss)
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
 
 
@@ -97,6 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('-cfg', '--cfg', type=str, default='optim.yaml')
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')
+    parser.add_argument('-dis', '--distributed', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
