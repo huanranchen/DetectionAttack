@@ -95,6 +95,7 @@ if __name__ == '__main__':
     parser.add_argument('-cfg', '--cfg', type=str, default='optim.yaml')
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')
+    parser.add_argument('-dis', '--distributed', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
