@@ -30,6 +30,7 @@ class TorchFasterRCNN(DetectorBase):
         shape = batch_tensor.shape[-2]
         preds, confs = self.detector(batch_tensor)
         bbox_array = []
+        score_array = []
         for ind, (pred, now_conf) in enumerate(zip(preds, confs)):
             nums = pred['scores'].shape[0]
             array = torch.cat((
@@ -42,10 +43,14 @@ class TorchFasterRCNN(DetectorBase):
             if now_conf.size(0) < self.max_conf_num:
                 now_conf = torch.cat((now_conf, torch.zeros(self.max_conf_num - now_conf.size(0)).to(self.device)), -1)
                 confs[ind] = now_conf
-            # now_conf[now_conf < 0.5] = 0
-            # confs[ind] = torch.mean(now_conf[now_conf > 0])
+            now_conf[now_conf < 0.5] = 0
+            confs[ind] = torch.mean(now_conf[now_conf > 0])
 
-        confs_array = torch.vstack((confs))
+            if pred['scores'].size(0) < self.max_conf_num:
+                score_array.append(torch.cat((pred['scores'], torch.zeros(self.max_conf_num - pred['scores'].size(0)).to(self.device)), -1))
+
+        # confs_array = torch.vstack((confs))
+        confs_array = torch.vstack((score_array))
         cls_max_ids = None
         bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
         output = {'bbox_array': bbox_array, 'obj_confs': confs_array, "cls_max_ids": cls_max_ids}
