@@ -78,6 +78,9 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
             scheduler.step()
         # print('           ep loss : ', ep_loss)
         loss_array.append(float(ep_loss))
+
+        if vlogger:
+            vlogger.write_ep_loss(ep_loss)
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
 
 
