@@ -70,7 +70,7 @@ class FishAttacker(OptimAttacker):
         self.grad_record = []
 
     @torch.no_grad()
-    def end_attack(self, ksi=0.1):
+    def end_attack(self, ksi=10):
         '''
         theta: original_patch
         theta_hat: now patch in optimizer
