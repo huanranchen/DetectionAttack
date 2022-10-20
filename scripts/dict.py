@@ -18,7 +18,7 @@ optim_factory = {
     'optim-nesterov': lambda p_obj, lr: torch.optim.SGD([p_obj], lr=lr * 100, nesterov=True, momentum=0.9),
     'optim-rmsprop': lambda p_obj, lr: torch.optim.RMSprop([p_obj], lr=lr * 100),
     "IDGM-fish": lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
-    'optim-record': lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
+    'record-p9': lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
     'IDGM-smoothfish': lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
 }
 
@@ -30,7 +30,7 @@ attack_method_dict = {
     "optim": OptimAttacker,
     "IDGM-fish": FishAttacker,
     "IDGM-smoothfish": SmoothFishAttacker,
-    "optim-record": OptimAttackerWithRecord,
+    "record-p9": OptimAttackerWithRecord,
 }
 
 loss_dict = {

@@ -211,7 +211,7 @@ class SmoothFishAttacker(OptimAttacker):
 
 class OptimAttackerWithRecord(OptimAttacker):
     def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty'):
-        super().__init__(loss_func, norm, cfg, device, detector_attacker)
+        super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
 
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
