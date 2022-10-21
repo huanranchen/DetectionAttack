@@ -41,4 +41,3 @@ ATTACKER:
     HEIGHT: 300
     SCALE: 0.15
     INIT: "random" # ['random', 'gray']
-    ASPECT_RATIO: 1

@@ -3,7 +3,7 @@ DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
 
 DETECTOR:
-  NAME: ["FASTER_RCNN", "SSD", 'SSDlite'] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["FASTER_RCNN", "SSD"] # 'SSDlite'
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 1
 
@@ -27,5 +27,5 @@ ATTACKER:
     WIDTH: 300
     HEIGHT: 300
     SCALE: 0.2
-    ASPECT_RATIO: 1
+
     TRANSFORM: ['median_pool', 'p9_scale']

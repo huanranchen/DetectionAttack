@@ -40,4 +40,3 @@ ATTACKER:
     HEIGHT: 128
     SCALE: 0.2
     INIT: "random"
-    ASPECT_RATIO: 1

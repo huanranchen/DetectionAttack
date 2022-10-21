@@ -269,8 +269,6 @@ if __name__ == '__main__':
     det_mAP_file = os.path.join(args.save, 'det-mAP.txt')
     if not os.path.exists(det_mAP_file):
         with open(det_mAP_file, 'a') as f:
-            where = cfg.ATTACKER.PATCH.ASPECT_RATIO
-            f.write('aspect ratio   : '+str(where)+'\n')
             f.write('scale          : ' + str(cfg.ATTACKER.PATCH.SCALE) + '\n')
             f.write('--------------------------\n')
 

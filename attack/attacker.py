@@ -2,10 +2,9 @@ import torch
 import numpy as np
 import os
 
-from detlib.utils import init_detectors, distribute_init_detectors
-from tools.det_utils import plot_boxes_cv2, scale_area_ratio
+from tools.det_utils import plot_boxes_cv2
 from tools import FormatConverter
-from scripts.dict import scheduler_factory, optim_factory, get_attack_method, loss_dict
+from scripts.dict import get_attack_method, loss_dict
 from tools import DataTransformer, pad_lab
 from attack.uap import PatchManager, PatchRandomApplier
 from tools.det_utils import inter_nms
@@ -20,16 +19,12 @@ class UniversalAttacker(object):
         self.max_boxes = 15
         self.patch_boxes = []
 
-        if hasattr(cfg, 'DISTRIBUTED') and cfg.DISTRIBUTED:
-            self.detectors = distribute_init_detectors(self.cfg.DETECTOR.NAME, cfg)
-        else:
-            self.detectors = init_detectors(self.cfg.DETECTOR.NAME, cfg)
         self.class_names = cfg.all_class_names  # class names reference: labels of all the classes
         self.attack_list = cfg.attack_list  # int list: classes index to be attacked, [40, 41, 42, ...]
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH, device)
         self.vlogger = None
 
-        self.patch_apply = PatchRandomApplier(device, scale_rate=cfg.ATTACKER.PATCH.SCALE)
+        self.patch_applier = PatchRandomApplier(device, cfg=cfg.ATTACKER.PATCH)
         self.data_transformer = DataTransformer(device, rand_rotate=0)
 
     @property
@@ -89,7 +84,7 @@ class UniversalAttacker(object):
         """
         if adv_patch is None: adv_patch = self.universal_patch
 
-        img_tensor = self.patch_apply(img_tensor, adv_patch, self.all_preds, gates=self.cfg.ATTACKER.PATCH.TRANSFORM)
+        img_tensor = self.patch_applier(img_tensor, adv_patch, self.all_preds, gates=self.cfg.ATTACKER.PATCH.TRANSFORM)
 
         if '2' in self.cfg.DATA.AUGMENT: img_tensor = self.data_transformer(img_tensor)
 

@@ -12,7 +12,7 @@ from .transformer import PatchTransformer
 
 class PatchRandomApplier(nn.Module):
     # apply patch
-    def __init__(self, device, rotate_angle=20, rand_loc_rate=0.1, scale_rate=0.2):
+    def __init__(self, device, cfg, rotate_angle=20, rand_loc_rate=0.1):
         """
 
         :param rotate_angle: random rotate angle range from [-rotate_angle, rotate_angle]
@@ -20,7 +20,8 @@ class PatchRandomApplier(nn.Module):
         :param scale_rate: patch size / bbox size
         """
         super().__init__()
-        self.patch_transformer = PatchTransformer(device, rotate_angle, rand_loc_rate, scale_rate).to(device)
+        self.cfg = cfg
+        self.patch_transformer = PatchTransformer(device, rotate_angle, rand_loc_rate, cfg.SCALE).to(device)
         self.device = device
 
     def list2tensor(self, list_batch, max_len=10):
@@ -62,7 +63,7 @@ class PatchRandomApplier(nn.Module):
         :return:
         """
         # print(img_batch.size, adv_patch.size)
-        gates = patch_aug_gates(gates)
+        gates = patch_aug_gates(self.cfg.TRANSFORM)
         patch_ori_size = adv_patch.size(-1)
         batch_size = img_batch.size(0)
         pad_size = (img_batch.size(-1) - adv_patch.size(-1)) / 2

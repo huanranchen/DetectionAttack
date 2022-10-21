@@ -12,29 +12,19 @@ from detlib.HHDet import HHYolov2, HHYolov3, HHYolov4, HHYolov5
 from detlib.torchDet import TorchFasterRCNN, TorchSSD
 
 
-def init_detectors(detector_names, cfg=None, distributed=False):
+def init_detectors(cfg_det=None, distribute=False):
+    detector_names = cfg_det.NAME
     detectors = []
-    if distributed:
+    if distribute:
         assert torch.cuda.device_count() >= len(detector_names), \
             'available device should bigger than num_detectors'
         for i, detector_name in enumerate(detector_names):
-            detector = init_detector(detector_name, cfg.DETECTOR, device=torch.device(f'cuda:{i}'))
+            detector = init_detector(detector_name, cfg_det, device=torch.device(f'cuda:{i}'))
             detectors.append(detector)
-        return detectors
-
-    for detector_name in detector_names:
-        detector = init_detector(detector_name, cfg.DETECTOR)
-        detectors.append(detector)
-    return detectors
-
-
-def distribute_init_detectors(detector_names, cfg=None):
-    assert torch.cuda.device_count() >= len(detector_names), \
-        'available device should bigger than num_detectors'
-    detectors = []
-    for i, detector_name in enumerate(detector_names):
-        detector = init_detector(detector_name, cfg.DETECTOR, device=torch.device(f'cuda:{i}'))
-        detectors.append(detector)
+    else:
+        for detector_name in detector_names:
+            detector = init_detector(detector_name, cfg_det)
+            detectors.append(detector)
     return detectors
 
 
@@ -42,9 +32,6 @@ def init_detector(detector_name, cfg, device=torch.device('cuda' if torch.cuda.i
     detector = None
     detector_name = detector_name.lower()
     model_config = cfg.MODEL_CONFIG if hasattr(cfg, 'MODEL_CONFIG') else None
-    # if cfg.PERTURB.GATE == 'shakedrop':
-    #     model_config = cfg.PERTURB.SHAKE_DROP.MODEL_CONFIG
-    #     print('Self-ensemble! Shakedrop ')
 
     if detector_name == "yolov2":
         detector = HHYolov2(name=detector_name, cfg=cfg, device=device)

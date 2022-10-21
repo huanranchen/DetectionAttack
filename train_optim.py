@@ -9,6 +9,7 @@ from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools.parser import logger
 from scripts.dict import scheduler_factory, optim_factory
+from detlib.utils import init_detectors
 
 
 def init(detector_attacker, cfg, args=None, data_root=None):
@@ -21,6 +22,7 @@ def init(detector_attacker, cfg, args=None, data_root=None):
 
     detector_attacker.init_universal_patch(args.patch)
     detector_attacker.init_attaker()
+    detector_attacker.detectors = init_detectors(cfg_det=cfg.DETECTOR, distribute=args.model_distribute)
 
     vlogger = None
     if args and not args.debugging:
@@ -100,7 +102,7 @@ if __name__ == '__main__':
     parser.add_argument('-cfg', '--cfg', type=str, default='optim.yaml')
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')
-    parser.add_argument('-dis', '--distributed', action='store_true')
+    parser.add_argument('-dis', '--model_distribute', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()

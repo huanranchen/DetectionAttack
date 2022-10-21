@@ -33,5 +33,5 @@ ATTACKER:
     WIDTH: 300
     HEIGHT: 300
     SCALE: 0.2
-    ASPECT_RATIO: 1
+
     TRANSFORM: ['median_pool', 'p9_scale']

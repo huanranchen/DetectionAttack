@@ -40,5 +40,5 @@ ATTACKER:
     HEIGHT: 300
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
-    ASPECT_RATIO: 1
+
     TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale', 'cutout']
