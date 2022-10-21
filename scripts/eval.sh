@@ -5,7 +5,7 @@ model=$3
 name=$4
 
 if [ $model != "" ] ;then
-  name="-"name
+  name="-"$name
 fi
 
 if [ ! -n "$5" ] ;then
