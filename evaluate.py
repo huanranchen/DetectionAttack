@@ -8,20 +8,16 @@ from tqdm import tqdm
 
 from attack.attacker import UniversalAttacker
 from data.gen_det_labels import Utils
-from tools.parser import ConfigParser
+from tools.parser import ConfigParser, logger_cfg
 from tools.metrics.main import compute_mAP
+from train_optim import init
+from scripts.dict import MAP_PATHS
 
 import warnings
 warnings.filterwarnings('ignore')
 
 # from tools.det_utils import plot_boxes_cv2
 label_postfix = '-rescale-labels'
-paths = {'attack-img': 'imgs',
-         'det-lab': 'det-labels',
-         'attack-lab': 'attack-labels',
-         'det-res': 'det-res',
-         'ground-truth': 'ground-truth'}
-
 
 def path_remove(path):
     if os.path.exists(path):
@@ -43,7 +39,7 @@ def dir_check(save_path, child_paths, rebuild=False):
     for child_path in child_paths:
         child_path = child_path.lower()
         tmp_path = os.path.join(save_path, child_path)
-        for path in paths.values():
+        for path in MAP_PATHS.values():
             ipath = os.path.join(tmp_path, path)
             buid(ipath, rebuild)
 
@@ -78,13 +74,12 @@ def handle_input():
     parser.add_argument('-e', '--eva_class', type=str, default='-1') # '-1': all classes; '-2': attack seen classes(ATTACK_CLASS in cfg file); '-3': attack unseen classes(all_class - ATTACK_CLASS); or given a list by '['x:y']'/'[0]'
     parser.add_argument('-q', '--quiet', help='output none if set true', action='store_true')
     args = parser.parse_args()
-
-    print("save root: ", args.save)
     cfg = ConfigParser(args.cfg)
 
-    print(args.detectors)
     if args.detectors is not None:
         cfg.DETECTOR.NAME = args.detectors
+    else:
+        args.detectors = cfg.DETECTOR.NAME
 
     return args, cfg
 
@@ -122,10 +117,10 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     dir_check(args.save, cfg.DETECTOR.NAME, rebuild=False)
     utils = Utils(cfg)
     batch_size = 1
-    img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
 
     data_loader = dataLoader(args.data_root, input_size=cfg.DETECTOR.INPUT_SIZE,
                              batch_size=batch_size, is_augment=False, pin_memory=True)
+    img_names = [os.path.join(args.data_root, i) for i in os.listdir(args.data_root)]
     save_path = args.save
     accs_total = {}
     for detector in evaluator.detectors: accs_total[detector.name] = []
@@ -141,11 +136,11 @@ def generate_labels(evaluator, cfg, args, save_label=False):
             evaluator.get_patch_pos_batch(all_preds)
             if save_label:
                 # for saving the original detection info
-                fp = os.path.join(tmp_path, paths['det-lab'])
+                fp = os.path.join(tmp_path, MAP_PATHS['det-lab'])
                 utils.save_label(all_preds[0], fp, img_name, save_conf=False, rescale=True)
 
             if hasattr(args, 'test_origin') and args.test_origin:
-                fp = os.path.join(tmp_path, paths['det-res'])
+                fp = os.path.join(tmp_path, MAP_PATHS['det-res'])
                 utils.save_label(all_preds[0], fp, img_name, save_conf=True, rescale=True)
 
             target_nums_clean = evaluator.get_patch_pos_batch(all_preds)[0]
@@ -158,7 +153,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
                 evaluator.plot_boxes(adv_img_tensor[0], preds[0], save_path=ipath, save_name=img_name)
 
             # for saving the attacked detection info
-            lpath = os.path.join(tmp_path, paths['attack-lab'])
+            lpath = os.path.join(tmp_path, MAP_PATHS['attack-lab'])
             utils.save_label(preds[0], lpath, img_name, rescale=True)
 
             if target_nums_clean:
@@ -178,7 +173,7 @@ def generate_labels(evaluator, cfg, args, save_label=False):
     return accs_total
 
 
-def init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
+def eval_init(args, cfg, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")):
     # preprocessing the cfg
     args = ignore_class(args, cfg)
     evaluator = UniversalPatchEvaluator(cfg, args.patch, device)
@@ -194,13 +189,8 @@ def cfg_save_modify(cfg):
 
 
 def eva(args, cfg):
-    args, cfg, evaluator = init(args, cfg)
-    print('------------------ Evaluating ------------------')
-    print("              cfg file : ", args.cfg)
-    print("             data root : ", args.data_root)
-    print("            label root : ", args.label_path)
-    print("             save root : ", args.save)
-    # set the eva classes to be the ones to attack
+    args, cfg, evaluator = eval_init(args, cfg)
+    logger_cfg(args, 'Evaluating')
     evaluator.attack_list = cfg.show_class_index(args.eva_class_list)
 
     accs_dict = None
@@ -216,7 +206,7 @@ def eva(args, cfg):
         path = os.path.join(save_path, detector.name)
 
         # link the path of the detection labels
-        det_path = os.path.join(path, paths['det-lab'])
+        det_path = os.path.join(path, MAP_PATHS['det-lab'])
         path_remove(det_path)
 
         # cmd = 'ln -s ' + os.path.join(args.label_path, detector.name+'-labels') + ' ' + det_path
@@ -226,31 +216,31 @@ def eva(args, cfg):
         os.system(cmd)
 
         # (det-results)take clear detection results as GT label: attack results as detections
-        # print('ground truth     :', os.path.join(path, paths['det-lab']))
-        det_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
-                                gt_path=paths['det-lab'], res_prefix='det', quiet=quiet)
+        # print('ground truth     :', os.path.join(path, MAP_PATHS['det-lab']))
+        det_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=MAP_PATHS['attack-lab'],
+                                gt_path=MAP_PATHS['det-lab'], res_prefix='det', quiet=quiet)
         det_mAPs[detector.name] = round(det_mAP*100, 2)
-        # shutil.rmtree(os.path.join(path, paths['attack-lab']))
+        # shutil.rmtree(os.path.join(path, MAP_PATHS['attack-lab']))
 
         if hasattr(args, 'test_gt') and args.test_gt:
             # link the path of the GT labels
             gt_target = os.path.join(path, 'ground-truth')
-            gt_source = os.path.join(args.label_path, paths['ground-truth'] + label_postfix)
+            gt_source = os.path.join(args.label_path, MAP_PATHS['ground-truth'] + label_postfix)
             path_remove(gt_target)
             cmd = ' '.join(['ln -s ', gt_source, gt_target])
             print(cmd)
             os.system(cmd)
             # (gt-results)take original labels as GT label(default): attack results as detections
-            # print('ground truth     :', paths['ground-truth'])
-            gt_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['attack-lab'],
-                                    gt_path=paths['ground-truth'], res_prefix='gt', quiet=quiet)
+            # print('ground truth     :', MAP_PATHS['ground-truth'])
+            gt_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=MAP_PATHS['attack-lab'],
+                                    gt_path=MAP_PATHS['ground-truth'], res_prefix='gt', quiet=quiet)
             gt_mAPs[detector.name] = round(gt_mAP*100, 2)
 
         if hasattr(args, 'test_origin') and args.test_origin:
             rp = 'ori'
             # (ori-results)take original labels as path['ground-truth'] label(default): clear detection res as detections
-            ori_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=paths['det-res'],
-                                gt_path=paths['ground-truth'], res_prefix=rp, quiet=quiet)
+            ori_mAP = compute_mAP(path=path, ignore=args.ignore_class, lab_path=MAP_PATHS['det-res'],
+                                gt_path=MAP_PATHS['ground-truth'], res_prefix=rp, quiet=quiet)
             ori_mAPs[rp][detector.name] = round(ori_mAP*100, 2)
 
         # merge_plot(ori_aps_dic, path, det_aps_dic, gt_aps_dic)
@@ -263,7 +253,7 @@ if __name__ == '__main__':
 
     args, cfg = handle_input()
     args = get_save(args)
-    # args, evaluator = init(args, cfg)
+    # args, evaluator = eval_init(args, cfg)
     det_mAPs, gt_mAPs, ori_mAPs, accs_dict = eva(args, cfg)
 
     det_mAP_file = os.path.join(args.save, 'det-mAP.txt')

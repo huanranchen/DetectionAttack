@@ -9,23 +9,22 @@ from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools.parser import logger
 from scripts.dict import scheduler_factory, optim_factory
-from detlib.utils import init_detectors
 
 
-def init(detector_attacker, cfg, args=None, data_root=None):
-    logger(cfg, args)
+
+def init(detector_attacker, cfg, data_root, args=None, log=True):
+    if log: logger(cfg, args)
+
     data_sampler = None
-    if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
     data_loader = dataLoader(data_root,
-                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
+                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
 
     detector_attacker.init_universal_patch(args.patch)
     detector_attacker.init_attaker()
-    detector_attacker.detectors = init_detectors(cfg_det=cfg.DETECTOR, distribute=args.model_distribute)
 
     vlogger = None
-    if args and not args.debugging:
+    if log and args and not args.debugging:
         vlogger = VisualBoard(name=args.board_name, new_process=args.new_process)
         detector_attacker.vlogger = vlogger
 
@@ -36,7 +35,7 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
     def get_iter():
         return (epoch - 1) * len(data_loader) + index
 
-    data_loader, vlogger = init(detector_attacker, cfg, args, data_root=data_root)
+    data_loader, vlogger = init(detector_attacker, cfg, args=args, data_root=data_root)
     optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
     detector_attacker.attacker.set_optimizer(optimizer)
     scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](optimizer)
@@ -112,6 +111,6 @@ if __name__ == '__main__':
     save_patch_name = args.cfg.split('/')[-1].split('.')[0] if args.board_name is None else args.board_name
 
     cfg = ConfigParser(args.cfg)
-    detector_attacker = UniversalAttacker(cfg, device)
+    detector_attacker = UniversalAttacker(cfg, device, model_distribute=args.model_distribute)
     cfg.show_class_label(cfg.attack_list)
     attack(cfg, detector_attacker, save_patch_name, args)

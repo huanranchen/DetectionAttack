@@ -4,6 +4,7 @@ import os
 
 from tools.det_utils import plot_boxes_cv2
 from tools import FormatConverter
+from detlib.utils import init_detectors
 from scripts.dict import get_attack_method, loss_dict
 from tools import DataTransformer, pad_lab
 from attack.uap import PatchManager, PatchRandomApplier
@@ -13,7 +14,7 @@ from tools.det_utils import inter_nms
 class UniversalAttacker(object):
     """An attacker agent to coordinate the detect & base attack methods for universal attacks."""
 
-    def __init__(self, cfg, device):
+    def __init__(self, cfg, device, model_distribute=False):
         self.cfg = cfg
         self.device = device
         self.max_boxes = 15
@@ -24,8 +25,10 @@ class UniversalAttacker(object):
         self.patch_obj = PatchManager(cfg.ATTACKER.PATCH, device)
         self.vlogger = None
 
-        self.patch_applier = PatchRandomApplier(device, cfg=cfg.ATTACKER.PATCH)
+        self.patch_applier = PatchRandomApplier(device, cfg_patch=cfg.ATTACKER.PATCH)
         self.data_transformer = DataTransformer(device, rand_rotate=0)
+
+        self.detectors = init_detectors(cfg_det=cfg.DETECTOR, distribute=model_distribute)
 
     @property
     def universal_patch(self):

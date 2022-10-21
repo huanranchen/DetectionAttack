@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: ''
+  AUGMENT: 0
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -41,5 +41,5 @@ ATTACKER:
     HEIGHT: 300
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
-
+    scale_max: 0.15
     TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']

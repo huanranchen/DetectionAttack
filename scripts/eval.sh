@@ -4,6 +4,10 @@ target=$2
 model=$3
 name=$4
 
+if [ $model != "" ] ;then
+  name="-"name
+fi
+
 if [ ! -n "$5" ] ;then
   folder=exp4
 else
@@ -11,7 +15,7 @@ else
 fi
 
 bash test.sh $cuda \
-$folder/$target/$model/$model-$name \
+$folder/$target/$model/$model$name \
 $folder/$target/$model/ \
 "eval/coco80 eval/coco91" \
 "Test"
