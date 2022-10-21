@@ -10,7 +10,7 @@ from torchvision.models.utils import load_state_dict_from_url
 from torchvision.models.detection.anchor_utils import AnchorGenerator
 from .generalized_rcnn import GeneralizedRCNN
 from .rpn import RPNHead, RegionProposalNetwork
-from torchvision.models.detection.roi_heads import RoIHeads
+from .detection.roi_heads import RoIHeads
 from ..utils.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone, _validate_trainable_layers, mobilenet_backbone
 

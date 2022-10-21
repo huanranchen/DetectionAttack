@@ -26,9 +26,9 @@ class TorchFasterRCNN(DetectorBase):
         self.detector = self.detector.to(self.device)
         self.eval()
 
-    def __call__(self, batch_tensor, **kwargs):
+    def __call__(self, batch_tensor, score='bbox', **kwargs):
         shape = batch_tensor.shape[-2]
-        preds, confs = self.detector(batch_tensor)
+        preds, confs = self.detector(batch_tensor) # the confs is scores from RPN
         bbox_array = []
         score_array = []
         for ind, (pred, now_conf) in enumerate(zip(preds, confs)):
@@ -40,17 +40,23 @@ class TorchFasterRCNN(DetectorBase):
             ), 1) if nums else torch.cuda.FloatTensor([])
             bbox_array.append(array)
 
-            if now_conf.size(0) < self.max_conf_num:
-                now_conf = torch.cat((now_conf, torch.zeros(self.max_conf_num - now_conf.size(0)).to(self.device)), -1)
-                confs[ind] = now_conf
-            now_conf[now_conf < 0.5] = 0
-            confs[ind] = torch.mean(now_conf[now_conf > 0])
+            if score is "rpn":
+                if now_conf.size(0) < self.max_conf_num:
+                    now_conf = torch.cat((now_conf, torch.zeros(self.max_conf_num - now_conf.size(0)).to(self.device)), -1)
+                    confs[ind] = now_conf
+                now_conf[now_conf < 0.5] = 0
+                confs[ind] = torch.mean(now_conf[now_conf > 0])
+            elif score is "bbox":
+                if pred['scores'].size(0) < self.max_conf_num:
+                    score_array.append(torch.cat((pred['scores'], torch.zeros(self.max_conf_num - pred['scores'].size(0)).to(self.device)), -1))
 
-            if pred['scores'].size(0) < self.max_conf_num:
-                score_array.append(torch.cat((pred['scores'], torch.zeros(self.max_conf_num - pred['scores'].size(0)).to(self.device)), -1))
+        if score is "rpn":
+            # score from the rpn
+            confs_array = torch.vstack((confs))
+        elif score is "bbox":
+            # score from the final bboxes
+            confs_array = torch.vstack((score_array))
 
-        # confs_array = torch.vstack((confs))
-        confs_array = torch.vstack((score_array))
         cls_max_ids = None
         bbox_array = inter_nms(bbox_array, self.conf_thres, self.iou_thres)
         output = {'bbox_array': bbox_array, 'obj_confs': confs_array, "cls_max_ids": cls_max_ids}

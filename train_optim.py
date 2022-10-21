@@ -32,10 +32,9 @@ def init(detector_attacker, cfg, data_root, args=None, log=True):
 
 
 def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
-    def get_iter():
-        return (epoch - 1) * len(data_loader) + index
+    def get_iter(): return (epoch - 1) * len(data_loader) + index
 
-    data_loader, vlogger = init(detector_attacker, cfg, args=args, data_root=data_root)
+    data_loader, vlogger = init(detector_attacker, cfg, args=args, data_root=cfg.DATA.TRAIN.IMG_DIR)
     optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
     detector_attacker.attacker.set_optimizer(optimizer)
     scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](optimizer)

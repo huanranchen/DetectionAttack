@@ -86,10 +86,10 @@ class UniversalAttacker(object):
         :return:
         """
         if adv_patch is None: adv_patch = self.universal_patch
-
         img_tensor = self.patch_applier(img_tensor, adv_patch, self.all_preds, gates=self.cfg.ATTACKER.PATCH.TRANSFORM)
 
-        if '2' in self.cfg.DATA.AUGMENT: img_tensor = self.data_transformer(img_tensor)
+        # 1st inference: get bbox; 2rd inference: get detections of the adversarial patch
+        # if '2' in self.cfg.DATA.AUGMENT: img_tensor = self.data_transformer(img_tensor)
 
         return img_tensor
 
