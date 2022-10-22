@@ -1,5 +1,6 @@
 import torch
 from .optim import OptimAttacker
+from torch.optim import Optimizer, Adam
 
 
 def cosine_similarity(x: list):
@@ -23,8 +24,14 @@ class FishAttacker(OptimAttacker):
     use fish technique to approximate second derivatives.
     '''
 
-    def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty'):
+    def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty',
+                 out_optimizer=None, ksi=10):
         super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
+        if out_optimizer is None:
+            self.out_optimizer = out_optimizer
+        else:
+            self.out_optimizer = out_optimizer(self.optimizer.param_groups[0]['params'][0], self.ksi)
+        self.ksi = ksi
 
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
@@ -70,7 +77,7 @@ class FishAttacker(OptimAttacker):
         self.grad_record = []
 
     @torch.no_grad()
-    def end_attack(self, ksi=10):
+    def end_attack(self):
         '''
         theta: original_patch
         theta_hat: now patch in optimizer
@@ -78,9 +85,17 @@ class FishAttacker(OptimAttacker):
         theta =(1-ksi )theta + ksi* theta_hat
         '''
         patch = self.optimizer.param_groups[0]['params'][0]
-        patch.mul_(ksi)
-        patch.add_((1 - ksi) * self.original_patch)
-        self.original_patch = None
+        if self.out_optimizer is None:
+            patch.mul_(self.ksi)
+            patch.add_((1 - self.ksi) * self.original_patch)
+            self.original_patch = None
+        else:
+            fake_grad = - self.ksi * (patch - self.original_patch)
+            self.out_optimizer.zero_grad()
+            patch.mul_(0)
+            patch.add_(self.original_patch)
+            patch.grad = fake_grad
+            self.out_optimizer.step()
 
         grad_similarity = cosine_similarity(self.grad_record)
         self.detector_attacker.vlogger.write_scalar(grad_similarity, 'grad_similarity')
@@ -93,8 +108,9 @@ class SmoothFishAttacker(OptimAttacker):
     attention!!!!! twice the time!!!!!!!
     '''
 
-    def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty'):
+    def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty', out_optimizer=None):
         super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
+        self.out_optimizer = out_optimizer
 
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
