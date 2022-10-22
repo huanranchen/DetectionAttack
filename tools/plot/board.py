@@ -40,6 +40,7 @@ class VisualBoard:
         self.writer.add_image(f'attack/{name}', im, self.iter)
 
     def write_ep_loss(self, ep_loss):
+        # print(np.array(self.det_loss).mean(), self.det_loss)
         self.writer.add_scalar('loss/det_loss', np.array(self.det_loss).mean(), self.iter)
         self.writer.add_scalar('loss/tv_loss', np.array(self.tv_loss).mean(), self.iter)
         self.writer.add_scalar('loss/iter_loss', np.array(self.loss).mean(), self.iter)

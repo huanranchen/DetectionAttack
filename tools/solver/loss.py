@@ -11,7 +11,6 @@ import numpy as np
 #     return loss
 
 
-
 class TVLoss(nn.Module):
     @staticmethod
     def forward(inputs, t_mask=None):

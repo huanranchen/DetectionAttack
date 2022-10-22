@@ -68,6 +68,7 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
                 scheduler.step(ten_epoch_loss)
                 ten_epoch_loss = 0
 
+        # print(ep_loss)
         ep_loss /= len(data_loader)
         ten_epoch_loss += ep_loss
         if cfg.ATTACKER.LR_SCHEDULER == 'plateau':
@@ -78,11 +79,8 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
             scheduler.step()
 
         if vlogger: vlogger.write_ep_loss(ep_loss)
-        # print('           ep loss : ', ep_loss)
         loss_array.append(float(ep_loss))
 
-        if vlogger:
-            vlogger.write_ep_loss(ep_loss)
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
 
 
