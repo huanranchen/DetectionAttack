@@ -11,7 +11,6 @@ from tools.parser import logger
 from scripts.dict import scheduler_factory, optim_factory
 
 
-
 def init(detector_attacker, cfg, data_root, args=None, log=True):
     if log: logger(cfg, args)
 
@@ -32,7 +31,8 @@ def init(detector_attacker, cfg, data_root, args=None, log=True):
 
 
 def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
-    def get_iter(): return (epoch - 1) * len(data_loader) + index
+    def get_iter():
+        return (epoch - 1) * len(data_loader) + index
 
     data_loader, vlogger = init(detector_attacker, cfg, args=args, data_root=cfg.DATA.TRAIN.IMG_DIR)
     optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
