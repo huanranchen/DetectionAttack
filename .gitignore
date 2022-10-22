@@ -1,6 +1,8 @@
 detlib/weights/
 data/
 results/
+checkpoints/
+bak/
 .idea
 *.weights
 *.png
