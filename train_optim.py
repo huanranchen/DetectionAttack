@@ -11,6 +11,7 @@ from tools.parser import logger
 from scripts.dict import scheduler_factory, optim_factory
 
 
+
 def init(detector_attacker, cfg, data_root, args=None, log=True):
     if log: logger(cfg, args)
 
@@ -30,11 +31,11 @@ def init(detector_attacker, cfg, data_root, args=None, log=True):
     return data_loader, vlogger
 
 
-def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
-    def get_iter():
-        return (epoch - 1) * len(data_loader) + index
+def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
+    def get_iter(): return (epoch - 1) * len(data_loader) + index
 
-    data_loader, vlogger = init(detector_attacker, cfg, args=args, data_root=cfg.DATA.TRAIN.IMG_DIR)
+    if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
+    data_loader, vlogger = init(detector_attacker, cfg, args=args, data_root=data_root)
     optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
     detector_attacker.attacker.set_optimizer(optimizer)
     scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](optimizer)
@@ -110,4 +111,4 @@ if __name__ == '__main__':
     cfg = ConfigParser(args.cfg)
     detector_attacker = UniversalAttacker(cfg, device, model_distribute=args.model_distribute)
     cfg.show_class_label(cfg.attack_list)
-    attack(cfg, detector_attacker, save_patch_name, args)
+    train_uap(cfg, detector_attacker, save_patch_name, args)

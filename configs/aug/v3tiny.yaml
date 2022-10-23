@@ -1,6 +1,6 @@
 DATA:
-  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
-  AUGMENT: 0
+  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  AUGMENT: 1
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -11,15 +11,16 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
-  NAME: ["faster_rcnn"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV3-tiny"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
+  MODEL_CONFIG: 'HHDet/yolov3/PyTorch_YOLOv3/config/yolov3-tiny.cfg'
 
   CONF_THRESH: 0.5
   IOU_THRESH: 0.45
 
   PERTURB:
-    GATE: 'shakedrop'
+    GATE: null
 
 ATTACKER:
   METHOD: "optim"
@@ -27,12 +28,12 @@ ATTACKER:
   MAX_EPOCH: 1000
   ITER_STEP: 1
 
+  STEP_LR: 0.03
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse]
   tv_eta: 2.5
   obj_eta: 1
-  STEP_LR: 0.03
   LR_SCHEDULER: 'ALRS'
 
   PATCH:
@@ -40,5 +41,5 @@ ATTACKER:
     HEIGHT: 300
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
-
+    scale_max: 0.15
     TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']

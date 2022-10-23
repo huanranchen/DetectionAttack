@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 import os
 import time
-from tools.plot import VisualBoard
+
 from tools.loader import dataLoader
 from tools import save_tensor
 from tools.parser import logger
