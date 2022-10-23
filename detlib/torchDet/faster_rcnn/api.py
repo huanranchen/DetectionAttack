@@ -16,7 +16,7 @@ class TorchFasterRCNN(DetectorBase):
         kwargs = {}
         if self.input_tensor_size is not None:
             kwargs['min_size'] = self.input_tensor_size
-        if self.cfg.PERTURB.GATE is 'shakedrop':
+        if self.cfg.PERTURB.GATE == 'shakedrop':
             from .faster_rcnn import faster_rcnn_resnet50_shakedrop
             self.detector = faster_rcnn_resnet50_shakedrop()
         else:
@@ -40,20 +40,20 @@ class TorchFasterRCNN(DetectorBase):
             ), 1) if nums else torch.cuda.FloatTensor([])
             bbox_array.append(array)
 
-            if score is "rpn":
+            if score == "rpn":
                 if now_conf.size(0) < self.max_conf_num:
                     now_conf = torch.cat((now_conf, torch.zeros(self.max_conf_num - now_conf.size(0)).to(self.device)), -1)
                     confs[ind] = now_conf
                 now_conf[now_conf < 0.5] = 0
                 confs[ind] = torch.mean(now_conf[now_conf > 0])
-            elif score is "bbox":
+            elif score == "bbox":
                 if pred['scores'].size(0) < self.max_conf_num:
                     score_array.append(torch.cat((pred['scores'], torch.zeros(self.max_conf_num - pred['scores'].size(0)).to(self.device)), -1))
 
-        if score is "rpn":
+        if score == "rpn":
             # score from the rpn
             confs_array = torch.vstack((confs))
-        elif score is "bbox":
+        elif score == "bbox":
             # score from the final bboxes
             confs_array = torch.vstack((score_array))
 

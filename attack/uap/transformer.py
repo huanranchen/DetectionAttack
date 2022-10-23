@@ -130,11 +130,11 @@ class PatchTransformer(nn.Module):
         bboxes_shape = torch.Size((batch_size, lab_len))
         bboxes_size = np.prod([batch_size, lab_len])
 
-        if level is 'instance':
+        if score == "bbox":
             target_size = bboxes_size
-        elif level is 'image':
+        elif score == "bbox":
             target_size = batch_size
-        elif level is 'batch':
+        elif level == 'batch':
             target_size = 1
         # print(bboxes_size, target_size)
 
@@ -142,14 +142,14 @@ class PatchTransformer(nn.Module):
         bg = self.equal_size(bg, x.size)
 
         angle = torch.cuda.FloatTensor(target_size).fill_(0)
-        if level is not 'instance':
+        if level != 'instance':
             angle = angle.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)
         sin = torch.sin(angle)
         cos = torch.cos(angle)
 
         target_cx = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
         target_cy = torch.cuda.FloatTensor(target_size).uniform_(rand_shift, 1-rand_shift)
-        if level is not 'instance':
+        if level != 'instance':
             target_cx = target_cx.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)
             target_cy = target_cy.unsqueeze(-1).expand(s[0], s[1]).reshape(-1)
         tx = (0.5 - target_cx) * 2
