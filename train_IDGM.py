@@ -38,7 +38,7 @@ def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
     data_loader, vlogger = init(detector_attacker, cfg, args=args, data_root=data_root)
     optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
     detector_attacker.attacker.set_optimizer(optimizer)
-    scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](detector_attacker.attacker.outer_optimizer)
+    scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](detector_attacker.attacker.out_optimizer)
 
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)

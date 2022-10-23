@@ -32,12 +32,12 @@ class FishAttacker(OptimAttacker):
 
     def set_optimizer(self, optimizer: Optimizer):
         self.optimizer = optimizer
-        if self.detector_attacker.vlogger is not None:
-            self.detector_attacker.vlogger.optimizer = optimizer
         if self.out_optimizer is not None:
             print(f'set outer optimizer is {self.out_optimizer}')
             print('-' * 100)
             self.out_optimizer = self.out_optimizer([self.optimizer.param_groups[0]['params'][0]], self.ksi)
+        if self.detector_attacker.vlogger is not None:
+            self.detector_attacker.vlogger.optimizer = self.out_optimizer
 
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
