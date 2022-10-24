@@ -5,53 +5,55 @@ import numpy as np
 from tqdm import tqdm
 
 from tools import save_tensor
-from tools.transformer import mixup_transform, mosaic_transform
 from tools.plot import VisualBoard
 from tools.loader import dataLoader
 from tools.parser import logger
 from scripts.dict import scheduler_factory, optim_factory
 
 
-def attack(cfg, data_root, detector_attacker, save_name, args=None):
-    def get_iter():
-        return (epoch - 1) * len(data_loader) + index
 
-    logger(cfg, args)
+def init(detector_attacker, cfg, data_root, args=None, log=True):
+    if log: logger(cfg, args)
+
     data_sampler = None
-    detector_attacker.init_universal_patch(args.patch)
     data_loader = dataLoader(data_root,
-                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment='1' in cfg.DATA.AUGMENT,
+                             input_size=cfg.DETECTOR.INPUT_SIZE, is_augment=cfg.DATA.AUGMENT,
                              batch_size=cfg.DETECTOR.BATCH_SIZE, sampler=data_sampler, shuffle=True)
 
-    detector_attacker.gates = ['jitter', 'median_pool', 'rotate', 'p9_scale']
-    if args.random_erase: detector_attacker.gates.append('rerase')
+    detector_attacker.init_universal_patch(args.patch)
+    detector_attacker.init_attaker()
 
-    p_obj = detector_attacker.patch_obj.patch
-    # optimizer = optim_factory[cfg.ATTACKER.METHOD](p_obj, cfg.ATTACKER.START_LEARNING_RATE)
-    # optimizer = torch.optim.Adam([p_obj], lr=cfg.ATTACKER.START_LEARNING_RATE, amsgrad=True)
-    optimizer = detector_attacker.model.optimizer
-    scheduler = scheduler_factory[cfg.ATTACKER.scheduler](optimizer)
+    vlogger = None
+    if log and args and not args.debugging:
+        vlogger = VisualBoard(name=args.board_name, new_process=args.new_process)
+        detector_attacker.vlogger = vlogger
+
+    return data_loader, vlogger
+
+
+def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
+    def get_iter(): return (epoch - 1) * len(data_loader) + index
+
+    if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
+    data_loader, vlogger = init(detector_attacker, cfg, args=args, data_root=data_root)
+    optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
+    detector_attacker.attacker.set_optimizer(optimizer)
+    scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](detector_attacker.attacker.out_optimizer)
+
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)
-    vlogger = None
-    if not args.debugging:
-        vlogger = VisualBoard(optimizer, name=args.board_name, new_process=args.new_process)
-        detector_attacker.vlogger = vlogger
     ten_epoch_loss = 0
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
-        et0 = time.time()
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
             # for index, (img_tensor_batch, img_tensor_batch2) in enumerate(tqdm(zip(data_loader, data_loader2), desc=f'Epoch {epoch}')):
             if vlogger: vlogger(epoch, get_iter())
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
-            if args.mixup:
-                img_tensor_batch = mixup_transform(x1=img_tensor_batch)
+
             all_preds = detector_attacker.detect_bbox(img_tensor_batch)
             # get position of adversarial patches
             target_nums = detector_attacker.get_patch_pos_batch(all_preds)
-            if sum(target_nums) == 0:
-                continue
+            if sum(target_nums) == 0: continue
 
             loss = detector_attacker.attack(img_tensor_batch, mode='optim')
             ep_loss += loss
@@ -62,25 +64,24 @@ def attack(cfg, data_root, detector_attacker, save_name, args=None):
             save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
             print('Saving patch to ', os.path.join(args.save_path, patch_name))
 
-            if cfg.ATTACKER.scheduler == 'ALRS':
+            if cfg.ATTACKER.LR_SCHEDULER == 'ALRS':
                 ten_epoch_loss /= 10
                 scheduler.step(ten_epoch_loss)
                 ten_epoch_loss = 0
 
-        et1 = time.time()
+        # print(ep_loss)
         ep_loss /= len(data_loader)
         ten_epoch_loss += ep_loss
-        if cfg.ATTACKER.scheduler == 'plateau':
+        if cfg.ATTACKER.LR_SCHEDULER == 'plateau':
             scheduler.step(ep_loss)
-        elif 'warmup' in cfg.ATTACKER.scheduler:
+        elif 'warmup' in cfg.ATTACKER.LR_SCHEDULER:
             scheduler.step(loss=ep_loss, epoch=epoch)
-        elif cfg.ATTACKER.scheduler != 'ALRS':
+        elif cfg.ATTACKER.LR_SCHEDULER != 'ALRS':
             scheduler.step()
-        if vlogger:
-            vlogger.write_ep_loss(ep_loss)
-            vlogger.write_scalar(et1 - et0, 'misc/ep time')
-        # print('           ep loss : ', ep_loss)
+
+        if vlogger: vlogger.write_ep_loss(ep_loss)
         loss_array.append(float(ep_loss))
+
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
 
 
@@ -98,9 +99,8 @@ if __name__ == '__main__':
     parser.add_argument('-cfg', '--cfg', type=str, default='optim.yaml')
     parser.add_argument('-n', '--board_name', type=str, default=None)
     parser.add_argument('-d', '--debugging', action='store_true')
+    parser.add_argument('-dis', '--model_distribute', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
-    parser.add_argument('-re', '--random_erase', action='store_true', default=False)
-    parser.add_argument('-mu', '--mixup', action='store_true', default=False)
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
     args = parser.parse_args()
 
@@ -109,8 +109,6 @@ if __name__ == '__main__':
     save_patch_name = args.cfg.split('/')[-1].split('.')[0] if args.board_name is None else args.board_name
 
     cfg = ConfigParser(args.cfg)
-    detector_attacker = UniversalAttacker(cfg, device)
+    detector_attacker = UniversalAttacker(cfg, device, model_distribute=args.model_distribute)
     cfg.show_class_label(cfg.attack_list)
-    data_root = cfg.DATA.TRAIN.IMG_DIR
-    img_names = [os.path.join(data_root, i) for i in os.listdir(data_root)]
-    attack(cfg, data_root, detector_attacker, save_patch_name, args)
+    train_uap(cfg, detector_attacker, save_patch_name, args)

@@ -25,13 +25,19 @@ class FishAttacker(OptimAttacker):
     '''
 
     def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty',
-                 out_optimizer=None, ksi=10):
+                 out_optimizer=Adam, ksi=0.1):
         super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
-        if out_optimizer is None:
-            self.out_optimizer = out_optimizer
-        else:
-            self.out_optimizer = out_optimizer(self.optimizer.param_groups[0]['params'][0], self.ksi)
         self.ksi = ksi
+        self.out_optimizer = out_optimizer
+
+    def set_optimizer(self, optimizer: Optimizer):
+        self.optimizer = optimizer
+        if self.out_optimizer is not None:
+            print(f'set outer optimizer is {self.out_optimizer}')
+            print('-' * 100)
+            self.out_optimizer = self.out_optimizer([self.optimizer.param_groups[0]['params'][0]], self.ksi)
+        if self.detector_attacker.vlogger is not None:
+            self.detector_attacker.vlogger.optimizer = self.out_optimizer
 
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
