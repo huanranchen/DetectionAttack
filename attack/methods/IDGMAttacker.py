@@ -25,7 +25,7 @@ class FishAttacker(OptimAttacker):
     '''
 
     def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty',
-                 out_optimizer=Adam, ksi=0.1):
+                 out_optimizer=Adam, ksi=0.05):
         super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
         self.ksi = ksi
         self.out_optimizer = out_optimizer

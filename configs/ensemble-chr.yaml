@@ -32,7 +32,7 @@ ATTACKER:
   MAX_EPOCH: 10000
   ITER_STEP: 1
 
-  STEP_LR: 0.001
+  STEP_LR: 0.0001
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv']

@@ -17,7 +17,7 @@ optim_factory = {
     'optim-sgd': lambda p_obj, lr: torch.optim.SGD([p_obj], lr=lr * 100),
     'optim-nesterov': lambda p_obj, lr: torch.optim.SGD([p_obj], lr=lr * 100, nesterov=True, momentum=0.9),
     'optim-rmsprop': lambda p_obj, lr: torch.optim.RMSprop([p_obj], lr=lr * 100),
-    "IDGM-fish": lambda p_obj, lr: torch.optim.SGD([p_obj], lr=lr, momentum=0.9),  # default
+    "IDGM-fish": lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
     'record-p9': lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
     'IDGM-smoothfish': lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
 }
