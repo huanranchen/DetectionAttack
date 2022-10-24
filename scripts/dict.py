@@ -1,5 +1,4 @@
-import torch
-from tools.solver import Cosine_lr_scheduler, Plateau_lr_scheduler, ALRS, warmupALRS
+from tools.solver import *
 from attack.methods import LinfBIMAttack, LinfMIMAttack, LinfPGDAttack, OptimAttacker, \
     FishAttacker, SmoothFishAttacker, OptimAttackerWithRecord, RSCchr, StrengthenWeakPointAttacker
 from tools.solver.loss import *
@@ -7,8 +6,9 @@ from tools.solver.loss import *
 scheduler_factory = {
     'plateau': Plateau_lr_scheduler,
     'cosine': Cosine_lr_scheduler,
-    'ALRS': ALRS,
-    'warmupALRS': warmupALRS
+    'ALRS': ALRS, # This is used for most of the experiments.
+    'warmupALRS': warmupALRS, # This is not used.
+    'ALRS_LowerTV': ALRS_LowerTV # This is just for observational scheduler comparison to the baseline.
 }
 
 optim_factory = {
