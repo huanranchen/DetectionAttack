@@ -4,8 +4,8 @@ from attack.methods import LinfBIMAttack, LinfMIMAttack, LinfPGDAttack, OptimAtt
 from tools.solver.loss import *
 
 scheduler_factory = {
-    'plateau': Plateau_lr_scheduler,
-    'cosine': Cosine_lr_scheduler,
+    'plateau': PlateauLR,
+    'cosine': CosineLR,
     'ALRS': ALRS, # This is used for most of the experiments.
     'warmupALRS': warmupALRS, # This is not used.
     'ALRS_LowerTV': ALRS_LowerTV # This is just for observational scheduler comparison to the baseline.

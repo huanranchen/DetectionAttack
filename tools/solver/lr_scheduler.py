@@ -3,52 +3,6 @@ import torch
 from torch import optim
 
 
-class _ExponentStepLR(torch.optim.lr_scheduler._LRScheduler):
-    def __init__(self, optimizer, gamma=0.999, step_size=1, last_epoch=1):
-        self.gamma = gamma
-        self.step_size = step_size
-        super(_ExponentStepLR, self).__init__(optimizer, last_epoch)
-
-    def get_lr(self):
-        if self.last_epoch < 200 or self.last_epoch % self.step_size:
-            return [group['lr'] for group in self.optimizer.param_groups]
-
-        return [group['lr'] * self.gamma for group in self.optimizer.param_groups]
-
-
-class warmupALRS():
-    """reference:Bootstrap Generalization Ability from Loss Landscape Perspective"""
-    def __init__(self, optimizer, warmup_epoch=50, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
-        self.optimizer = optimizer
-
-        self.warmup_rate = 1/3
-        self.warmup_epoch = warmup_epoch
-        self.start_lr = optimizer.param_groups[0]["lr"]
-        self.warmup_lr = self.start_lr * (1-self.warmup_rate)
-        self.update_lr(lambda x: x*self.warmup_rate)
-
-        self.loss_threshold = loss_threshold
-        self.decay_rate = decay_rate
-        self.loss_ratio_threshold = loss_ratio_threshold
-
-        self.last_loss = 999
-
-    def update_lr(self, update_fn):
-        for group in self.optimizer.param_groups:
-            group['lr'] = update_fn(group['lr'])
-            now_lr = group['lr']
-            print(f'now lr = {now_lr}')
-
-
-    def step(self, loss, epoch):
-        delta = self.last_loss - loss
-        self.last_loss = loss
-        if epoch < self.warmup_epoch:
-            self.update_lr(lambda x: -(self.warmup_epoch-epoch)*self.warmup_lr / self.warmup_epoch + self.start_lr)
-        elif delta < self.loss_threshold and delta/self.last_loss < self.loss_ratio_threshold:
-            self.update_lr(lambda x: x*self.decay_rate)
-
-
 class ALRS():
     """ALRS is a scheduler without warmup, a variant of warmupALRS."""
     def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
@@ -60,18 +14,58 @@ class ALRS():
 
         self.last_loss = 999
 
-    def step(self, loss):
+        self.ten_epoch_loss = 0
+
+    def update_lr(self, loss):
         delta = self.last_loss - loss
-        if delta < self.loss_threshold and delta/self.last_loss < self.loss_ratio_threshold:
+        if delta < self.loss_threshold and delta / self.last_loss < self.loss_ratio_threshold:
             for group in self.optimizer.param_groups:
                 group['lr'] *= self.decay_rate
                 now_lr = group['lr']
                 print(f'now lr = {now_lr}')
 
+    def step(self, **kargs):
+        epoch = kargs['epoch']
+        loss = kargs['ep_loss']
+        if epoch % 10 != 0:
+            self.ten_epoch_loss += loss
+        else:
+            self.ten_epoch_loss /= 10
+            loss = self.ten_epoch_loss
+            self.update_lr(loss)
+            self.last_loss = loss
+            self.ten_epoch_loss = 0
+
+
+class warmupALRS(ALRS):
+    """reference:Bootstrap Generalization Ability from Loss Landscape Perspective"""
+    def __init__(self, optimizer, warmup_epoch=50, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
+        super().__init__(optimizer, loss_threshold, loss_ratio_threshold, decay_rate)
+        self.warmup_rate = 1/3
+        self.warmup_epoch = warmup_epoch
+        self.start_lr = optimizer.param_groups[0]["lr"]
+        self.warmup_lr = self.start_lr * (1-self.warmup_rate)
+        self.update_lr(lambda x: x*self.warmup_rate)
+
+    def update_lr(self, update_fn):
+        for group in self.optimizer.param_groups:
+            group['lr'] = update_fn(group['lr'])
+            now_lr = group['lr']
+            print(f'now lr = {now_lr}')
+
+
+    def step(self, **kwargs):
+        loss = kwargs['ep_loss']
+        epoch = kwargs['epoch']
+        delta = self.last_loss - loss
         self.last_loss = loss
+        if epoch < self.warmup_epoch:
+            self.update_lr(lambda x: -(self.warmup_epoch-epoch)*self.warmup_lr / self.warmup_epoch + self.start_lr)
+        elif delta < self.loss_threshold and delta/self.last_loss < self.loss_ratio_threshold:
+            self.update_lr(lambda x: x*self.decay_rate)
 
 
-class ALRS_LowerTV():
+class ALRS_LowerTV(ALRS):
     """
     A variant of the standard ALRS.
     This is just for observational scheduler comparison of the optimization to the Plateau_LR
@@ -80,32 +74,29 @@ class ALRS_LowerTV():
         to force the learning rate down to 0.1 so that the TV Loss will converges to the same level.
     """
     def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.955):
-        self.optimizer = optimizer
-
-        self.loss_threshold = loss_threshold
-        self.decay_rate = decay_rate
-        self.loss_ratio_threshold = loss_ratio_threshold
-
-        self.last_loss = 999
-
-    def step(self, loss):
-        delta = self.last_loss - loss
-        if delta < self.loss_threshold and delta / self.last_loss < self.loss_ratio_threshold:
-            for group in self.optimizer.param_groups:
-                group['lr'] *= self.decay_rate
-                now_lr = group['lr']
-                print(f'now lr = {now_lr}')
-
-        self.last_loss = loss
+        super().__init__(optimizer, loss_threshold, loss_ratio_threshold, decay_rate)
 
 
-def Expo_lr_scheduler(optimizer):
-    return optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.999, update_step=5)
+class CosineLR():
+    def __init__(self, optimizer, total_epoch=1000):
+        self.optim = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_epoch)
+
+    def step(self, **kwargs):
+        self.optim.step()
 
 
-def Cosine_lr_scheduler(optimizer, total_epoch=1000):
-    return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_epoch)
+class ExponentialLR():
+    def __init__(self, optimizer):
+        self.optim = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.999, update_step=5)
+
+    def step(self, **kwargs):
+        self.optim.step()
 
 
-def Plateau_lr_scheduler(optimizer, patience=100):
-    return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience)
+class PlateauLR():
+    def __init__(self, optimizer, type='min', patience=100):
+        self.optim = optim.lr_scheduler.ReduceLROnPlateau(optimizer, type, patience=patience)
+
+    def step(self, **kargs):
+        ep_loss = kargs['ep_loss']
+        self.optim.step(ep_loss)
