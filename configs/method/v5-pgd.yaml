@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '3'
+  AUGMENT: 0
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -21,10 +21,11 @@ DETECTOR:
     GATE: null
 
 ATTACKER:
-  METHOD: "mim"
+  METHOD: "pgd"
   EPSILON: 255 # 0-255
   MAX_EPOCH: 1000
   ITER_STEP: 5
+
   STEP_LR: 0.03
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
@@ -38,4 +39,4 @@ ATTACKER:
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
 
-    TRANSFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale']
+    TRANSFORM: ['rotate', 'p9_scale']

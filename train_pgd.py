@@ -19,14 +19,16 @@ def modelDDP(detector_attacker, args):
 
 def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
     get_iter = lambda epoch, index: (epoch - 1) * len(data_loader) + index
-    data_loader, vlogger = init(detector_attacker, cfg, args, data_root=data_root)
+    if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
+    data_loader, vlogger = init(detector_attacker, cfg, data_root=data_root, args=args)
 
     save_tensor(detector_attacker.universal_patch, save_name + '.png', args.save_path)
     loss_array = []
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
         et0 = time.time()
         ep_loss = 0
-        for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
+        # for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
+        for index, img_tensor_batch in enumerate(data_loader):
             now_step = get_iter(epoch, index)
             if vlogger: vlogger(epoch, now_step)
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
@@ -57,6 +59,8 @@ if __name__ == '__main__':
     from tools.parser import ConfigParser
     from attack.attacker import UniversalAttacker
     import argparse
+    import warnings
+    warnings.filterwarnings('ignore')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--patch', type=str, help='fine-tune from a pre-trained patch', default=None)

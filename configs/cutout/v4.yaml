@@ -38,7 +38,6 @@ ATTACKER:
   PATCH:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.15
+    SCALE: 0.2
     INIT: "gray" # ['random', 'gray']
-    scale_max: 0.15
     TRANSFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale', 'cutout']
