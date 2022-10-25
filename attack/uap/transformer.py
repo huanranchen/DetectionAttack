@@ -130,9 +130,9 @@ class PatchTransformer(nn.Module):
         bboxes_shape = torch.Size((batch_size, lab_len))
         bboxes_size = np.prod([batch_size, lab_len])
 
-        if level == "bbox":
+        if level == "instance":
             target_size = bboxes_size
-        elif level == "bbox":
+        elif level == "image":
             target_size = batch_size
         elif level == 'batch':
             target_size = 1

@@ -70,10 +70,10 @@ class ALRS_LowerTV(ALRS):
     A variant of the standard ALRS.
     This is just for observational scheduler comparison of the optimization to the Plateau_LR
         employed in the current baseline <Fooling automated surveillance cameras: adversarial patches to attack person detection>.
-    The difference is that we fine-tune the hyper-params decay_rate from 0.97 to 0.955
+    The difference is that we fine-tune the hyper-params decay_rate
         to force the learning rate down to 0.1 so that the TV Loss will converges to the same level.
     """
-    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.955):
+    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.95):
         super().__init__(optimizer, loss_threshold, loss_ratio_threshold, decay_rate)
 
 

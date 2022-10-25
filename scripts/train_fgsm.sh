@@ -22,6 +22,6 @@ mkdir ./results/$folder/method/$model
 
 CUDA_VISIBLE_DEVICES=$cuda nohup python train_pgd.py \
 -cfg=method/$model-$target$combine.yaml \
--s=./results/$folder/method/$target/$model/ \
+-s=./results/$folder/method/$model/ \
 -n=$model-$name$combine \
 >./results/$folder/method/$model/$model-$name$combine.log 2>&1 &
