@@ -1,6 +1,6 @@
 DATA:
   CLASS_NAME_FILE: 'configs/namefiles/coco.names'
-  AUGMENT: '13'
+  AUGMENT: 1
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
@@ -21,7 +21,7 @@ DETECTOR:
     GATE: 'shakedrop'
 
 ATTACKER:
-  METHOD: "bim"
+  METHOD: "pgd"
   EPSILON: 255 # 0-255
   MAX_EPOCH: 1000
   ITER_STEP: 5
@@ -38,4 +38,4 @@ ATTACKER:
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
 
-    TRANSFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale']
+    TRANSFORM: ['rotate', 'p9_scale', 'cutout']
