@@ -10,6 +10,9 @@ from tools.loader import dataLoader
 from tools.parser import logger
 from scripts.dict import scheduler_factory, optim_factory
 
+# for validation in training
+from scripts.obj_args import eva_args
+from evaluate import eval_patch, get_save
 
 
 def init(detector_attacker, cfg, data_root, args=None, log=True):
@@ -32,7 +35,7 @@ def init(detector_attacker, cfg, data_root, args=None, log=True):
     return data_loader, vlogger
 
 
-def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
+def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None, validation=True):
     def get_iter(): return (epoch - 1) * len(data_loader) + index
 
     if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
@@ -58,18 +61,25 @@ def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
             loss = detector_attacker.attack(img_tensor_batch, mode='optim')
             ep_loss += loss
 
-        if epoch % 10 == 0:
-            # patch_name = f'{epoch}_{save_name}'
-            patch_name = f'{save_name}' + '.png'
-            save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
-            print('Saving patch to ', os.path.join(args.save_path, patch_name))
-
         # print(ep_loss)
         ep_loss /= len(data_loader)
         scheduler.step(ep_loss=ep_loss, epoch=epoch)
 
         if vlogger: vlogger.write_ep_loss(ep_loss)
         loss_array.append(float(ep_loss))
+        if epoch % 10 == 0:
+            # patch_name = f'{epoch}_{save_name}'
+            patch_name = f'{save_name}' + '.png'
+            patch_path = os.path.join(args.save_path, patch_name)
+            save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
+            print('Saving patch to ', patch_path)
+
+            if validation:
+                val_args = eva_args(patch=patch_path, cfg=cfg)
+                val_args = get_save(val_args)
+                det_APs = eval_patch(val_args, cfg)[0].values()
+                if vlogger: vlogger.write_scalar(np.array(det_APs).mean(), 'Test AP(avg)')
+
 
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
 

@@ -14,7 +14,7 @@ sys.path.append(PROJECT_ROOT)
 # print(PROJECT_ROOT, sys.path)
 
 from tools.parser import ConfigParser
-from evaluate import UniversalPatchEvaluator, eva, init, handle_input
+from evaluate import UniversalPatchEvaluator, eva, init, parser_input
 
 def init_args(args, save_root, ratio):
     args.gen_labels = True
@@ -46,7 +46,7 @@ def draw_all_picture_of_aspect_ratio(cfg, args, postfix=''):
         # else:
         #     args.gen_labels = True
 
-        det_mAPs, _, _, accs_dict = eva(args, cfg)
+        det_mAPs, _, _, accs_dict = eval_patch(args, cfg)
         acc = list(accs_dict.values())[0]
         print(acc)
         # print(det_mAPs.values())

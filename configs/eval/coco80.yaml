@@ -3,7 +3,7 @@ DATA:
   AUGMENT: 0
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
-    LAB_DIR: 'data/INRIAPerson/Train/labels'
+    LAB_DIR: 'data/INRIAPerson/Train/pos/labels'
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
     LAB_DIR: 'data/INRIAPerson/Test/labels'
