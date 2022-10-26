@@ -27,8 +27,6 @@ class HHYolov5(DetectorBase):
 
     def load(self, model_weights, **args):
         model_config = args['model_config']
-        # check_yaml(model_config)
-        print('yolov5 api load model')
         # Create model
         self.detector = Model(model_config).to(self.device)
         self.detector.load_state_dict(torch.load(model_weights, map_location=self.device)['model'].float().state_dict())
