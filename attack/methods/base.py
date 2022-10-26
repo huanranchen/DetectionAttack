@@ -30,7 +30,6 @@ class BaseAttacker(ABC):
         self.max_epsilon = cfg.EPSILON / 255.
         self.max_iters = cfg.MAX_EPOCH
         self.iter_step = cfg.ITER_STEP
-        self.step_lr = cfg.STEP_LR
         self.class_id = cfg.TARGET_CLASS
         self.attack_class = cfg.ATTACK_CLASS
 
@@ -102,13 +101,13 @@ class BaseAttacker(ABC):
         return out
 
     def begin_attack(self):
-        '''
+        """
         to tell attackers: now, i'm begin attacking!
-        '''
+        """
         pass
 
     def end_attack(self):
-        '''
+        """
         to tell attackers: now, i'm stop attacking!
-        '''
+        """
         pass

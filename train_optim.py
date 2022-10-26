@@ -25,7 +25,8 @@ def init(detector_attacker, cfg, data_root, args=None, log=True):
 
     vlogger = None
     if log and args and not args.debugging:
-        vlogger = VisualBoard(name=args.board_name, new_process=args.new_process)
+        vlogger = VisualBoard(name=args.board_name, new_process=args.new_process,
+                              optimizer=detector_attacker.attacker)
         detector_attacker.vlogger = vlogger
 
     return data_loader, vlogger

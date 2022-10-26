@@ -3,10 +3,10 @@ DATA:
   AUGMENT: 0
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
-    LAB_DIR: 'data/INRIAPerson/Train/pos/yolo-labels'
+    LAB_DIR: 'data/INRIAPerson/Train/labels'
   TEST:
-    IMG_DIR: 'data/coco/train/train2017'
-    LAB_DIR:
+    IMG_DIR: 'data/INRIAPerson/Test/pos'
+    LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 DETECTOR:
   NAME: ['YOLOV2', "YOLOV3", "YOLOV3-TINY", "YOLOV4", "YOLOV4-TINY", "YOLOV5"] # YOLOV3, YOLOV4, YOLOV5

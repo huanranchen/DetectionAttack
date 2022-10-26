@@ -1,4 +1,3 @@
-
 cuda=$1
 target=$2
 model=$3

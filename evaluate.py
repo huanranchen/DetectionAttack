@@ -64,8 +64,8 @@ def handle_input():
     parser.add_argument('-cfg', '--cfg', type=str, default=None)
     parser.add_argument('-d', '--detectors', nargs='+', default=None)
     parser.add_argument('-s', '--save', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/inria/')
-    parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/labels')
-    parser.add_argument('-dr', '--data_root', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/pos')
+    parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/labels')
+    parser.add_argument('-dr', '--data_root', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/pos')
     parser.add_argument('-to', '--test_origin', action='store_true')
     parser.add_argument('-tg', '--test_gt', action='store_true')
     parser.add_argument('-ul', '--stimulate_uint8_loss', action='store_true')
@@ -259,8 +259,9 @@ if __name__ == '__main__':
     det_mAP_file = os.path.join(args.save, 'det-mAP.txt')
     if not os.path.exists(det_mAP_file):
         with open(det_mAP_file, 'a') as f:
-            f.write('scale          : ' + str(cfg.ATTACKER.PATCH.SCALE) + '\n')
+            f.write('              scale : ' + str(cfg.ATTACKER.PATCH.SCALE) + '\n')
             f.write('--------------------------\n')
+            f.write('           detector : [mAP, acc]')
 
     det_dict = det_mAPs
     if accs_dict is not None:

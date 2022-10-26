@@ -29,6 +29,7 @@ ATTACKER:
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "descend-mse" # [null, descend-mse, ascend-mse, obj, obj-tv]
+  LR_SCHEDULER: 'ALRS'
   tv_eta: 2.5
   obj_eta: 1
 
@@ -37,5 +38,4 @@ ATTACKER:
     HEIGHT: 300
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
-
     TRANSFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale', 'cutout']

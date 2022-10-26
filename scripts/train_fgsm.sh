@@ -20,8 +20,11 @@ mkdir ./results/$folder
 mkdir ./results/$folder/method
 mkdir ./results/$folder/method/$model
 
+save_dir=./results/$folder/method/$model/
+save_name=$model$combine-$name
+
 CUDA_VISIBLE_DEVICES=$cuda nohup python train_pgd.py \
 -cfg=method/$model-$target$combine.yaml \
--s=./results/$folder/method/$model/ \
--n=$model-$name$combine \
->./results/$folder/method/$model/$model-$name$combine.log 2>&1 &
+-s=$save_dir \
+-n=$save_name \
+>$save_dir/$save_name.log 2>&1 &

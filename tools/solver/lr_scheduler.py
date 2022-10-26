@@ -7,33 +7,33 @@ class ALRS():
     """ALRS is a scheduler without warmup, a variant of warmupALRS."""
     def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
         self.optimizer = optimizer
-
         self.loss_threshold = loss_threshold
         self.decay_rate = decay_rate
         self.loss_ratio_threshold = loss_ratio_threshold
-
         self.last_loss = 999
-
         self.ten_epoch_loss = 0
 
     def update_lr(self, loss):
         delta = self.last_loss - loss
+        print(delta)
         if delta < self.loss_threshold and delta / self.last_loss < self.loss_ratio_threshold:
-            for group in self.optimizer.param_groups:
-                group['lr'] *= self.decay_rate
+            for ind, group in enumerate(self.optimizer.param_groups):
+                self.optimizer.param_groups[ind]['lr'] *= self.decay_rate
                 now_lr = group['lr']
                 print(f'now lr = {now_lr}')
 
     def step(self, **kargs):
         epoch = kargs['epoch']
         loss = kargs['ep_loss']
+        print(loss)
         if epoch % 10 != 0:
             self.ten_epoch_loss += loss
+            print(self.ten_epoch_loss)
         else:
             self.ten_epoch_loss /= 10
-            loss = self.ten_epoch_loss
-            self.update_lr(loss)
-            self.last_loss = loss
+            print(self.ten_epoch_loss)
+            self.update_lr(self.ten_epoch_loss)
+            self.last_loss = self.ten_epoch_loss
             self.ten_epoch_loss = 0
 
 
@@ -48,8 +48,8 @@ class warmupALRS(ALRS):
         self.update_lr(lambda x: x*self.warmup_rate)
 
     def update_lr(self, update_fn):
-        for group in self.optimizer.param_groups:
-            group['lr'] = update_fn(group['lr'])
+        for ind, group in enumerate(self.optimizer.param_groups):
+            self.optimizer.param_groups[ind]['lr'] = update_fn(group['lr'])
             now_lr = group['lr']
             print(f'now lr = {now_lr}')
 
@@ -73,7 +73,7 @@ class ALRS_LowerTV(ALRS):
     The difference is that we fine-tune the hyper-params decay_rate
         to force the learning rate down to 0.1 so that the TV Loss will converges to the same level.
     """
-    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.95):
+    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.94):
         super().__init__(optimizer, loss_threshold, loss_ratio_threshold, decay_rate)
 
 

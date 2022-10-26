@@ -7,6 +7,7 @@ import time
 from tools.loader import dataLoader
 from tools import save_tensor
 from tools.parser import logger
+from scripts.dict import scheduler_factory
 from train_optim import init
 
 def modelDDP(detector_attacker, args):
@@ -23,12 +24,13 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
     data_loader, vlogger = init(detector_attacker, cfg, data_root=data_root, args=args)
 
     save_tensor(detector_attacker.universal_patch, save_name + '.png', args.save_path)
+    scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](detector_attacker.attacker)
     loss_array = []
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
         et0 = time.time()
         ep_loss = 0
         # for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
-        for index, img_tensor_batch in enumerate(data_loader):
+        for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
             now_step = get_iter(epoch, index)
             if vlogger: vlogger(epoch, now_step)
             img_tensor_batch = img_tensor_batch.to(detector_attacker.device)
@@ -48,6 +50,7 @@ def attack(cfg, detector_attacker, save_name, args=None, data_root=None):
         et1 = time.time()
         ep_loss /= len(data_loader)
         loss_array.append(ep_loss)
+        scheduler.step(ep_loss=ep_loss, epoch=epoch)
         if vlogger:
             vlogger.write_ep_loss(ep_loss)
             vlogger.write_scalar(et1 - et0, 'misc/ep time')
