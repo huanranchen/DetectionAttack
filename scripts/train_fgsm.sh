@@ -21,7 +21,7 @@ mkdir ./results/$folder/method
 mkdir ./results/$folder/method/$model
 
 save_dir=./results/$folder/method/$model/
-save_name=$model$combine-$name
+save_name=$model-$name$combine
 
 CUDA_VISIBLE_DEVICES=$cuda nohup python train_pgd.py \
 -cfg=method/$model-$target$combine.yaml \

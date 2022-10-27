@@ -11,17 +11,17 @@ alpha = 0.5  # 不透明度
 
 
 class D2Landscape():
-    '''
+    """
     这个类负责画图，并且只负责画一张图
-    '''
+    """
     def __init__(self, model,
                  input: torch.tensor,
                  mode='3D'):
-        '''
+        """
 
         :param model: taken input as input, output loss
         :param input:
-        '''
+        """
         self.model = model
         self.input = input
         assert mode in modes
@@ -75,9 +75,9 @@ class D2Landscape():
         return result
 
     def _draw3D(self, mesh_x, mesh_y, mesh_z, axes=None):
-        '''
+        """
         现在这个也能画2D了。。。
-        '''
+        """
         if self.mode == '3D':
             axes.plot_surface(mesh_x, mesh_y, mesh_z, cmap='rainbow')
 

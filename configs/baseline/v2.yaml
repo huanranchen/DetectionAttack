@@ -40,6 +40,5 @@ ATTACKER:
     WIDTH: 300
     HEIGHT: 300
     SCALE: 0.15
-    INIT: "gray" # ['random', 'gray']
-    scale_max: 0.15
+    INIT: "gray" # ['random', 'gray', 'white']
     TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']

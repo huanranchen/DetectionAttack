@@ -42,6 +42,11 @@ class PatchManager:
         elif init_mode.lower() == 'gray':
             print('Gray initializing a universal patch')
             patch = torch.full((1, 3, height, width), 0.5)
+        elif init_mode.lower() == 'white':
+            print('White initializing a universal patch')
+            patch = torch.full((1, 3, height, width), 1.0)
+        else:
+            assert False, "Patch initialization mode doesn't exist!"
         self.patch = patch.to(self.device)
 
     def total_variation(self):

@@ -284,7 +284,7 @@ if __name__ == '__main__':
         with open(det_mAP_file, 'a') as f:
             f.write('              scale : ' + str(cfg.ATTACKER.PATCH.SCALE) + '\n')
             f.write('--------------------------\n')
-            f.write('           detector : [mAP, acc]')
+            f.write('           detector : [mAP, acc]\n')
 
     det_dict = det_mAPs
     if accs_dict is not None:
