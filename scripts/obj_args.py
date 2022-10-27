@@ -5,13 +5,12 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class eva_args:
     def __init__(self, patch, cfg,
                  label_path=None, data_root=None,
-                 save=os.path.join(PROJECT_DIR, '/data/inria/'),
+                 save="",
                  stimulate_uint8_loss=False, gen_labels=True, test_origin=False,
                  save_imgs=False, test_gt=False, detectors=None,
                  eva_class=None, quiet=False):
         self.patch = patch
-        self.cfg = cfg
-        self.save = save
+        self.save = os.path.join(PROJECT_DIR, save)
         self.lavel_path = os.path.join(PROJECT_DIR, cfg.DATA.TEST.LAB_DIR) if label_path is None else label_path
         self.data_root = os.path.join(PROJECT_DIR, cfg.DATA.TEST.IMG_DIR) if data_root is None else data_root
         self.stimulate_uint8_loss = stimulate_uint8_loss

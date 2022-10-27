@@ -35,7 +35,7 @@ def init(detector_attacker, cfg, data_root, args=None, log=True):
     return data_loader, vlogger
 
 
-def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
+def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None, save_process=True):
     def get_iter(): return (epoch - 1) * len(data_loader) + index
 
     if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
@@ -46,7 +46,6 @@ def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
 
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)
-    exit()
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
@@ -71,9 +70,13 @@ def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
         if epoch % 10 == 0:
             # patch_name = f'{epoch}_{save_name}'
             patch_name = f'{save_name}' + '.png'
-            patch_path = os.path.join(args.save_path, patch_name)
-            save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
-            print('Saving patch to ', patch_path)
+            save_path = args.save_path
+            if save_process:
+                save_path = save_path + '/patch'
+                os.makedirs(save_path, exist_ok=True)
+                patch_name = f'{save_name}_{epoch}' + '.png'
+            save_tensor(detector_attacker.universal_patch, patch_name, save_path)
+            print('Saving patch to ', save_path)
 
 
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)

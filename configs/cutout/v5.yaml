@@ -33,7 +33,7 @@ ATTACKER:
   LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse]
   tv_eta: 2.5
   obj_eta: 1
-  LR_SCHEDULER: 'plateau'
+  LR_SCHEDULER: 'ALRS'
 
   PATCH:
     WIDTH: 300
