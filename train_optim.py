@@ -10,6 +10,9 @@ from tools.loader import dataLoader
 from tools.parser import logger
 from scripts.dict import scheduler_factory, optim_factory
 
+# for validation in training
+from scripts.obj_args import eva_args
+from evaluate import eval_patch, get_save
 
 
 def init(detector_attacker, cfg, data_root, args=None, log=True):
@@ -25,13 +28,14 @@ def init(detector_attacker, cfg, data_root, args=None, log=True):
 
     vlogger = None
     if log and args and not args.debugging:
-        vlogger = VisualBoard(name=args.board_name, new_process=args.new_process)
+        vlogger = VisualBoard(name=args.board_name, new_process=args.new_process,
+                              optimizer=detector_attacker.attacker)
         detector_attacker.vlogger = vlogger
 
     return data_loader, vlogger
 
 
-def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
+def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None, save_process=True):
     def get_iter(): return (epoch - 1) * len(data_loader) + index
 
     if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
@@ -42,7 +46,6 @@ def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
 
     loss_array = []
     save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)
-    ten_epoch_loss = 0
     for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
@@ -58,29 +61,23 @@ def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
             loss = detector_attacker.attack(img_tensor_batch, mode='optim')
             ep_loss += loss
 
-        if epoch % 10 == 0:
-            # patch_name = f'{epoch}_{save_name}'
-            patch_name = f'{save_name}' + '.png'
-            save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
-            print('Saving patch to ', os.path.join(args.save_path, patch_name))
-
-            if cfg.ATTACKER.LR_SCHEDULER == 'ALRS':
-                ten_epoch_loss /= 10
-                scheduler.step(ten_epoch_loss)
-                ten_epoch_loss = 0
-
         # print(ep_loss)
         ep_loss /= len(data_loader)
-        ten_epoch_loss += ep_loss
-        if cfg.ATTACKER.LR_SCHEDULER == 'plateau':
-            scheduler.step(ep_loss)
-        elif 'warmup' in cfg.ATTACKER.LR_SCHEDULER:
-            scheduler.step(loss=ep_loss, epoch=epoch)
-        elif cfg.ATTACKER.LR_SCHEDULER != 'ALRS':
-            scheduler.step()
+        scheduler.step(ep_loss=ep_loss, epoch=epoch)
 
         if vlogger: vlogger.write_ep_loss(ep_loss)
         loss_array.append(float(ep_loss))
+        if epoch % 10 == 0:
+            # patch_name = f'{epoch}_{save_name}'
+            patch_name = f'{save_name}' + '.png'
+            save_path = args.save_path
+            if save_process:
+                save_path = save_path + '/patch'
+                os.makedirs(save_path, exist_ok=True)
+                patch_name = f'{save_name}_{epoch}' + '.png'
+            save_tensor(detector_attacker.universal_patch, patch_name, save_path)
+            print('Saving patch to ', save_path)
+
 
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
 

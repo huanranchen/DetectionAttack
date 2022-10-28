@@ -76,10 +76,8 @@ class Ensemble(nn.ModuleList):
     # Ensemble of models
     def __init__(self):
         super().__init__()
-        print('experimental Ensemble init.')
 
     def forward(self, x, augment=False, profile=False, visualize=False):
-        print('experimental Ensemble forward.')
         y = []
         for module in self:
             y.append(module(x, augment, profile, visualize)[0])

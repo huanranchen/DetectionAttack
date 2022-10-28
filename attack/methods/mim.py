@@ -11,13 +11,17 @@ import cv2
 
 
 class LinfMIMAttack(BaseAttacker):
-    """MI-FGSM attack (arxiv: https://arxiv.org/pdf/1710.06081.pdf)
-    """
-
+    """MI-FGSM attack (arxiv: https://arxiv.org/pdf/1710.06081.pdf)"""
     def __init__(self, loss_func, cfg, device, detector_attacker, norm='L_infty', momentum=0.9):
         super().__init__(loss_func, norm, cfg, device, detector_attacker)
         self.momentum = momentum
         self.grad = None
+
+        self.param_groups = [{'lr': cfg.STEP_LR}]
+
+    @property
+    def step_lr(self):
+        return self.param_groups[0]['lr']
 
     def patch_update(self, **kwargs):
         now_grad = self.patch_obj.patch.grad

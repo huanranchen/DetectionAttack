@@ -50,8 +50,8 @@ def batch_mAP(cfg, key_dir):
         args = copy.deepcopy(args_train)
         args.save += key_dir
         args.patch = os.path.join(args.patch_dir, patch_file)
-        args_, cfg, _ = init(args, cfg)
-        det_mAPs, _, _, _ = eva(args, cfg)
+        args_, cfg, _ = parser_input(args)
+        det_mAPs, _, _, _ = eval_patch(args, cfg)
 
         for k, v in det_mAPs.items():
             y[k].append(float(v))
@@ -59,7 +59,7 @@ def batch_mAP(cfg, key_dir):
         args_.save += '/test'
         args_.data_root = os.path.join(ROOT, cfg.DATA.TEST.IMG_DIR)
         args_.label_path = os.path.join(ROOT, cfg.DATA.TEST.LAB_DIR)
-        det_mAPs, _, _, _ = eva(args, cfg)
+        det_mAPs, _, _, _ = eval_patch(args, cfg)
         for k, v in det_mAPs.items():
             y_test[k].append(float(v))
 
@@ -78,8 +78,7 @@ if __name__ == '__main__':
     import re
 
     import matplotlib.pyplot as plt
-    from evaluate import eva
-    from evaluate import get_save
+    from evaluate import eval_patch, get_save
 
     args_train, cfg = parser_input()
     print('save dir: ', args_train.save)
@@ -117,7 +116,7 @@ if __name__ == '__main__':
             args.save += '/all_data'
             args.patch = os.path.join(args.patch_dir, patch_file)
             args = get_save(args)
-            det_mAPs, _, _, _ = eva(args, cfg)
+            det_mAPs, _, _, _ = eval_patch(args, cfg)
 
             for k, v in det_mAPs.items():
                 y_train[k].append(float(v))
@@ -125,7 +124,7 @@ if __name__ == '__main__':
             args.save += '/test'
             args.data_root = os.path.join(ROOT, cfg.DATA.TEST.IMG_DIR)
             args.label_path = os.path.join(ROOT, cfg.DATA.TEST.LAB_DIR)
-            det_mAPs, _, _, _ = eva(args, cfg)
+            det_mAPs, _, _, _ = eval_patch(args, cfg)
             for k, v in det_mAPs.items():
                 y_test[k].append(float(v))
             # cur += 1

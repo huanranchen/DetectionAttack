@@ -4,7 +4,7 @@ DATA:
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
-    LAB_DIR: 'data/INRIAPerson/Train/labels/yolo-labels'
+    LAB_DIR: 'data/INRIAPerson/Train/labels'
 
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
@@ -38,7 +38,6 @@ ATTACKER:
   PATCH:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.15
+    SCALE: 0.2
     INIT: "gray" # ['random', 'gray']
-    scale_max: 0.15
     TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']

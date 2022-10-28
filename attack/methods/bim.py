@@ -17,6 +17,12 @@ class LinfBIMAttack(BaseAttacker):
         super().__init__(loss_func, norm, cfg, device, detector_attacker)
         self.epsilon = 0.1
 
+        self.param_groups = [{'lr': cfg.STEP_LR}]
+
+    @property
+    def step_lr(self):
+        return self.param_groups[0]['lr']
+
     def patch_update(self, **kwargs):
         grad = self.patch_obj.patch.grad
         update = self.step_lr * grad.sign()

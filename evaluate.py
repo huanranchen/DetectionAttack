@@ -10,11 +10,11 @@ from attack.attacker import UniversalAttacker
 from data.gen_det_labels import Utils
 from tools.parser import ConfigParser, logger_cfg
 from tools.metrics.main import compute_mAP
-from train_optim import init
 from scripts.dict import MAP_PATHS
 
 import warnings
 warnings.filterwarnings('ignore')
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # from tools.det_utils import plot_boxes_cv2
 label_postfix = '-rescale-labels'
@@ -64,8 +64,8 @@ def handle_input():
     parser.add_argument('-cfg', '--cfg', type=str, default=None)
     parser.add_argument('-d', '--detectors', nargs='+', default=None)
     parser.add_argument('-s', '--save', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/inria/')
-    parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/labels')
-    parser.add_argument('-dr', '--data_root', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Train/pos')
+    parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/labels')
+    parser.add_argument('-dr', '--data_root', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/pos')
     parser.add_argument('-to', '--test_origin', action='store_true')
     parser.add_argument('-tg', '--test_gt', action='store_true')
     parser.add_argument('-ul', '--stimulate_uint8_loss', action='store_true')
@@ -188,7 +188,7 @@ def cfg_save_modify(cfg):
     return cfg
 
 
-def eva(args, cfg):
+def eval_patch(args, cfg):
     args, cfg, evaluator = eval_init(args, cfg)
     logger_cfg(args, 'Evaluating')
     evaluator.attack_list = cfg.show_class_index(args.eva_class_list)
@@ -251,16 +251,40 @@ def eva(args, cfg):
 if __name__ == '__main__':
     from tools.parser import dict2txt, merge_dict_by_key
 
-    args, cfg = handle_input()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--patch', type=str, default=None)
+    parser.add_argument('-cfg', '--cfg', type=str, default=None)
+    parser.add_argument('-d', '--detectors', nargs='+', default=None)
+    parser.add_argument('-s', '--save', type=str, default=os.path.join(PROJECT_DIR, '/data/inria/'))
+    parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str,
+                        default=os.path.join(PROJECT_DIR, '/INRIAPerson/Test/labels'))
+    parser.add_argument('-dr', '--data_root', type=str, default=os.path.join(PROJECT_DIR, '/data/INRIAPerson/Test/pos'))
+    parser.add_argument('-to', '--test_origin', action='store_true')
+    parser.add_argument('-tg', '--test_gt', action='store_true')
+    parser.add_argument('-ul', '--stimulate_uint8_loss', action='store_true')
+    parser.add_argument('-i', '--save_imgs', help='to save attacked imgs', action='store_true')
+    parser.add_argument('-g', '--gen_labels', action='store_true')
+    parser.add_argument('-e', '--eva_class', type=str,
+                        default='-1')  # '-1': all classes; '-2': attack seen classes(ATTACK_CLASS in cfg file); '-3': attack unseen classes(all_class - ATTACK_CLASS); or given a list by '['x:y']'/'[0]'
+    parser.add_argument('-q', '--quiet', help='output none if set true', action='store_true')
+    args = parser.parse_args()
+    cfg = ConfigParser(args.cfg)
+
+    if args.detectors is not None:
+        cfg.DETECTOR.NAME = args.detectors
+    else:
+        args.detectors = cfg.DETECTOR.NAME
+
     args = get_save(args)
     # args, evaluator = eval_init(args, cfg)
-    det_mAPs, gt_mAPs, ori_mAPs, accs_dict = eva(args, cfg)
+    det_mAPs, gt_mAPs, ori_mAPs, accs_dict = eval_patch(args, cfg)
 
     det_mAP_file = os.path.join(args.save, 'det-mAP.txt')
     if not os.path.exists(det_mAP_file):
         with open(det_mAP_file, 'a') as f:
-            f.write('scale          : ' + str(cfg.ATTACKER.PATCH.SCALE) + '\n')
+            f.write('              scale : ' + str(cfg.ATTACKER.PATCH.SCALE) + '\n')
             f.write('--------------------------\n')
+            f.write('           detector : [mAP, acc]\n')
 
     det_dict = det_mAPs
     if accs_dict is not None:
