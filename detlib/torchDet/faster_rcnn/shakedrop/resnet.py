@@ -49,7 +49,8 @@ class BasicBlock(nn.Module):
         groups: int = 1,
         base_width: int = 64,
         dilation: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+        shake_drop: bool = True,
     ) -> None:
         super(BasicBlock, self).__init__()
         if norm_layer is None:
@@ -66,6 +67,7 @@ class BasicBlock(nn.Module):
         self.bn2 = norm_layer(planes)
         self.downsample = downsample
         self.stride = stride
+        self.shake_drop = shake_drop
 
     def forward(self, x: Tensor) -> Tensor:
         identity = x
@@ -81,7 +83,10 @@ class BasicBlock(nn.Module):
             identity = self.downsample(x)
 
         # out += identity
-        out = identity + ShakeDropFunction.apply(out, self.training)
+        if self.shake_drop:
+            out = identity + ShakeDropFunction.apply(out, self.training)
+        else:
+            out += identity
         out = self.relu(out)
 
         return out
@@ -105,7 +110,8 @@ class Bottleneck(nn.Module):
         groups: int = 1,
         base_width: int = 64,
         dilation: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+        shake_drop: bool = True,
     ) -> None:
         super(Bottleneck, self).__init__()
         if norm_layer is None:
@@ -121,6 +127,7 @@ class Bottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
+        self.shake_drop = shake_drop
 
     def forward(self, x: Tensor) -> Tensor:
         identity = x
@@ -140,7 +147,10 @@ class Bottleneck(nn.Module):
             identity = self.downsample(x)
 
         # out += identity
-        out = identity + ShakeDropFunction.apply(out, self.training)
+        if self.shake_drop:
+            out = identity + ShakeDropFunction.apply(out, self.training)
+        else:
+            out += identity
         out = self.relu(out)
 
         return out
@@ -180,13 +190,13 @@ class ResNet(nn.Module):
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer1 = self._make_layer(block, 64, layers[0], shake_drop=False)
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
-                                       dilate=replace_stride_with_dilation[0])
+                                       dilate=replace_stride_with_dilation[0], shake_drop=False)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2,
-                                       dilate=replace_stride_with_dilation[1])
+                                       dilate=replace_stride_with_dilation[1], shake_drop=True)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2,
-                                       dilate=replace_stride_with_dilation[2])
+                                       dilate=replace_stride_with_dilation[2], shake_drop=False)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
@@ -208,7 +218,7 @@ class ResNet(nn.Module):
                     nn.init.constant_(m.bn2.weight, 0)  # type: ignore[arg-type]
 
     def _make_layer(self, block: Type[Union[BasicBlock, Bottleneck]], planes: int, blocks: int,
-                    stride: int = 1, dilate: bool = False) -> nn.Sequential:
+                    stride: int = 1, dilate: bool = False, shake_drop: bool = True) -> nn.Sequential:
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
@@ -223,12 +233,12 @@ class ResNet(nn.Module):
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
-                            self.base_width, previous_dilation, norm_layer))
+                            self.base_width, previous_dilation, norm_layer, shake_drop=False))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes, groups=self.groups,
                                 base_width=self.base_width, dilation=self.dilation,
-                                norm_layer=norm_layer))
+                                norm_layer=norm_layer, shake_drop=shake_drop))
 
         return nn.Sequential(*layers)
 
