@@ -70,7 +70,7 @@ def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
 
         if vlogger: vlogger.write_ep_loss(ep_loss)
         loss_array.append(float(ep_loss))
-        if epoch % 6 == 0:
+        if epoch % 6 == 0 or epoch == cfg.ATTACKER.MAX_EPOCH:
             # patch_name = f'{epoch}_{save_name}'
             patch_name = f'{save_name}' + '.png'
             if args.save_process:
