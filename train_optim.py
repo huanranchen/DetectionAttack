@@ -35,7 +35,7 @@ def init(detector_attacker, cfg, data_root, args=None, log=True):
     return data_loader, vlogger
 
 
-def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None, save_process=True):
+def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None):
     def get_iter(): return (epoch - 1) * len(data_loader) + index
 
     if data_root is None: data_root = cfg.DATA.TRAIN.IMG_DIR
@@ -45,8 +45,11 @@ def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None, save
     scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](optimizer)
 
     loss_array = []
+    if args.save_process:
+        args.save_path += '/patch'
+        os.makedirs(args.save_path, exist_ok=True)
     save_tensor(detector_attacker.universal_patch, f'{save_name}' + '.png', args.save_path)
-    for epoch in range(1, cfg.ATTACKER.MAX_EPOCH + 1):
+    for epoch in range(args.start_epoch, cfg.ATTACKER.MAX_EPOCH + 1):
         ep_loss = 0
         for index, img_tensor_batch in enumerate(tqdm(data_loader, desc=f'Epoch {epoch}')):
             # for index, (img_tensor_batch, img_tensor_batch2) in enumerate(tqdm(zip(data_loader, data_loader2), desc=f'Epoch {epoch}')):
@@ -67,16 +70,13 @@ def train_uap(cfg, detector_attacker, save_name, args=None, data_root=None, save
 
         if vlogger: vlogger.write_ep_loss(ep_loss)
         loss_array.append(float(ep_loss))
-        if epoch % 10 == 0:
+        if epoch % 6 == 0:
             # patch_name = f'{epoch}_{save_name}'
             patch_name = f'{save_name}' + '.png'
-            save_path = args.save_path
-            if save_process:
-                save_path = save_path + '/patch'
-                os.makedirs(save_path, exist_ok=True)
+            if args.save_process:
                 patch_name = f'{save_name}_{epoch}' + '.png'
-            save_tensor(detector_attacker.universal_patch, patch_name, save_path)
-            print('Saving patch to ', save_path)
+            save_tensor(detector_attacker.universal_patch, patch_name, args.save_path)
+            print('Saving patch to ', args.save_path)
 
 
     np.save(os.path.join(args.save_path, save_name + '-loss.npy'), loss_array)
@@ -99,6 +99,8 @@ if __name__ == '__main__':
     parser.add_argument('-dis', '--model_distribute', action='store_true')
     parser.add_argument('-s', '--save_path', type=str, default='./results/exp2/optim')
     parser.add_argument('-np', '--new_process', action='store_true', default=False)
+    parser.add_argument('-sp', '--save_process', action='store_true', default=False)
+    parser.add_argument('-start', '--start_epoch', type=int, default=1)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
