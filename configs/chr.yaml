@@ -3,7 +3,7 @@ DATA:
   AUGMENT: 0
 
   TRAIN:
-    IMG_DIR: 'data/INRIAPerson/Train/pos'
+    IMG_DIR: '/data2/chenhuanran/data/smallINRIA/INRIAPerson/Train/pos/'
     LAB_DIR: 'data/INRIAPerson/Train/labels/yolo-labels'
 
   TEST:
@@ -11,12 +11,9 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 
-
-
-
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
-  NAME: ["YOLOV5", "SSD"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["YOLOV5"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 16
 
@@ -27,12 +24,12 @@ DETECTOR:
     GATE: ''
 
 ATTACKER:
-  METHOD: "IDGM-fish"
+  METHOD: "optim"
   EPSILON: 255 # 0-255
   MAX_EPOCH: 10000
   ITER_STEP: 1
 
-  STEP_LR: 0.001
+  STEP_LR: 0.03
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
   LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv']
