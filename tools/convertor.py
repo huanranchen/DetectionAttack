@@ -35,7 +35,7 @@ class FormatConverter:
         :param data: rgb numpy
         :return: rgb torch tensor CBHW
         """
-        return transforms.ToTensor()(data.astype(np.float)).unsqueeze(0) / 255.
+        return transforms.ToTensor()(data.astype(np.float32)).unsqueeze(0) / 255.
 
     @staticmethod
     def bgr_numpy2tensor(bgr_img_numpy: np.ndarray):

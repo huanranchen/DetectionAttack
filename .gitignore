@@ -3,6 +3,7 @@ data/
 results/
 checkpoints/
 bak/
+demo/
 .idea
 *.weights
 *.png

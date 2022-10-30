@@ -97,9 +97,12 @@ def inter_nms(all_predictions, conf_thres=0.25, iou_thres=0.45):
     out = []
     for predictions in all_predictions:
         if type(predictions) is np.ndarray:
-            predictions = torch.from_numpy(predictions).cuda()
+            predictions = torch.from_numpy(predictions)
         elif isinstance(predictions, list):
-            predictions = torch.tensor(predictions).cuda()
+            predictions = torch.tensor(predictions)
+
+        if torch.cuda.is_available():
+            predictions = predictions.cuda()
 
         if predictions.numel() == 0:
             out.append(predictions)
@@ -175,16 +178,22 @@ def get_region_boxes(output, conf_thresh, num_classes, anchors, num_anchors, onl
     output = output.view(5 + num_classes, batch * num_anchors * h * w)
     # print(output.size())
     grid_x = torch.linspace(0, w - 1, w).repeat(h, 1).repeat(batch * num_anchors, 1, 1).view(
-        batch * num_anchors * h * w).cuda()
+        batch * num_anchors * h * w)
     grid_y = torch.linspace(0, h - 1, h).repeat(w, 1).t().repeat(batch * num_anchors, 1, 1).view(
-        batch * num_anchors * h * w).cuda()
+        batch * num_anchors * h * w)
+    if torch.cuda.is_available():
+        grid_x = grid_x.cuda()
+        grid_y = grid_y.cuda()
     xs = torch.sigmoid(output[0]) + grid_x
     ys = torch.sigmoid(output[1]) + grid_y
 
     anchor_w = torch.Tensor(anchors).view(num_anchors, anchor_step).index_select(1, torch.LongTensor([0]))
     anchor_h = torch.Tensor(anchors).view(num_anchors, anchor_step).index_select(1, torch.LongTensor([1]))
-    anchor_w = anchor_w.repeat(batch, 1).repeat(1, 1, h * w).view(batch * num_anchors * h * w).cuda()
-    anchor_h = anchor_h.repeat(batch, 1).repeat(1, 1, h * w).view(batch * num_anchors * h * w).cuda()
+    anchor_w = anchor_w.repeat(batch, 1).repeat(1, 1, h * w).view(batch * num_anchors * h * w)
+    anchor_h = anchor_h.repeat(batch, 1).repeat(1, 1, h * w).view(batch * num_anchors * h * w)
+    if torch.cuda.is_available():
+        anchor_w = anchor_w.cuda()
+        anchor_h = anchor_h.cuda()
     ws = torch.exp(output[2]) * anchor_w
     hs = torch.exp(output[3]) * anchor_h
 
