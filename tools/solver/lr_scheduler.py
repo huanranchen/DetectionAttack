@@ -5,6 +5,7 @@ from torch import optim
 
 class ALRS():
     """ALRS is a scheduler without warmup, a variant of warmupALRS."""
+
     def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
         self.optimizer = optimizer
         self.loss_threshold = loss_threshold
@@ -39,13 +40,14 @@ class ALRS():
 
 class warmupALRS(ALRS):
     """reference:Bootstrap Generalization Ability from Loss Landscape Perspective"""
+
     def __init__(self, optimizer, warmup_epoch=50, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
         super().__init__(optimizer, loss_threshold, loss_ratio_threshold, decay_rate)
-        self.warmup_rate = 1/3
+        self.warmup_rate = 1 / 3
         self.warmup_epoch = warmup_epoch
         self.start_lr = optimizer.param_groups[0]["lr"]
-        self.warmup_lr = self.start_lr * (1-self.warmup_rate)
-        self.update_lr(lambda x: x*self.warmup_rate)
+        self.warmup_lr = self.start_lr * (1 - self.warmup_rate)
+        self.update_lr(lambda x: x * self.warmup_rate)
 
     def update_lr(self, update_fn):
         for ind, group in enumerate(self.optimizer.param_groups):
@@ -53,16 +55,15 @@ class warmupALRS(ALRS):
             now_lr = group['lr']
             print(f'now lr = {now_lr}')
 
-
     def step(self, **kwargs):
         loss = kwargs['ep_loss']
         epoch = kwargs['epoch']
         delta = self.last_loss - loss
         self.last_loss = loss
         if epoch < self.warmup_epoch:
-            self.update_lr(lambda x: -(self.warmup_epoch-epoch)*self.warmup_lr / self.warmup_epoch + self.start_lr)
-        elif delta < self.loss_threshold and delta/self.last_loss < self.loss_ratio_threshold:
-            self.update_lr(lambda x: x*self.decay_rate)
+            self.update_lr(lambda x: -(self.warmup_epoch - epoch) * self.warmup_lr / self.warmup_epoch + self.start_lr)
+        elif delta < self.loss_threshold and delta / self.last_loss < self.loss_ratio_threshold:
+            self.update_lr(lambda x: x * self.decay_rate)
 
 
 class ALRS_LowerTV(ALRS):
@@ -73,6 +74,7 @@ class ALRS_LowerTV(ALRS):
     The difference is that we fine-tune the hyper-params decay_rate
         to force the learning rate down to 0.1 so that the TV Loss will converges to the same level.
     """
+
     def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.94):
         super().__init__(optimizer, loss_threshold, loss_ratio_threshold, decay_rate)
 
