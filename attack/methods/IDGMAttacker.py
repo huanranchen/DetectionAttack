@@ -26,6 +26,7 @@ class LazyAttacker(OptimAttacker):
     '''
     def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty',
                  out_optimizer=Adam, ksi=0.05):
+        # FIXME: delete outer optimizer. Use normal optimization.
         super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
         self.ksi = ksi
         self.out_optimizer = out_optimizer
@@ -123,6 +124,10 @@ class FishAttacker(OptimAttacker):
         super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
         self.ksi = ksi
         self.out_optimizer = out_optimizer
+
+    @property
+    def param_groups(self):
+        return self.out_optimizer.param_groups
 
     def set_optimizer(self, optimizer: Optimizer):
         self.optimizer = optimizer
