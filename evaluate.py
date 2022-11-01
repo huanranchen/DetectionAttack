@@ -58,32 +58,6 @@ class UniversalPatchEvaluator(UniversalAttacker):
         self.patch_obj.update_(patch)
 
 
-def handle_input():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--patch', type=str, default=None)
-    parser.add_argument('-cfg', '--cfg', type=str, default=None)
-    parser.add_argument('-d', '--detectors', nargs='+', default=None)
-    parser.add_argument('-s', '--save', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/inria/')
-    parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/labels')
-    parser.add_argument('-dr', '--data_root', type=str, default='/home/chenziyan/work/BaseDetectionAttack/data/INRIAPerson/Test/pos')
-    parser.add_argument('-to', '--test_origin', action='store_true')
-    parser.add_argument('-tg', '--test_gt', action='store_true')
-    parser.add_argument('-ul', '--stimulate_uint8_loss', action='store_true')
-    parser.add_argument('-i', '--save_imgs', help='to save attacked imgs', action='store_true')
-    parser.add_argument('-g', '--gen_labels', action='store_true')
-    parser.add_argument('-e', '--eva_class', type=str, default='-1') # '-1': all classes; '-2': attack seen classes(ATTACK_CLASS in cfg file); '-3': attack unseen classes(all_class - ATTACK_CLASS); or given a list by '['x:y']'/'[0]'
-    parser.add_argument('-q', '--quiet', help='output none if set true', action='store_true')
-    args = parser.parse_args()
-    cfg = ConfigParser(args.cfg)
-
-    if args.detectors is not None:
-        cfg.DETECTOR.NAME = args.detectors
-    else:
-        args.detectors = cfg.DETECTOR.NAME
-
-    return args, cfg
-
-
 def get_save(args):
     def get_prefix(path):
         if os.sep in path:
@@ -194,7 +168,7 @@ def eval_patch(args, cfg):
     evaluator.attack_list = cfg.show_class_index(args.eva_class_list)
 
     accs_dict = None
-    if args.gen_labels:
+    if not args.gen_no_label:
         accs_dict = generate_labels(evaluator, cfg, args)
     save_path = args.save
 
@@ -250,30 +224,23 @@ def eval_patch(args, cfg):
 
 if __name__ == '__main__':
     from tools.parser import dict2txt, merge_dict_by_key
+    # To test attack performance with reference to detection labels.
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--patch', type=str, default=None)
-    parser.add_argument('-cfg', '--cfg', type=str, default=None)
-    parser.add_argument('-d', '--detectors', nargs='+', default=None)
-    parser.add_argument('-s', '--save', type=str, default=os.path.join(PROJECT_DIR, '/data/inria/'))
-    parser.add_argument('-lp', '--label_path', help='ground truth & detector predicted labels dir', type=str,
-                        default=os.path.join(PROJECT_DIR, '/INRIAPerson/Test/labels'))
+    parser.add_argument('-p', '--patch', type=str, default=None, help="Adversarial patch path.")
+    parser.add_argument('-cfg', '--cfg', type=str, default=None, help="A relative file path of teh .yaml cfg file.")
+    parser.add_argument('-s', '--save', type=str, default=os.path.join(PROJECT_DIR, '/data/inria/'), help="Directory to save evaluation results.")
+    parser.add_argument('-lp', '--label_path', type=str, default=os.path.join(PROJECT_DIR, '/INRIAPerson/Test/labels'), help='ground truth & detector predicted labels dir')
     parser.add_argument('-dr', '--data_root', type=str, default=os.path.join(PROJECT_DIR, '/data/INRIAPerson/Test/pos'))
-    parser.add_argument('-to', '--test_origin', action='store_true')
-    parser.add_argument('-tg', '--test_gt', action='store_true')
-    parser.add_argument('-ul', '--stimulate_uint8_loss', action='store_true')
+    parser.add_argument('-to', '--test_origin', action='store_true', help="To test detector performance in clean samples.")
+    parser.add_argument('-tg', '--test_gt', action='store_true', help="To test attack performance with reference to ground truth labels(Annotation).")
+    parser.add_argument('-ul', '--stimulate_uint8_loss', action='store_true', help="To stimulate uint8 loss from float data format.")
     parser.add_argument('-i', '--save_imgs', help='to save attacked imgs', action='store_true')
-    parser.add_argument('-g', '--gen_labels', action='store_true')
-    parser.add_argument('-e', '--eva_class', type=str,
-                        default='-1')  # '-1': all classes; '-2': attack seen classes(ATTACK_CLASS in cfg file); '-3': attack unseen classes(all_class - ATTACK_CLASS); or given a list by '['x:y']'/'[0]'
-    parser.add_argument('-q', '--quiet', help='output none if set true', action='store_true')
+    parser.add_argument('-ng', '--gen_no_label', action='store_true', help="Won't generate any detection labels of adversarial samples if set True.")
+    parser.add_argument('-e', '--eva_class', type=str, default='0', help="The class to attack. '-1': all classes, '-2': attack seen classes(ATTACK_CLASS in cfg file), '-3': attack unseen classes(all_class - ATTACK_CLASS); or custom '0, 2:5, 10'.")
+    parser.add_argument('-q', '--quiet', action='store_true', help='logger none if set true')
     args = parser.parse_args()
     cfg = ConfigParser(args.cfg)
-
-    if args.detectors is not None:
-        cfg.DETECTOR.NAME = args.detectors
-    else:
-        args.detectors = cfg.DETECTOR.NAME
 
     args = get_save(args)
     # args, evaluator = eval_init(args, cfg)
@@ -291,5 +258,6 @@ if __name__ == '__main__':
         det_dict = merge_dict_by_key(det_mAPs, accs_dict)
     dict2txt(det_dict, det_mAP_file)
     dict2txt(gt_mAPs, os.path.join(args.save, 'gt-mAP.txt'))
-    print("det dict      [mAP, acc] :", det_dict)
+    if not args.quiet:
+        print("det dict      [mAP, acc] :", det_dict)
 

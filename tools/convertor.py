@@ -50,6 +50,12 @@ class FormatConverter:
         return img_tensor
 
     @staticmethod
+    def tensor2_numpy_cpu(im_tensor: torch.tensor):
+        if im_tensor.device != torch.device('cpu'):
+            im_tensor = im_tensor.cpu()
+        return im_tensor.numpy()
+
+    @staticmethod
     def tensor2numpy_cv2(im_tensor: torch.tensor):
         """
 

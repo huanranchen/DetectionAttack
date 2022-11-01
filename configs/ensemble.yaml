@@ -11,9 +11,6 @@ DATA:
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
 
-
-
-
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
   NAME: ["YOLOV3", "FASTER_RCNN"] # YOLOV3, YOLOV4, YOLOV5

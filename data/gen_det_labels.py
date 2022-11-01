@@ -43,13 +43,13 @@ class Utils:
 
 if __name__ == "__main__":
 
-    source = 'Test'
+    source = 'val/val2017'
     parser = argparse.ArgumentParser()
-    parser.add_argument('-dr', '--data_root', type=str, default=f"{PROJECT_DIR}/data/INRIAPerson/{source}/pos")
-    parser.add_argument('-sr', '--save_root', type=str, default=f'{PROJECT_DIR}/data/INRIAPerson/{source}/labels/')
-    parser.add_argument('-cfg', '--config_file', type=str, default=f'test.yaml')
-    parser.add_argument('-nr', '--nrescale', action='store_true')
-    parser.add_argument('-i', '--imgs', action='store_true')
+    parser.add_argument('-dr', '--data_root', type=str, default=f"data/coco_person/{source}/pos", help="Image data dir path")
+    parser.add_argument('-sr', '--save_root', type=str, default=f'data/coco_person/{source}/labels/', help="Label data dir path")
+    parser.add_argument('-cfg', '--config_file', type=str, default=f'test.yaml', help=".yaml config file, a relative path.")
+    parser.add_argument('-nr', '--nrescale', action="store_true", default=False, help="Won't rescale labels from [0, 1] to the target scales If nrescale=True. Default: rescale to the input size.")
+    parser.add_argument('-i', '--imgs', action='store_true', help="To save imgs.")
     # parser.add_argument('-c', '--class', nargs='+', default=-1)
     args = parser.parse_args()
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     args.save_root = os.path.join(PROJECT_DIR, args.save_root)
     args.config_file = os.path.join(f'{PROJECT_DIR}/configs', args.config_file)
     cfg = ConfigParser(args.config_file)
-    detectors = init_detectors(cfg.DETECTOR.NAME, cfg)
+    detectors = init_detectors(cfg.DETECTOR)
 
     utils = Utils(cfg)
     device = torch.device('cuda')
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     data_loader = dataLoader(data_root=args.data_root, input_size=cfg.DETECTOR.INPUT_SIZE,
                              batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
     postfix = '-labels' if args.nrescale else '-rescale-labels'
-    print('rescale      :', args.nrescale, postfix)
+    print('Rescale label: ', not args.nrescale, '; Postfix of saved dir:　', postfix)
     save_path = args.save_root
     for detector in detectors:
         fp = os.path.join(save_path, detector.name + postfix)
