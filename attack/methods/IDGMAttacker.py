@@ -19,6 +19,100 @@ def cosine_similarity(x: list):
     return torch.mean(similarity).item()
 
 
+class LazyAttacker(OptimAttacker):
+    threshold = 0.75
+    '''
+    小于阈值，我就不更新了。只有大于阈值，我才会正常更新
+    '''
+    def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty',
+                 out_optimizer=Adam, ksi=0.05):
+        super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
+        self.ksi = ksi
+        self.out_optimizer = out_optimizer
+
+    def set_optimizer(self, optimizer: Optimizer):
+        self.optimizer = optimizer
+        if self.out_optimizer is not None:
+            print(f'set outer optimizer is {self.out_optimizer}')
+            print('-' * 100)
+            self.out_optimizer = self.out_optimizer([self.optimizer.param_groups[0]['params'][0]], self.ksi)
+        if self.detector_attacker.vlogger is not None:
+            self.detector_attacker.vlogger.optimizer = self.out_optimizer
+
+    def non_targeted_attack(self, ori_tensor_batch, detector):
+        losses = []
+        for iter in range(self.iter_step):
+            if iter > 0: ori_tensor_batch = ori_tensor_batch.clone()
+            adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch)
+            adv_tensor_batch = adv_tensor_batch.to(detector.device)
+            # detect adv img batch to get bbox and obj confs
+            bboxes, confs, cls_array = detector(adv_tensor_batch).values()
+
+            if hasattr(self.cfg, 'class_specify'):
+                attack_cls = int(self.cfg.ATTACK_CLASS)
+                confs = torch.cat(
+                    ([conf[cls == attack_cls].max(dim=-1, keepdim=True)[0] for conf, cls in zip(confs, cls_array)]))
+            elif hasattr(self.cfg, 'topx_conf'):
+                # attack top x confidence
+                # print(confs.size())
+                confs = torch.sort(confs, dim=-1, descending=True)[0][:, :self.cfg.topx_conf]
+                confs = torch.mean(confs, dim=-1)
+            else:
+                # only attack the max confidence
+                confs = confs.max(dim=-1, keepdim=True)[0]
+
+            detector.zero_grad()
+            # print('confs', confs)
+            loss_dict = self.attack_loss(confs=confs)
+            loss = loss_dict['loss']
+            # print(loss)
+            loss.backward()
+            self.grad_record.append(self.optimizer.param_groups[0]['params'][0].grad.clone())
+            losses.append(float(loss))
+
+            # update patch. for optimizer, using optimizer.step(). for PGD or others, using clamp and SGD.
+            self.patch_update()
+        # print(adv_tensor_batch, bboxes, loss_dict)
+        # update training statistics on tensorboard
+        self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
+        return torch.tensor(losses).mean()
+
+    @torch.no_grad()
+    def begin_attack(self):
+        self.original_patch = self.optimizer.param_groups[0]['params'][0].detach().clone()
+        self.grad_record = []
+
+    @torch.no_grad()
+    def end_attack(self):
+        '''
+        theta: original_patch
+        theta_hat: now patch in optimizer
+        theta = theta + ksi*(theta_hat - theta), so:
+        theta =(1-ksi )theta + ksi* theta_hat
+        '''
+        grad_similarity = cosine_similarity(self.grad_record)
+        self.detector_attacker.vlogger.write_scalar(grad_similarity, 'grad_similarity')
+        if grad_similarity < self.threshold:
+            patch = self.optimizer.param_groups[0]['params'][0]
+            patch.mul_(0)
+            patch.add_(self.original_patch)
+        else:
+            patch = self.optimizer.param_groups[0]['params'][0]
+            if self.out_optimizer is None:
+                patch.mul_(self.ksi)
+                patch.add_((1 - self.ksi) * self.original_patch)
+                self.original_patch = None
+            else:
+                fake_grad = - self.ksi * (patch - self.original_patch)
+                self.out_optimizer.zero_grad()
+                patch.mul_(0)
+                patch.add_(self.original_patch)
+                patch.grad = fake_grad
+                self.out_optimizer.step()
+
+        del self.grad_record
+
+
 class FishAttacker(OptimAttacker):
     '''
     use fish technique to approximate second derivatives.

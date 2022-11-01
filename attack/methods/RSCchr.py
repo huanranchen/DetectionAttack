@@ -175,7 +175,8 @@ class StrengthenWeakPointAttacker(OptimAttacker):
         self.detectors.append(detector)
         losses = []
         for iter in range(self.iter_step):
-            if iter > 0: ori_tensor_batch = ori_tensor_batch.clone()
+            if iter > 0:
+                ori_tensor_batch = ori_tensor_batch.clone()
             adv_tensor_batch = self.detector_attacker.uap_apply(ori_tensor_batch)
             adv_tensor_batch = adv_tensor_batch.to(detector.device)
             # detect adv img batch to get bbox and obj confs
@@ -205,7 +206,7 @@ class StrengthenWeakPointAttacker(OptimAttacker):
 
             # update patch. for optimizer, using optimizer.step(). for PGD or others, using clamp and SGD.
             self.patch_update()
-        # print(adv_tensor_batch, bboxes, loss_dict)
+
         # update training statistics on tensorboard
         self.logger(detector, adv_tensor_batch, bboxes, loss_dict)
         return torch.tensor(losses).mean()
