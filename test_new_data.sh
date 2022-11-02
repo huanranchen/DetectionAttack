@@ -19,9 +19,9 @@ dr="CCTVfootage/imgs"
 save_dir="ccvtv_footage"
 
 # COCO person val
-lp="COCOperson/val/val2017/labels"
-dr="COCOperson/val/val2017/pos"
-save_dir="coco_person"
+#lp="COCOperson/val/val2017/labels"
+#dr="COCOperson/val/val2017/pos"
+#save_dir="coco_person"
 
 for config in ${A[@]}
 do

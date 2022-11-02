@@ -70,13 +70,12 @@ if __name__ == '__main__':
 
     x = []
     for patch_file in patch_files:
-        fp = args.save+'all_data/'+patch_file
-        x.append(int(patch_file.split('.')[0].split('_')[-1]))
-
-        args.save += '/all_data'
-        args.patch = os.path.join(args.patch_dir, patch_file)
-        args = get_save(args)
-        det_mAPs, _, _, _ = eval_patch(args, cfg)
+        args_tmp = copy.deepcopy(args)
+        prefix = patch_file.split('.')[0]
+        x.append(int(prefix.split('_')[-1]))
+        args_tmp.patch = os.path.join(args_tmp.patch_dir, *['all_data', patch_file])
+        args_tmp = get_save(args_tmp)
+        det_mAPs, _, _, _ = eval_patch(args_tmp, cfg)
 
         for k, v in det_mAPs.items():
             y[k].append(float(v))
