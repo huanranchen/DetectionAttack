@@ -6,12 +6,7 @@ patch_name=$2
 save=$3
 A=$4
 targets=$5
-ifng=$6
 ifim=$7
-echo 'ifng: '$ifng
-if [ $ifng = "-ng" ] ;then
-    gg=""
-fi
 
 # 测试模型自身+迁移的效果
 for config in ${A[@]}
@@ -20,7 +15,7 @@ do
   echo "./results/${patch_name}.png"
   for target in ${targets[@]}
   do
-    cmd="CUDA_VISIBLE_DEVICES=${device} python evaluate.py $ifim $gg\
+    cmd="CUDA_VISIBLE_DEVICES=${device} python evaluate.py $ifim\
     -p ./results/${patch_name}.png \
     -cfg ./configs/${config}.yaml \
     -lp ~/work/BaseDetectionAttack/data/INRIAPerson/$target/labels \

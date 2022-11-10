@@ -150,7 +150,6 @@ def logger(cfg, args):
     logger_cfg(cfg.DATA, 'DATA')
     logger_cfg(cfg.DETECTOR, 'DETECTOR')
     logger_cfg(cfg.ATTACKER, 'ATTACKER')
-    logger_msg('Attack method', args.attack_method)
     logger_banner('END')
 
 

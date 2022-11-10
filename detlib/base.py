@@ -118,3 +118,8 @@ class DetectorBase(ABC):
         img_tensor /= 255.
         # img_tensor = self.normalize_tensor(img_tensor)
         return img_tensor
+
+    # def __call__(self, batch_tensor, **kwargs):
+    #     original_size = (batch_tensor.size(3), batch_tensor.size(4))
+    #     batch_tensor.resize_(self.input_tensor_size)
+    #     self.detector.detect(batch_tensor, original_size=original_size)

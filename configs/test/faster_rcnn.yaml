@@ -1,19 +1,17 @@
 DATA:
-  CLASS_NAME_FILE: 'configs/namefiles/coco.names'
+  CLASS_NAME_FILE: 'configs/namefiles/coco-91.names'
   AUGMENT: 0
 
   TRAIN:
     IMG_DIR: 'data/INRIAPerson/Train/pos'
-    LAB_DIR: 'data/INRIAPerson/Train/labels/yolo-labels'
+    LAB_DIR: 'data/INRIAPerson/Train/labels'
 
   TEST:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
-
 DETECTOR:
-  # "Military_YOLOX", , "YOLOV5"
-  NAME: ["YOLOV3", "FASTER_RCNN"] # YOLOV3, YOLOV4, YOLOV5
+  NAME: ["faster_rcnn"] # YOLOV3, YOLOV4, YOLOV5
   INPUT_SIZE: [416, 416] # height, width
   BATCH_SIZE: 8
 
@@ -21,7 +19,7 @@ DETECTOR:
   IOU_THRESH: 0.45
 
   PERTURB:
-    GATE: ''
+    GATE: null
 
 ATTACKER:
   METHOD: "optim"
@@ -29,20 +27,17 @@ ATTACKER:
   MAX_EPOCH: 1000
   ITER_STEP: 1
 
-  STEP_LR: 0.03
   TARGET_CLASS:
   ATTACK_CLASS: '0' # -1 attack all classes, or you can select the class id
-  LOSS_FUNC: "obj-tv" # [null, 'descend-mse', 'ascend-mse', 'obj', 'obj-tv']
+  LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse]
   tv_eta: 2.5
   obj_eta: 1
-  LR_SCHEDULER: 'ALRS'
+  STEP_LR: 0.03
+  LR_SCHEDULER: 'ALRS_LowerTV'
 
   PATCH:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.15
+    SCALE: 0.2
     INIT: "gray" # ['random', 'gray']
-
-    TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']
-
-DISTRIBUTED: True
+    TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale', 'cutout']

@@ -12,7 +12,7 @@ from detlib.HHDet import HHYolov2, HHYolov3, HHYolov4, HHYolov5
 from detlib.torchDet import TorchFasterRCNN, TorchSSD
 
 
-def init_detectors(cfg_det=None, distribute=False):
+def init_detectors(cfg_det: object=None, distribute: bool =False):
     detector_names = cfg_det.NAME
     detectors = []
     if distribute:
@@ -28,7 +28,7 @@ def init_detectors(cfg_det=None, distribute=False):
     return detectors
 
 
-def init_detector(detector_name, cfg, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
+def init_detector(detector_name: str, cfg: object, device: torch.device =torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
     detector = None
     detector_name = detector_name.lower()
     model_config = cfg.MODEL_CONFIG if hasattr(cfg, 'MODEL_CONFIG') else None
@@ -110,7 +110,7 @@ def init_detector(detector_name, cfg, device=torch.device('cuda' if torch.cuda.i
     return detector
 
 
-def inter_nms(all_predictions, conf_thres=0.25, iou_thres=0.45):
+def inter_nms(all_predictions, conf_thres: float =0.25, iou_thres: float =0.45):
     """Performs Non-Maximum Suppression (NMS) on inference results
     Returns:
          detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
