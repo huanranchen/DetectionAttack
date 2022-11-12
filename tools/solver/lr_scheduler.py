@@ -38,20 +38,20 @@ class ALRS():
 
 class warmupALRS(ALRS):
     """reference:Bootstrap Generalization Ability from Loss Landscape Perspective"""
+
     def __init__(self, optimizer, warmup_epoch=50, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
         super().__init__(optimizer, loss_threshold, loss_ratio_threshold, decay_rate)
-        self.warmup_rate = 1/3
+        self.warmup_rate = 1 / 3
         self.warmup_epoch = warmup_epoch
         self.start_lr = optimizer.param_groups[0]["lr"]
-        self.warmup_lr = self.start_lr * (1-self.warmup_rate)
-        self.update_lr(lambda x: x*self.warmup_rate)
+        self.warmup_lr = self.start_lr * (1 - self.warmup_rate)
+        self.update_lr(lambda x: x * self.warmup_rate)
 
     def update_lr(self, update_fn):
         for ind, group in enumerate(self.optimizer.param_groups):
             self.optimizer.param_groups[ind]['lr'] = update_fn(group['lr'])
             now_lr = group['lr']
             print(f'now lr = {now_lr}')
-
 
     def step(self, **kwargs):
         loss = kwargs['ep_loss']
@@ -76,6 +76,7 @@ class ALRS_LowerTV(ALRS):
     The difference is that we fine-tune the hyper-params decay_rate
         to force the learning rate down to 0.1 so that the TV Loss will converges to the same level.
     """
+
     def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.94):
         super().__init__(optimizer, loss_threshold, loss_ratio_threshold, decay_rate)
 

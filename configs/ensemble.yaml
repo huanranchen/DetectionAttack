@@ -13,8 +13,8 @@ DATA:
 
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
-  NAME: ["YOLOV3", "FASTER_RCNN"] # YOLOV3, YOLOV4, YOLOV5
-  INPUT_SIZE: [416, 416] # height, width
+  NAME: [ "YOLOV2","YOLOV3","YOLOV4","YOLOV5",'SSD', "faster_rcnn"] # YOLOV3, YOLOV4, YOLOV5
+  INPUT_SIZE: [ 416, 416 ] # height, width
   BATCH_SIZE: 8
 
   CONF_THRESH: 0.5
@@ -24,9 +24,9 @@ DETECTOR:
     GATE: ''
 
 ATTACKER:
-  METHOD: "optim"
+  METHOD: "record-p9"
   EPSILON: 255 # 0-255
-  MAX_EPOCH: 1000
+  MAX_EPOCH: 10000
   ITER_STEP: 1
 
   STEP_LR: 0.03
@@ -43,6 +43,4 @@ ATTACKER:
     SCALE: 0.15
     INIT: "gray" # ['random', 'gray']
 
-    TRANSFORM: ['jitter', 'rotate', 'median_pool', 'p9_scale']
-
-DISTRIBUTED: True
+    TRANSFORM: [ 'jitter', 'rotate', 'median_pool', 'p9_scale' ]

@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import os
-
+import multiprocessing
 from tools.det_utils import plot_boxes_cv2
 from tools import FormatConverter
 from detlib.utils import init_detectors
@@ -29,6 +29,7 @@ class UniversalAttacker(object):
         self.data_transformer = DataTransformer(device, rand_rotate=0)
 
         self.detectors = init_detectors(cfg_det=cfg.DETECTOR, distribute=model_distribute)
+        self.model_distribute = model_distribute
 
     @property
     def universal_patch(self):
@@ -124,9 +125,18 @@ class UniversalAttacker(object):
         detectors_loss = []
         self.attacker.begin_attack()
         if mode == 'optim' or mode == 'sequential':
-            for detector in self.detectors:
-                loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
-                detectors_loss.append(loss)
+            if self.model_distribute and False:
+                # TODO: check whether parallel can be a good approximation of second derivative?
+                pool = multiprocessing.Pool(processes=len(self.detectors))
+                for detector in self.detectors:
+                    detectors_loss.append(pool.apply_async(func=self.attacker.non_targeted_attack,
+                                                           args=(img_tensor_batch, detector)))
+                pool.close()
+                pool.join()
+            else:
+                for detector in self.detectors:
+                    loss = self.attacker.non_targeted_attack(img_tensor_batch, detector)
+                    detectors_loss.append(loss)
         elif mode == 'parallel':
             detectors_loss = self.parallel_attack(img_tensor_batch)
         self.attacker.end_attack()
