@@ -4,18 +4,20 @@ from torch import optim
 
 
 class ALRS():
-    """ALRS is a scheduler without warmup, a variant of warmupALRS."""
-    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97):
+    """ALRS is a scheduler without warmup, a variant of warmupALRS.
+    ALRS decays the learning rate when
+    """
+    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.97, patience=10):
         self.optimizer = optimizer
         self.loss_threshold = loss_threshold
         self.decay_rate = decay_rate
         self.loss_ratio_threshold = loss_ratio_threshold
         self.last_loss = 999
-        self.ten_epoch_loss = 0
+        self.total_epoch_loss = 0
+        self.patience = patience
 
     def update_lr(self, loss):
         delta = self.last_loss - loss
-        print(delta)
         if delta < self.loss_threshold and delta / self.last_loss < self.loss_ratio_threshold:
             for ind, group in enumerate(self.optimizer.param_groups):
                 self.optimizer.param_groups[ind]['lr'] *= self.decay_rate
@@ -25,16 +27,13 @@ class ALRS():
     def step(self, **kargs):
         epoch = kargs['epoch']
         loss = kargs['ep_loss']
-        print(loss)
-        if epoch % 10 != 0:
-            self.ten_epoch_loss += loss
-            print(self.ten_epoch_loss)
+        if epoch % self.patience != 0:
+            self.total_epoch_loss += loss
         else:
-            self.ten_epoch_loss /= 10
-            print(self.ten_epoch_loss)
-            self.update_lr(self.ten_epoch_loss)
-            self.last_loss = self.ten_epoch_loss
-            self.ten_epoch_loss = 0
+            loss = self.total_epoch_loss / self.patience
+            self.update_lr(loss)
+            self.last_loss = loss
+            self.total_epoch_loss = 0
 
 
 class warmupALRS(ALRS):
@@ -57,12 +56,16 @@ class warmupALRS(ALRS):
     def step(self, **kwargs):
         loss = kwargs['ep_loss']
         epoch = kwargs['epoch']
-        delta = self.last_loss - loss
-        self.last_loss = loss
         if epoch < self.warmup_epoch:
             self.update_lr(lambda x: -(self.warmup_epoch-epoch)*self.warmup_lr / self.warmup_epoch + self.start_lr)
-        elif delta < self.loss_threshold and delta/self.last_loss < self.loss_ratio_threshold:
-            self.update_lr(lambda x: x*self.decay_rate)
+        elif epoch % self.patience != 0:
+            self.total_epoch_loss += loss
+        else:
+            loss = self.total_epoch_loss / self.patience
+            delta = self.last_loss - loss
+            self.last_loss = loss
+            if delta < self.loss_threshold and delta / self.last_loss < self.loss_ratio_threshold:
+                self.update_lr(lambda x: x*self.decay_rate)
 
 
 class ALRS_LowerTV(ALRS):

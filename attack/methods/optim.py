@@ -8,9 +8,9 @@ class OptimAttacker(BaseAttacker):
     def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty'):
         super().__init__(loss_func, norm, cfg, device, detector_attacker)
 
-    @property
-    def param_groups(self):
-        return self.optimizer.param_groups
+    # @property
+    # def param_groups(self):
+    #     return self.optimizer.param_groups
 
     def set_optimizer(self, optimizer: Optimizer):
         self.optimizer = optimizer

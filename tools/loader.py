@@ -15,8 +15,9 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class DetDataset(Dataset):
-    def __init__(self, images_path, input_size, is_augment=False):
-        self.imgs = [os.path.join(images_path, i) for i in os.listdir(images_path)]
+    def __init__(self, images_path, input_size, is_augment=False, return_img_name=False):
+        self.images_path = images_path
+        self.imgs = os.listdir(images_path)
         self.input_size = input_size
         self.n_samples = len(self.imgs)
         # is_augment = False
@@ -27,6 +28,7 @@ class DetDataset(Dataset):
             transforms.Resize(self.input_size),
             transforms.ToTensor()
         ])
+        self.return_img_name = return_img_name
 
     def transform_fn(self, im, p_aug=0.5):
         """This is for random data augmentation of p_aug probability
@@ -40,9 +42,10 @@ class DetDataset(Dataset):
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-            transforms.RandomResizedCrop((416, 416), scale=(0.2, 0.9)),
+            # transforms.RandomResizedCrop((416, 416), scale=(0.2, 0.9)),
             transforms.RandomRotation(5),
         ])(im)
+
         return im_t
 
     def pad_scale(self, img):
@@ -69,9 +72,13 @@ class DetDataset(Dataset):
 
     def __getitem__(self, index):
         # print(self.imgs[index], index)
-        image = Image.open(self.imgs[index]).convert('RGB')
+        img_path = os.path.join(self.images_path, self.imgs[index])
+        image = Image.open(img_path).convert('RGB')
         image = self.transform(image)
         image = self.pad_scale(image)
+
+        if self.return_img_name:
+            return self.ToTensor(image), self.imgs[index]
 
         return self.ToTensor(image)
 
@@ -167,11 +174,11 @@ def check_valid(name: str):
 
 
 def dataLoader(data_root, lab_root=None, input_size=None, batch_size=1, is_augment=False,
-               shuffle=False, pin_memory=False, num_workers=16, sampler=None):
+               shuffle=False, pin_memory=False, num_workers=16, sampler=None, return_img_name=False):
     if input_size is None:
         input_size = [416, 416]
     if lab_root is None:
-        data_set = DetDataset(data_root, input_size, is_augment=is_augment)
+        data_set = DetDataset(data_root, input_size, is_augment=is_augment, return_img_name=return_img_name)
     else:
         data_set = DetDatasetLab(data_root, lab_root, input_size)
     data_loader = DataLoader(data_set, batch_size=batch_size, shuffle=shuffle,

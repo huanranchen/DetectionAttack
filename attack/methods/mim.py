@@ -17,7 +17,7 @@ class LinfMIMAttack(BaseAttacker):
         self.momentum = momentum
         self.grad = None
 
-        self.param_groups = [{'lr': cfg.STEP_LR}]
+        # self.param_groups = [{'lr': cfg.STEP_LR}]
 
     @property
     def step_lr(self):

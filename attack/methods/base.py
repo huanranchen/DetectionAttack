@@ -1,8 +1,9 @@
 import torch
 from abc import ABC, abstractmethod
+from torch.optim.optimizer import Optimizer
 
 
-class BaseAttacker(ABC):
+class BaseAttacker(Optimizer):
     """An Attack Base Class"""
 
     def __init__(self, loss_func, norm: str, cfg, device: torch.device, detector_attacker):
@@ -21,6 +22,10 @@ class BaseAttacker(ABC):
             step_lr (float, optional): [the step size of attack]. Defaults to 0.01.
             device ([type], optional): ['cpu' or 'cuda']. Defaults to None.
         """
+        defaults = dict(lr=cfg.STEP_LR)
+        params = [detector_attacker.patch_obj.patch]
+        super().__init__(params, defaults)
+
         self.loss_fn = loss_func
         self.cfg = cfg
         self.detector_attacker = detector_attacker
@@ -32,6 +37,7 @@ class BaseAttacker(ABC):
         self.iter_step = cfg.ITER_STEP
         self.class_id = cfg.TARGET_CLASS
         self.attack_class = cfg.ATTACK_CLASS
+
 
     def logger(self, detector, adv_tensor_batch, bboxes, loss_dict):
         vlogger = self.detector_attacker.vlogger

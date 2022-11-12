@@ -71,7 +71,6 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--attack_method', type=str, default='sequential')
     parser.add_argument('-cfg', '--cfg', type=str, default='test.yaml')
     parser.add_argument('-n', '--board_name', type=str, default=None)
-    parser.add_argument('-re', '--random_erase', action='store_true', default=False)
     parser.add_argument('-s', '--save_path', type=str, default='./results/inria')
     parser.add_argument('-d', '--debugging', action='store_true')
     parser.add_argument('-np', '--new_process', action='store_true', default=False)

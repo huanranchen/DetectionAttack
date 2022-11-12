@@ -17,7 +17,7 @@ class LinfBIMAttack(BaseAttacker):
         super().__init__(loss_func, norm, cfg, device, detector_attacker)
         self.epsilon = 0.1
 
-        self.param_groups = [{'lr': cfg.STEP_LR}]
+        # self.param_groups = [{'lr': cfg.STEP_LR}]
 
     @property
     def step_lr(self):

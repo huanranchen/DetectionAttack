@@ -81,7 +81,7 @@ class PatchRandomApplier(nn.Module):
             adv_batch = self.patch_transformer.random_jitter(adv_batch)
         adv_batch = torch.clamp(adv_batch, 0.000001, 0.99999)
         if gates['cutout']:
-            adv_batch = self.patch_transformer.random_erase(adv_batch)
+            adv_batch = self.patch_transformer.cutout(adv_batch)
         adv_batch = padding(adv_batch)
 
         # transform by gates
