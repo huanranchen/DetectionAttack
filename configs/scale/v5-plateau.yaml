@@ -33,11 +33,11 @@ ATTACKER:
   LOSS_FUNC: "obj-tv" # [null, descend-mse, ascend-mse, 'obj-tv', 'obj']
   tv_eta: 2.5
   obj_eta: 1
-  LR_SCHEDULER: 'ALRS'
+  LR_SCHEDULER: 'plateau'
 
   PATCH:
     WIDTH: 300
     HEIGHT: 300
-    SCALE: 0.1
+    SCALE: 0.10
     INIT: "gray" # ['random', 'gray']
     TRANSFORM: ['jitter', 'median_pool', 'rotate', 'p9_scale']
