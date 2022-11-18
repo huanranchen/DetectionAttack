@@ -139,34 +139,43 @@ class C3(nn.Module):
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
 
 
-###################Add shakedrop modules in original the script
+# Add shakedrop modules in original the script
+###################Begin
 from .shakedrop.shake_drop import ShakeDrop
-class ShakedropBottleneck(nn.Module):
+class ShakedropBottleneck(Bottleneck):
     # Standard bottleneck
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
-        super().__init__()
-        c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = Conv(c_, c2, 3, 1, g=g)
-        self.add = shortcut and c1 == c2
+        super().__init__(c1, c2, shortcut, g, e)
 
     def forward(self, x):
         return x + ShakeDrop.apply(self.cv2(self.cv1(x))) if self.add else self.cv2(self.cv1(x))
 
 
-class C3shakedrop(nn.Module):
-    # CSP Bottleneck with 3 convolutions
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
-        super().__init__()
-        c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = Conv(c1, c_, 1, 1)
-        self.cv3 = Conv(2 * c_, c2, 1)  # act=FReLU(c2)
-        self.m = nn.Sequential(*(ShakedropBottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
-        # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
+from .shakedrop.ghost_shake import GhostShake
+class GhostShakeBottleneck(Bottleneck):
+    # Standard bottleneck
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
+        super().__init__(c1, c2, shortcut, g, e)
 
     def forward(self, x):
-        return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
+        # GhostNet style.
+        return GhostShake.apply(x) + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+
+
+class C3shakedrop(C3):
+    # CSP Bottleneck with 3 convolutions
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__(c1, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)  # hidden channels
+        self.m = nn.Sequential(*(ShakedropBottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
+
+class C3ghostshake(C3):
+    # CSP Bottleneck with 3 convolutions
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__(c1, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)  # hidden channels
+        self.m = nn.Sequential(*(GhostShakeBottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
+
 ###################End
 
 

@@ -88,6 +88,8 @@ def init_detector(detector_name: str, cfg: object, device: torch.device =torch.d
         detector = HHYolov5(name=detector_name, cfg=cfg, device=device)
         if cfg.PERTURB.GATE == 'shakedrop':
             model_config = 'HHDet/yolov5/yolov5/models/yolov5s-shakedrop.yaml'
+        elif cfg.PERTURB.GATE == 'ghostshake':
+            model_config = 'HHDet/yolov5/yolov5/models/yolov5s-ghostshake.yaml'
         elif model_config is None:
             model_config = 'HHDet/yolov5/yolov5/models/yolov5s.yaml'
 

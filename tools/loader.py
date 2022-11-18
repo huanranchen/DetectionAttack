@@ -42,7 +42,7 @@ class DetDataset(Dataset):
         im_t = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-            # transforms.RandomResizedCrop((416, 416), scale=(0.2, 0.9)),
+            transforms.RandomResizedCrop((416, 416), scale=(0.2, 0.9)),
             transforms.RandomRotation(5),
         ])(im)
 
