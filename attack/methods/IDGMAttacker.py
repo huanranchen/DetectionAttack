@@ -24,6 +24,7 @@ class LazyAttacker(OptimAttacker):
     '''
     小于阈值，我就不更新了。只有大于阈值，我才会正常更新
     '''
+
     def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty',
                  out_optimizer=Adam, ksi=0.05):
         # FIXME: delete outer optimizer. Use normal optimization.
@@ -217,6 +218,19 @@ class SmoothFishAttacker(OptimAttacker):
         super().__init__(device, cfg, loss_func, detector_attacker, norm=norm)
         self.out_optimizer = out_optimizer
 
+    @property
+    def param_groups(self):
+        return self.out_optimizer.param_groups
+
+    def set_optimizer(self, optimizer: Optimizer):
+        self.optimizer = optimizer
+        if self.out_optimizer is not None:
+            print(f'set outer optimizer is {self.out_optimizer}')
+            print('-' * 100)
+            self.out_optimizer = self.out_optimizer([self.optimizer.param_groups[0]['params'][0]], self.ksi)
+        if self.detector_attacker.vlogger is not None:
+            self.detector_attacker.vlogger.optimizer = self.out_optimizer
+
     def non_targeted_attack(self, ori_tensor_batch, detector):
         losses = []
         for iter in range(self.iter_step):
@@ -303,7 +317,7 @@ class SmoothFishAttacker(OptimAttacker):
         self.theta_grad_record = []
 
     @torch.no_grad()
-    def end_attack(self, ksi=10, gamma=5):
+    def end_attack(self, ksi=0.05, gamma=5):
         '''
         grad_mean = mean(d theta)
         grad_sm = alpha*num_detectors*grad_mean + gamma*( (theta_hat - theta) - alpha*num_detectors*grad_mean )
@@ -321,7 +335,12 @@ class SmoothFishAttacker(OptimAttacker):
         self.optimizer.param_groups[0]['params'][0].mul_(0)
         self.optimizer.param_groups[0]['params'][0].add_(self.original_patch)
         # outer loop update. ksi*grad_sm
-        self.optimizer.param_groups[0]['params'][0].add_(ksi * grad_sm)
+        if self.out_optimizer is None:
+            self.optimizer.param_groups[0]['params'][0].add_(ksi * grad_sm)
+        else:
+            self.out_optimizer.zero_grad()
+            self.optimizer.param_groups[0]['params'][0].grad = - ksi * grad_sm
+            self.out_optimizer.step()
 
         # record in tensorboard
         grad_similarity = cosine_similarity(self.theta_grad_record)
