@@ -18,10 +18,10 @@ do
     cmd="CUDA_VISIBLE_DEVICES=${device} python evaluate.py $ifim\
     -p ./results/${patch_name}.png \
     -cfg ./configs/${config}.yaml \
-    -lp ~/work/BaseDetectionAttack/data/INRIAPerson/$target/labels \
-    -dr ~/work/BaseDetectionAttack/data/INRIAPerson/$target/pos \
-    -s ~/work/BaseDetectionAttack/data/${save}/${target} \
-    -e 0 &"
+    -lp /home/chenhuanran2022/work/BaseDetectionAttack/data/INRIAPerson/$target/labels \
+    -dr /home/chenhuanran2022/work/BaseDetectionAttack/data/INRIAPerson/$target/pos \
+    -s /home/chenhuanran2022/work/BaseDetectionAttack/data/${save}/${target} \
+    -e 0&"
     echo $cmd
     eval $cmd
     sleep 2

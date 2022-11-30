@@ -5,8 +5,9 @@ from torch import nn, Tensor
 from torch.nn import functional as F
 from typing import Any, Callable, List, Optional, Sequence
 
-from torchvision.models.utils import load_state_dict_from_url
-from torchvision.models.mobilenetv2 import _make_divisible, ConvBNActivation
+from torch.hub import load_state_dict_from_url
+from torchvision.models.mobilenetv2 import _make_divisible
+from torchvision.ops import Conv2dNormActivation as ConvBNActivation
 
 from .shakedrop import ShakeDropFunction
 

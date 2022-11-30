@@ -11,7 +11,7 @@ from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
 from torchvision.models.detection.backbone_utils import _validate_trainable_layers
 from torchvision.models import vgg
 
-from torchvision.models.utils import load_state_dict_from_url
+from torch.hub import load_state_dict_from_url
 from torchvision.ops import boxes as box_ops
 
 from ..utils.transform import GeneralizedRCNNTransform

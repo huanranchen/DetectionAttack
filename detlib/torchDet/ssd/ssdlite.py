@@ -9,7 +9,7 @@ from torchvision.models.detection import _utils as det_utils
 from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
 from torchvision.models.detection.backbone_utils import _validate_trainable_layers
 from torchvision.models.detection.ssdlite import _normal_init, _mobilenet_extractor, SSDLiteHead
-from torchvision.models.utils import load_state_dict_from_url
+from torch.hub import load_state_dict_from_url
 
 from .ssd import SSD
 from .shakedrop.backbone import mobilenet_v3_large
