@@ -1,6 +1,7 @@
 from tools.solver import *
 from attack.methods import LinfBIMAttack, LinfMIMAttack, LinfPGDAttack, OptimAttacker, \
-    FishAttacker, SmoothFishAttacker, OptimAttackerWithRecord, RSCchr, StrengthenWeakPointAttacker
+    FishAttacker, SmoothFishAttacker, OptimAttackerWithRecord, RSCchr, StrengthenWeakPointAttacker, \
+    SAMAttacker
 from tools.solver.loss import *
 
 scheduler_factory = {
@@ -20,6 +21,7 @@ optim_factory = {
     "IDGM-fish": lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
     'record-p9': lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
     'IDGM-smoothfish': lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),  # default
+    "SAM": lambda p_obj, lr: torch.optim.Adam([p_obj], lr=lr, amsgrad=True),
 }
 
 attack_method_dict = {
@@ -31,6 +33,7 @@ attack_method_dict = {
     "IDGM-fish": FishAttacker,
     "IDGM-smoothfish": SmoothFishAttacker,
     "record-p9": OptimAttackerWithRecord,
+    "SAM": SAMAttacker,
 }
 
 loss_dict = {
