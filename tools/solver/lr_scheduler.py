@@ -6,7 +6,7 @@ from torch import optim
 class ALRS():
     """ALRS is a scheduler without warmup, a variant of warmupALRS."""
 
-    def __init__(self, optimizer, loss_threshold=1e-4, loss_ratio_threshold=1e-4, decay_rate=0.95):
+    def __init__(self, optimizer, loss_threshold=1e-3, loss_ratio_threshold=1e-3, decay_rate=0.95):
         self.optimizer = optimizer
         self.loss_threshold = loss_threshold
         self.decay_rate = decay_rate

@@ -52,11 +52,13 @@ class SAMAttacker(BaseAttacker):
         if self.iter % 2:
             self.patch_obj.patch += self.reverse_step_size * \
                                     self.patch_obj.patch.grad / torch.norm(self.patch_obj.patch.grad, p=2)
+            self.iter = 0
         else:
             self.optimizer.step()
             # grad = self.optimizer.param_groups[0]['params'][0].grad
             # print(torch.mean(torch.abs(grad)))
             self.patch_obj.clamp_(p_min=self.min_epsilon, p_max=self.max_epsilon)
+            self.reverse_step_size = self.optimizer.param_groups[0]['lr'] / 10
 
     def attack_loss(self, confs):
         self.optimizer.zero_grad()

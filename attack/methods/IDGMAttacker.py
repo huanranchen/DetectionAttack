@@ -405,7 +405,7 @@ class OptimAttackerWithRecord(OptimAttacker):
 
 class CommonWeakness(OptimAttacker):
     '''
-    use fish technique to approximate second derivatives.
+    fish + sam
     '''
 
     def __init__(self, device, cfg, loss_func, detector_attacker, norm='L_infty',
@@ -508,5 +508,5 @@ class CommonWeakness(OptimAttacker):
         gradient ascent
         '''
         patch = self.optimizer.param_groups[0]['params'][0]
-        fake_grad = - self.reverse_step_size * (patch - self.original_patch)
-        patch.add_(fake_grad)
+        fake_grad = - (patch - self.original_patch)
+        patch.add_(self.reverse_step_size * fake_grad / torch.norm(fake_grad, p=2))

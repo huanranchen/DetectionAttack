@@ -48,6 +48,7 @@ def train_uap(cfg: ConfigParser,
     optimizer = optim_factory[cfg.ATTACKER.METHOD](detector_attacker.universal_patch, cfg.ATTACKER.STEP_LR)
     detector_attacker.attacker.set_optimizer(optimizer)
     scheduler = scheduler_factory[cfg.ATTACKER.LR_SCHEDULER](optimizer)
+    vlogger.optimizer = optimizer
 
     loss_array = []
     if args.save_process:
