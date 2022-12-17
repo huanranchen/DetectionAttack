@@ -165,4 +165,4 @@ def ssdlite320_mobilenet_v3_large_shakedrop(
             raise ValueError(f"No checkpoint is available for model {weights_name}")
         state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
         model.load_state_dict(state_dict)
-    return
+    return model

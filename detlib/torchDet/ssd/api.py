@@ -21,12 +21,13 @@ class TorchSSD(DetectorBase):
 
     def load(self, model_weights=None, **kargs):
         if self.cfg.PERTURB.GATE == 'shakedrop':
-            from .ssd import ssdlite320_mobilenet_v3_large_shakedrop
+            from .ssdlite import ssdlite320_mobilenet_v3_large_shakedrop
             self.detector = ssdlite320_mobilenet_v3_large_shakedrop(pretrained=True)
         else:
             self.detector = model_dict[self.name](pretrained=True)
 
         self.detector = self.detector.to(self.device)
+        print(self.device)
         self.detector.eval()
         self.detector.requires_grad_(False)
 

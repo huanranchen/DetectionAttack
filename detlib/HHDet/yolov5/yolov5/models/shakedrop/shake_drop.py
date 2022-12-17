@@ -28,7 +28,7 @@ class ShakeDrop(torch.autograd.Function):
         gate = createFloatTensor([0]).bernoulli_(1 - p_drop)
         ctx.save_for_backward(gate)
         if gate.item() == 0:
-            alpha = createFloatTensor(x.size(0)).uniform_(*alpha_range)
+            alpha = createFloatTensor(x.size(0)).uniform_(*alpha_range).to(x.device)
             alpha = alpha.view(alpha.size(0), 1, 1, 1).expand_as(x)
             return alpha * x
         else:

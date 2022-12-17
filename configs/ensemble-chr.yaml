@@ -10,10 +10,6 @@ DATA:
     IMG_DIR: 'data/INRIAPerson/Test/pos'
     LAB_DIR: 'data/INRIAPerson/Test/labels'
 
-
-
-
-
 DETECTOR:
   # "Military_YOLOX", , "YOLOV5"
   NAME: [ "YOLOV2","YOLOV3","YOLOV4","YOLOV5",'SSD', "faster_rcnn"] # YOLOV3, YOLOV4, YOLOV5
@@ -24,7 +20,7 @@ DETECTOR:
   IOU_THRESH: 0.45
 
   PERTURB:
-    GATE: ''
+    GATE: 'shakedrop'
 
 ATTACKER:
   METHOD: "IDGM-fish"

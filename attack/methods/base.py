@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from torch.optim.optimizer import Optimizer
 
 
-class BaseAttacker(Optimizer):
+class BaseAttacker():
     """An Attack Base Class"""
 
     def __init__(self, loss_func, norm: str, cfg, device: torch.device, detector_attacker):
@@ -24,7 +24,8 @@ class BaseAttacker(Optimizer):
         """
         defaults = dict(lr=cfg.STEP_LR)
         params = [detector_attacker.patch_obj.patch]
-        super().__init__(params, defaults)
+        # print(params)
+        # super().__init__(params, defaults)
 
         self.loss_fn = loss_func
         self.cfg = cfg
